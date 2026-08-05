@@ -46,6 +46,8 @@ struct CanvasToolbar: View {
                 set: { style.stroke = RGBAColor($0) }
             ))
 
+            colorSwatch(icon: "paintbrush.fill", help: "Fill color", color: fillColorBinding)
+
             colorSwatch(icon: "square.fill", help: "Canvas background", color: $background)
 
             Divider().frame(height: 22).padding(.horizontal, 2)
@@ -70,7 +72,6 @@ struct CanvasToolbar: View {
                         Text("Solid").tag(FillStyle.solid)
                         Text("Hachure").tag(FillStyle.hachure)
                     }
-                    ColorPicker("Fill color", selection: fillColorBinding, supportsOpacity: true)
                     Divider()
                     Button("Fine stroke") { style.strokeWidth = 1.5 }
                     Button("Medium stroke") { style.strokeWidth = 2.5 }
