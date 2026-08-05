@@ -1,6 +1,20 @@
 import SwiftUI
 
 struct CanvasToolbar: View {
+    private enum ColorTarget: String, Identifiable {
+        case stroke, fill, background
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .stroke: "Stroke color"
+            case .fill: "Fill color"
+            case .background: "Canvas background"
+            }
+        }
+    }
+
     @Binding var tool: ToolKind
     @Binding var style: ElementStyle
     @Binding var selectedStyle: ElementStyle?
@@ -21,11 +35,12 @@ struct CanvasToolbar: View {
     var availableWidth: CGFloat = 900
 
     @State private var showingInspector = false
+    @State private var colorTarget: ColorTarget?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
     private let tools: [ToolKind] = [
-        .select, .hand, .freedraw, .rectangle, .ellipse, .diamond, .line, .arrow, .text, .eraser,
+        .select, .hand, .freedraw, .line, .arrow, .rectangle, .ellipse, .diamond, .text, .eraser,
     ]
 
     private var visibleTools: ArraySlice<ToolKind> {
@@ -37,7 +52,7 @@ struct CanvasToolbar: View {
     }
 
     private var visibleToolCount: Int {
-        let reservedWidth: CGFloat = 300
+        let reservedWidth: CGFloat = 170
         let buttonWidth: CGFloat = 34
         return min(tools.count, max(2, Int((availableWidth - reservedWidth) / buttonWidth)))
     }
@@ -65,6 +80,13 @@ struct CanvasToolbar: View {
                         .keyboardShortcut("2", modifiers: .command)
                     Button("Reset Zoom") { onResetZoom() }
                         .keyboardShortcut("0", modifiers: .command)
+                }
+
+                Divider()
+                Section("Colors") {
+                    Button("Stroke color…") { colorTarget = .stroke }
+                    Button("Fill color…") { colorTarget = .fill }
+                    Button("Canvas background…") { colorTarget = .background }
                 }
 
                 Divider()
@@ -99,15 +121,7 @@ struct CanvasToolbar: View {
             .menuIndicator(.hidden)
             .fixedSize()
             .help("More tools")
-            .accessibilityLabel("More canvas tools")
-
-            Divider().frame(height: 22).padding(.horizontal, 2)
-
-            colorSwatch(icon: "pencil.tip", help: "Stroke color", color: strokeColorBinding)
-
-            colorSwatch(icon: "paintbrush.fill", help: "Fill color", color: fillColorBinding)
-
-            colorSwatch(icon: "square.fill", help: "Canvas background", color: $background)
+            .accessibilityLabel("More tools and appearance")
 
             Divider().frame(height: 22).padding(.horizontal, 2)
 
@@ -164,6 +178,17 @@ struct CanvasToolbar: View {
                                      showsImageShadow: selectedImageShadow != nil)
             }
         }
+        .popover(item: $colorTarget, arrowEdge: .bottom) { target in
+            VStack(alignment: .leading, spacing: 10) {
+                Text(target.title)
+                    .font(.headline)
+                ColorPicker("Color",
+                            selection: colorBinding,
+                            supportsOpacity: target != .background)
+            }
+            .padding(16)
+            .frame(width: 240)
+        }
     }
 
     @ViewBuilder
@@ -194,34 +219,31 @@ struct CanvasToolbar: View {
         }
     }
 
-    private func colorSwatch(icon: String, help: String, color: Binding<Color>) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 13)
-                .accessibilityHidden(true)
-            ZStack {
-                ColorPicker("", selection: color, supportsOpacity: true)
-                    .labelsHidden()
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(color.wrappedValue)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
-                    )
-                    .allowsHitTesting(false)
-            }
-            .frame(width: 24, height: 24)
-            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-        }
-        .help(help)
-    }
-
     private var fillColorBinding: Binding<Color> {
         Binding(
             get: { selectedStyle?.fill.swiftUIColor ?? style.fill.swiftUIColor },
             set: { newColor in updateStyle { $0.fill = RGBAColor(newColor) } }
+        )
+    }
+
+    private var colorBinding: Binding<Color> {
+        Binding(
+            get: {
+                switch colorTarget {
+                case .stroke: strokeColorBinding.wrappedValue
+                case .fill: fillColorBinding.wrappedValue
+                case .background: background
+                case nil: .clear
+                }
+            },
+            set: { newColor in
+                switch colorTarget {
+                case .stroke: strokeColorBinding.wrappedValue = newColor
+                case .fill: fillColorBinding.wrappedValue = newColor
+                case .background: background = newColor
+                case nil: break
+                }
+            }
         )
     }
 
