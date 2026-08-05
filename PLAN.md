@@ -46,43 +46,43 @@ gallery grid, and export to images.
 - [x] `Renderer` (Core Graphics) + hit-testing (bbox + point-to-segment distance)
 - [ ] Two-layer rendering: committed scene layer + live overlay layer
 - [~] Camera pan (scrollWheel + Hand-tool drag) + pinch zoom (magnify); spring smoothing pending
-- [ ] Zoom in, zoom out, zoom to fit, zoom to selection tools combined into a single `ZoomTool`
+- [x] Zoom in, zoom out, zoom to fit, zoom to selection, and reset tools combined into the ellipsis menu
 - [ ] **Verify:** smooth pan/zoom in Instruments (500+ elements, no dropped frames)
 
 ## Phase 2 — Tools + the sketchy look
 
 - [x] Tool state machine (Select move/delete + Hand pan + Eraser + Text live; marquee/resize in Phase 3)
-- [x] Freehand tool — default tool (smoothing refinement pending)
+- [x] Freehand tool — default tool with commit-time smoothing
 - [x] Shape tools (rect/ellipse/diamond) + line/arrow with arrowheads
 - [x] Text tool (inline `NSTextField` editing)
 - [x] Eraser tool (click / drag to remove elements)
-- [x] `Sketch`/`Renderer`: jittered, double-stroked paths + solid fill (hachure pending)
+- [x] `Sketch`/`Renderer`: jittered, double-stroked paths + solid and hachure fills
 - [x] Deterministic per-element `seed` (no shimmer on redraw/pan/zoom)
-- [ ] Roughened-path cache keyed by geometry+style hash
-- [ ] Tool keyboard shortcuts (V/H/R/O/D/L/A/P/T/E)
+- [x] Roughened-path cache keyed by deterministic element hash
+- [x] Tool keyboard shortcuts (V/H/R/O/D/L/A/P/T/E) and arrow-key movement
 - [x] Floating translucent toolbar: tools + stroke & background color + Save + Share (press feedback)
 - [ ] Image elements (paste/drop)
 - [ ] **Verify:** every shape renders with stable sketch style; freehand feels good
 
 ## Phase 3 — Selection, manipulation, styling, undo
 
-- [~] Selection: click done; shift-click / marquee pending
-- [~] Move (1:1) done; resize (8 handles, shift=aspect) + rotate handle pending
-- [~] Delete (⌫) done; z-order / duplicate (⌘D) / copy-paste pending
+- [x] Selection: click, shift-click, and marquee
+- [x] Move (1:1), resize (8 handles, shift=aspect), and rotate handle
+- [x] Delete (⌫), z-order, duplicate (⌘D), and copy-paste
 - [ ] Inspector panel: stroke/fill/opacity/width/font/arrowheads/dash + roughness/fill-style
-- [ ] Command-based mutations funneled through `apply()` with `UndoManager`
+- [~] Command-based mutations use a custom snapshot undo/redo stack; native `UndoManager` remains
 - [ ] **Verify:** full manipulation + undo/redo correctness
 
 ## Phase 4 — Persistence, autosave, gallery
 
 - [x] SwiftData `@Model CanvasDocument` (id/title/createdAt/updatedAt/sceneData/thumbnail)
 - [x] `SceneCodec` (scene JSON) + `Thumbnailer` (fitted PNG); private namespaced store
-- [~] Autosave on each element commit (time-debounce + thumbnail throttle pending)
-- [~] Auto-title `Sketch — <date, time>` on create; discard-empty-untitled pending
+- [~] Autosave on each element/camera commit with dirty-only persistence; time-debounce + thumbnail throttle pending
+- [x] Auto-title `Sketch — <date, time>` on create; discard-empty-untitled on close
 - [x] Gallery `LazyVGrid`: create / open (dbl-click) / rename / delete
 - [x] Manual **Save** (name this sketch, ⌘S) + canvas background color from toolbar
-- [ ] Don't save if canvas not dirty (no elements or no changes)
-- [ ] Gallery motion: staggered entrance, spring hover, reduced-motion honored
+- [x] Don't save if canvas is not dirty (no changes)
+- [x] Gallery motion: staggered entrance, spring hover, reduced-motion honored
 - [~] **Verify:** store created + clean launch; full GUI round-trip pending manual pass
 
 ## Phase 5 — Launch integrations
@@ -92,14 +92,14 @@ gallery grid, and export to images.
 - [x] Settings screen with `KeyboardShortcuts.Recorder`
 - [x] URL scheme handler: `quikkanva://new | gallery | open?id=UUID`
 - [x] Menu bar menu actions (New Canvas / Open Gallery / Settings / Quit)
-- [~] Raycast `silent` script commands (`new` + `gallery`) + setup README
+- [x] Raycast `silent` script commands (`new` + `gallery`) + setup README
 - [~] **Verify:** build + launch + URL open OK; hotkey latency pending manual check
 
 ## Phase 6 — Export & polish
 
 - [x] `Exporter`: PNG/JPEG at 2x, background toggle, tight-crop to content
 - [x] Copy-to-clipboard export; `NSSavePanel` save flow (toolbar menu + ⌘E / ⌘⇧C)
-- [~] Design pass: spring press feedback + translucent toolbar done; deeper pass pending
+- [x] Design pass: spring press feedback + translucent toolbar + native extra-tools menu
 - [ ] Slow-motion animation review
 - [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 
@@ -114,7 +114,7 @@ gallery grid, and export to images.
 
 ## Verification checklist
 
-- [ ] `xcodebuild -scheme Quikkanva build` succeeds
+- [x] `xcodebuild -scheme Quikkanva build` succeeds
 - [ ] Unit tests: scene Codable round-trip · hit-testing · `RoughGenerator` determinism ·
       command undo/redo · exporter output · auto-title generation
 - [ ] Instruments: no dropped frames at 500+ sketchy elements during draw + pan/zoom
