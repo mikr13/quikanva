@@ -53,6 +53,7 @@ struct CanvasPanelView: View {
     @State private var canvasCommand: CanvasCommand?
     @State private var includeExportBackground = true
     @State private var selectedStyle: ElementStyle?
+    @State private var selectedImageShadow: Bool?
     @StateObject private var autosave: CanvasAutosaveCoordinator
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -80,6 +81,8 @@ struct CanvasPanelView: View {
                 autosave.schedule(updated)
             } onSelectionChange: { updated in
                 selectedStyle = updated
+            } onImageShadowChange: { updated in
+                selectedImageShadow = updated
             } onCommandHandled: {
                 canvasCommand = nil
             }
@@ -99,6 +102,7 @@ struct CanvasPanelView: View {
                 tool: $tool,
                 style: $style,
                 selectedStyle: $selectedStyle,
+                selectedImageShadow: $selectedImageShadow,
                 background: backgroundBinding,
                 includeExportBackground: $includeExportBackground,
                 onSave: {
@@ -115,6 +119,9 @@ struct CanvasPanelView: View {
                 onResetZoom: { canvasCommand = .resetZoom },
                 onApplySelectedStyle: { updated in
                     canvasCommand = .updateSelectionStyle(updated)
+                },
+                onApplySelectedImageShadow: { enabled in
+                    canvasCommand = .updateSelectedImageShadow(enabled)
                 }
             )
             .padding(.bottom, 16)

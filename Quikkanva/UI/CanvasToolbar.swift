@@ -4,6 +4,7 @@ struct CanvasToolbar: View {
     @Binding var tool: ToolKind
     @Binding var style: ElementStyle
     @Binding var selectedStyle: ElementStyle?
+    @Binding var selectedImageShadow: Bool?
     @Binding var background: Color
     @Binding var includeExportBackground: Bool
     var onSave: () -> Void = {}
@@ -16,6 +17,7 @@ struct CanvasToolbar: View {
     var onZoomToSelection: () -> Void = {}
     var onResetZoom: () -> Void = {}
     var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
+    var onApplySelectedImageShadow: (Bool) -> Void = { _ in }
 
     @State private var showingInspector = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -155,7 +157,9 @@ struct CanvasToolbar: View {
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .popover(isPresented: $showingInspector, arrowEdge: .bottom) {
             if selectedStyle != nil {
-                CanvasStyleInspector(style: selectedStyleBinding)
+                CanvasStyleInspector(style: selectedStyleBinding,
+                                     imageShadow: selectedImageShadowBinding,
+                                     showsImageShadow: selectedImageShadow != nil)
             }
         }
     }
@@ -197,10 +201,19 @@ struct CanvasToolbar: View {
             set: { onApplySelectedStyle($0) }
         )
     }
+
+    private var selectedImageShadowBinding: Binding<Bool> {
+        Binding(
+            get: { selectedImageShadow ?? true },
+            set: { onApplySelectedImageShadow($0) }
+        )
+    }
 }
 
 private struct CanvasStyleInspector: View {
     @Binding var style: ElementStyle
+    @Binding var imageShadow: Bool
+    let showsImageShadow: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -214,6 +227,10 @@ private struct CanvasStyleInspector: View {
                 Text("No fill").tag(FillStyle.none)
                 Text("Solid").tag(FillStyle.solid)
                 Text("Hachure").tag(FillStyle.hachure)
+            }
+
+            if showsImageShadow {
+                Toggle("Image shadow", isOn: $imageShadow)
             }
 
             Slider(value: $style.strokeWidth, in: 0.5 ... 8, step: 0.5) {

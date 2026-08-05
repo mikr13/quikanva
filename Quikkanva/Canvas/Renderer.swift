@@ -262,6 +262,11 @@ enum Renderer {
               let image = image(for: el, data: data) else { return }
         let rect = CGRect(corner: el.points[0].cg, el.points[1].cg)
         ctx.saveGState()
+        if el.imageShadow ?? true {
+            ctx.setShadow(offset: CGSize(width: 0, height: 3),
+                          blur: 10,
+                          color: NSColor.black.withAlphaComponent(0.2).cgColor)
+        }
         ctx.translateBy(x: rect.minX, y: rect.maxY)
         ctx.scaleBy(x: 1, y: -1)
         ctx.draw(image, in: CGRect(x: 0, y: 0, width: rect.width, height: rect.height))

@@ -62,6 +62,7 @@ gallery grid, and export to images.
 - [x] Tool keyboard shortcuts (V/H/R/O/D/L/A/P/T/E) and arrow-key movement
 - [x] Floating translucent toolbar: tools + stroke & background color + Save + Share (press feedback)
 - [x] Image elements (paste/drop)
+- [x] Image presentation: optional subtle shadow; selection overlay shown only in Select mode
 - [ ] **Verify:** every shape renders with stable sketch style; freehand feels good
 
 ## Phase 3 — Selection, manipulation, styling, undo

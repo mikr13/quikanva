@@ -13,6 +13,7 @@ final class CanvasNSView: NSView {
     var style = ElementStyle()
     var onCommit: ((CanvasScene) -> Void)?
     var onSelectionChange: ((ElementStyle?) -> Void)?
+    var onImageShadowChange: ((Bool?) -> Void)?
     var onCommandHandled: (() -> Void)?
     var command: CanvasCommand? {
         didSet {
@@ -131,7 +132,7 @@ final class CanvasNSView: NSView {
     }
 
     private func drawSelection(in ctx: CGContext) {
-        guard let box = selectionBounds else { return }
+        guard tool == .select, let box = selectionBounds else { return }
         let zoom = CGFloat(scene.camera.zoom)
         ctx.saveGState()
         ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
@@ -183,8 +184,16 @@ final class CanvasNSView: NSView {
         return first
     }
 
+    private var selectedImageShadow: Bool? {
+        guard selectedIDs.count == 1,
+              let selected = scene.elements.first(where: { selectedIDs.contains($0.id) }),
+              selected.kind == .image else { return nil }
+        return selected.imageShadow ?? true
+    }
+
     func notifySelectionChange() {
         onSelectionChange?(selectedStyle)
+        onImageShadowChange?(selectedImageShadow)
     }
 
     private func handlePoint(_ handle: SelectionHandle, in box: CGRect) -> CGPoint {
@@ -690,8 +699,22 @@ final class CanvasNSView: NSView {
             }
             commit(updated)
             notifySelectionChange()
+        case .updateSelectedImageShadow(let shadow):
+            guard !selectedIDs.isEmpty else { break }
+            var updated = scene
+            for index in updated.elements.indices where selectedIDs.contains(updated.elements[index].id) {
+                guard updated.elements[index].kind == .image else { continue }
+                updated.elements[index].imageShadow = shadow
+            }
+            commit(updated)
+            notifySelectionChange()
         }
-        if case .updateSelectionStyle = command {} else { onCommit?(scene) }
+        switch command {
+        case .updateSelectionStyle, .updateSelectedImageShadow:
+            break
+        default:
+            onCommit?(scene)
+        }
         onCommandHandled?()
     }
 

@@ -85,6 +85,7 @@ struct Element: Codable, Identifiable, Hashable {
     var style: ElementStyle = ElementStyle()
     var text: String = ""
     var imageData: Data?
+    var imageShadow: Bool?
     var seed: UInt64 = UInt64.random(in: 1 ... .max)
     var zIndex: Int = 0
 }
