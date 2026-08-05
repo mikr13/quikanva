@@ -101,9 +101,16 @@ final class CanvasWindowManager {
         window.minSize = NSSize(width: 480, height: 360)
         window.collectionBehavior.insert(.fullScreenPrimary)
 
-        window.contentView = NSHostingView(rootView: CanvasPanelView(doc: doc, context: context) { [weak window] in
-            window?.close()
-        })
+        window.contentView = NSHostingView(rootView: CanvasPanelView(
+            doc: doc,
+            context: context,
+            onClose: { [weak window] in
+                window?.close()
+            },
+            onTitleChange: { [weak window] in
+                window?.title = doc.title
+            }
+        ))
         window.center()
 
         let id = doc.id

@@ -6,6 +6,7 @@ struct CanvasPanelView: View {
     let doc: CanvasDocument
     let context: ModelContext
     let onClose: () -> Void
+    let onTitleChange: () -> Void
 
     @State private var scene: CanvasScene
     @State private var tool: ToolKind = .freedraw
@@ -15,10 +16,16 @@ struct CanvasPanelView: View {
     @State private var canvasCommand: CanvasCommand?
     @State private var includeExportBackground = true
 
-    init(doc: CanvasDocument, context: ModelContext, onClose: @escaping () -> Void = {}) {
+    init(
+        doc: CanvasDocument,
+        context: ModelContext,
+        onClose: @escaping () -> Void = {},
+        onTitleChange: @escaping () -> Void = {}
+    ) {
         self.doc = doc
         self.context = context
         self.onClose = onClose
+        self.onTitleChange = onTitleChange
         _scene = State(initialValue: SceneCodec.decode(doc.sceneData))
     }
 
@@ -69,7 +76,10 @@ struct CanvasPanelView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !name.isEmpty { doc.title = name }
+                if !name.isEmpty {
+                    doc.title = name
+                    onTitleChange()
+                }
                 persist(scene)
             }
             .keyboardShortcut(.defaultAction)
