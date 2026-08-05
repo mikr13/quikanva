@@ -1,7 +1,7 @@
 import AppKit
 
 final class CanvasNSView: NSView {
-    var scene = CanvasScene() { didSet { needsDisplay = true } }
+    var scene = CanvasScene() { didSet { redraw() } }
     var tool: ToolKind = .freedraw {
         didSet {
             guard tool != oldValue else { return }
@@ -27,6 +27,8 @@ final class CanvasNSView: NSView {
     private let canvasUndoManager = UndoManager()
     private var cameraTimer: Timer?
     private var cameraAnimation: CameraAnimation?
+    private let committedSceneView = CanvasCommittedSceneView()
+    private let liveOverlayView = CanvasLiveOverlayView()
 
     private struct CameraAnimation {
         let from: Camera
@@ -60,6 +62,8 @@ final class CanvasNSView: NSView {
 
     private func redraw() {
         needsDisplay = true
+        committedSceneView.needsDisplay = true
+        liveOverlayView.needsDisplay = true
     }
 
     override var isFlipped: Bool { true }
@@ -69,6 +73,18 @@ final class CanvasNSView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
+        committedSceneView.owner = self
+        liveOverlayView.owner = self
+        for subview in [committedSceneView, liveOverlayView] {
+            subview.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(subview)
+            NSLayoutConstraint.activate([
+                subview.leadingAnchor.constraint(equalTo: leadingAnchor),
+                subview.trailingAnchor.constraint(equalTo: trailingAnchor),
+                subview.topAnchor.constraint(equalTo: topAnchor),
+                subview.bottomAnchor.constraint(equalTo: bottomAnchor),
+            ])
+        }
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -82,11 +98,23 @@ final class CanvasNSView: NSView {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         ctx.setFillColor(scene.background?.cgColor ?? RGBAColor.beige.cgColor)
         ctx.fill(bounds)
+    }
 
+    fileprivate func drawCommittedScene(in ctx: CGContext) {
         ctx.saveGState()
         ctx.translateBy(x: CGFloat(scene.camera.panX), y: CGFloat(scene.camera.panY))
         ctx.scaleBy(x: CGFloat(scene.camera.zoom), y: CGFloat(scene.camera.zoom))
-        Renderer.draw(scene, in: ctx, live: live)
+        Renderer.draw(scene, in: ctx, live: nil)
+        ctx.restoreGState()
+    }
+
+    fileprivate func drawLiveOverlay(in ctx: CGContext) {
+        ctx.saveGState()
+        ctx.translateBy(x: CGFloat(scene.camera.panX), y: CGFloat(scene.camera.panY))
+        ctx.scaleBy(x: CGFloat(scene.camera.zoom), y: CGFloat(scene.camera.zoom))
+        if let live {
+            Renderer.draw(CanvasScene(elements: [live], camera: scene.camera, background: nil), in: ctx, live: nil)
+        }
         drawSelection(in: ctx)
         if case .selecting(let start, let current, _, _) = drag {
             let box = CGRect(corner: start, current)
@@ -213,7 +241,7 @@ final class CanvasNSView: NSView {
                 drag = .drawing
             }
         }
-        needsDisplay = true
+        redraw()
     }
 
     private func beginSelection(at p: CGPoint, event: NSEvent) {
@@ -295,11 +323,11 @@ final class CanvasNSView: NSView {
             let now = convert(event.locationInWindow, from: nil)
             scene.camera.panX = Double(startPan.x + now.x - startMouse.x)
             scene.camera.panY = Double(startPan.y + now.y - startMouse.y)
-            if original.camera != scene.camera { needsDisplay = true }
+            if original.camera != scene.camera { redraw() }
         case .none:
             break
         }
-        needsDisplay = true
+        redraw()
     }
 
     override func mouseUp(with event: NSEvent) {
@@ -323,7 +351,7 @@ final class CanvasNSView: NSView {
             break
         }
         drag = .none
-        needsDisplay = true
+        redraw()
     }
 
     private func commitLive() {
@@ -359,7 +387,7 @@ final class CanvasNSView: NSView {
         guard let hit = pickElement(p) else { return }
         scene.elements.removeAll { $0.id == hit.id }
         selectedIDs.remove(hit.id)
-        needsDisplay = true
+        redraw()
     }
 
     private func commit(_ updated: CanvasScene) {
@@ -390,7 +418,7 @@ final class CanvasNSView: NSView {
         scene = restored
         selectedIDs = selectedIDs.intersection(restored.elements.map(\.id))
         onCommit?(scene)
-        needsDisplay = true
+        redraw()
     }
 
     override func keyDown(with event: NSEvent) {
@@ -805,5 +833,31 @@ final class CanvasNSView: NSView {
 extension CanvasNSView: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         endTextEditing()
+    }
+}
+
+private final class CanvasCommittedSceneView: NSView {
+    weak var owner: CanvasNSView?
+
+    override var isFlipped: Bool { true }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        owner?.drawCommittedScene(in: ctx)
+    }
+}
+
+private final class CanvasLiveOverlayView: NSView {
+    weak var owner: CanvasNSView?
+
+    override var isFlipped: Bool { true }
+
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        owner?.drawLiveOverlay(in: ctx)
     }
 }
