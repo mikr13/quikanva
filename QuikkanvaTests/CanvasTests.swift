@@ -80,6 +80,32 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testSelectedStyleCommandUpdatesShape() {
+        let element = Element(kind: .rectangle,
+                               points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let initial = CanvasScene(elements: [element])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = NSWindow(contentRect: view.frame,
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = view
+        view.scene = initial
+        view.tool = .select
+
+        view.mouseDown(with: mouseEvent(.leftMouseDown, at: CGPoint(x: 90, y: 220), window: window))
+        view.mouseUp(with: mouseEvent(.leftMouseUp, at: CGPoint(x: 90, y: 220), window: window))
+
+        var updatedStyle = element.style
+        updatedStyle.fillStyle = .solid
+        updatedStyle.strokeWidth = 4
+        updatedStyle.roughness = 0.6
+        view.command = .updateSelectionStyle(updatedStyle)
+
+        XCTAssertEqual(view.scene.elements.first?.style, updatedStyle)
+        window.orderOut(nil)
+    }
+
     func testCanvasTitleUsesSketchPrefix() {
         XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch — "))
     }
