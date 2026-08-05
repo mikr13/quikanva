@@ -1,4 +1,4 @@
-# Quikkanva — Build Plan & Progress
+# Quikanva — Build Plan & Progress
 
 A blazing-fast **native macOS** quick-canvas app: pop a canvas instantly from a global
 hotkey / menu bar / Raycast, sketch with an Excalidraw-comparable **custom vector engine**
@@ -34,7 +34,6 @@ gallery grid, and export to images.
 - [x] Add SPM dependency `sindresorhus/KeyboardShortcuts`
 - [x] App scenes wired: `MenuBarExtra` + gallery `Window` + canvas `WindowGroup(for:)`
 - [x] `.accessory` activation policy + `NSApp.activate` so windows take focus
-- [ ] App icon / assets (deferred)
 - [x] **Verify:** `xcodebuild` BUILD SUCCEEDED; bundle signs + registers `quikkanva://`
 
 ## Phase 1 — Data model + canvas surface
@@ -107,12 +106,23 @@ gallery grid, and export to images.
 
 ## Phase 7 — Stretch (post-v1)
 
+- [ ] 3D App icon with layers / assets (using Apple Icon Composer)
 - [ ] Send elements to back/front (z-order)
 - [ ] Choose stroke style (solid, dashed, dotted)
 - [ ] Choose arrowhead style (open, closed, filled)
+- [ ] Allow bending / curving of lines and arrows
 - [ ] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
-- [ ] Snapping / alignment guides
+- [ ] Configure max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
 - [ ] PDF / SVG export
+
+## Phase 8 — Stretch (post-v1, continued)
+
+- [ ] Dual random word paired naming for auto-titles (e.g., "Cosmic Ladle - Aug 5th, 2026 at 14:30")
+- [ ] Configure date-time format for auto-titles in settings (e.g., "Aug 5th, 2026 at 14:30" vs "2026-08-05 14:30")
+- [ ] Always-on-top canvas window (for presentations / laser mode)
+- [ ] Apple liquid glass treatment of the toolbar, settings and gallery windows
+- [ ] Snapping / alignment guides
+- [ ] Support importing Excalidraw plugin files
 - [ ] Launch at login
 - [ ] iCloud sync
 
