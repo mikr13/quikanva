@@ -54,6 +54,7 @@ struct CanvasPanelView: View {
     @State private var includeExportBackground = true
     @State private var selectedStyle: ElementStyle?
     @State private var selectedImageShadow: Bool?
+    @State private var selectedCurve: Double?
     @StateObject private var autosave: CanvasAutosaveCoordinator
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -69,6 +70,7 @@ struct CanvasPanelView: View {
         self.onClose = onClose
         self.onTitleChange = onTitleChange
         _scene = State(initialValue: SceneCodec.decode(doc.sceneData))
+        _style = State(initialValue: CanvasPreferences.defaultStyle)
         _autosave = StateObject(wrappedValue: CanvasAutosaveCoordinator { scene in
             Self.persist(scene, doc: doc, context: context)
         })
@@ -83,6 +85,8 @@ struct CanvasPanelView: View {
                 selectedStyle = updated
             } onImageShadowChange: { updated in
                 selectedImageShadow = updated
+            } onCurveChange: { updated in
+                selectedCurve = updated
             } onCommandHandled: {
                 canvasCommand = nil
             }
@@ -106,6 +110,7 @@ struct CanvasPanelView: View {
                         style: $style,
                         selectedStyle: $selectedStyle,
                         selectedImageShadow: $selectedImageShadow,
+                        selectedCurve: $selectedCurve,
                         background: backgroundBinding,
                         includeExportBackground: $includeExportBackground,
                         onSave: {
@@ -125,6 +130,15 @@ struct CanvasPanelView: View {
                         },
                         onApplySelectedImageShadow: { enabled in
                             canvasCommand = .updateSelectedImageShadow(enabled)
+                        },
+                        onApplySelectedCurve: { curve in
+                            canvasCommand = .updateSelectedCurve(curve)
+                        },
+                        onBringSelectionToFront: {
+                            canvasCommand = .bringSelectionToFront
+                        },
+                        onSendSelectionToBack: {
+                            canvasCommand = .sendSelectionToBack
                         },
                         availableWidth: max(0, proxy.size.width - 32)
                     )

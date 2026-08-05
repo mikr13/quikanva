@@ -16,6 +16,21 @@ final class CanvasTests: XCTestCase {
         XCTAssertEqual(decoded, scene)
     }
 
+    func testElementStyleRoundTripKeepsPresentationSettings() throws {
+        var style = ElementStyle()
+        style.strokeStyle = .dotted
+        style.arrowheadStyle = .filled
+        style.fontFamily = "Menlo"
+        style.fontWeight = .semibold
+        style.textAlignment = .center
+        style.textDecoration = .underline
+
+        let decoded = try JSONDecoder().decode(ElementStyle.self,
+                                                from: JSONEncoder().encode(style))
+
+        XCTAssertEqual(decoded, style)
+    }
+
     func testHitTestingUsesElementGeometry() {
         let rectangle = Element(kind: .rectangle,
                                 points: [Point(x: 20, y: 20), Point(x: 120, y: 100)])
@@ -25,6 +40,10 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasNSView.hits(rectangle, CGPoint(x: 60, y: 60)))
         XCTAssertFalse(CanvasNSView.hits(rectangle, CGPoint(x: 180, y: 180)))
         XCTAssertTrue(CanvasNSView.hits(line, CGPoint(x: 70, y: 70)))
+
+        let curvedLine = Element(kind: .line,
+                                 points: [Point(x: 20, y: 20), Point(x: 70, y: 110), Point(x: 120, y: 20)])
+        XCTAssertTrue(CanvasNSView.hits(curvedLine, CGPoint(x: 70, y: 65)))
     }
 
     func testSketchGenerationIsDeterministic() {

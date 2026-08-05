@@ -107,13 +107,13 @@ gallery grid, and export to images.
 ## Phase 7 — More polish
 
 - [x] 3D App icon with layers / assets (using Apple Icon Composer)
-- [ ] Bundle the unsigned app for direct download (Developer ID signing deferred until v2)
-- [ ] Send elements to back/front (z-order)
-- [ ] Choose stroke style (solid, dashed, dotted)
-- [ ] Choose arrowhead style (open, closed, filled)
-- [ ] Allow bending / curving of lines and arrows
-- [ ] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
-- [ ] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
+- [x] Bundle the unsigned app for direct download (Developer ID signing deferred until v2)
+- [x] Send elements in canvas to back/front (z-order)
+- [x] Choose stroke style (solid, dashed, dotted)
+- [x] Choose arrowhead style (open, closed, filled)
+- [x] Allow bending / curving of lines and arrows
+- [x] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
+- [x] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
 - [ ] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel
 
 ## Phase 8 — Future ideas

@@ -44,6 +44,25 @@ enum Sketch {
         }
     }
 
+    static func roughCurve(_ a: CGPoint,
+                           _ control: CGPoint,
+                           _ b: CGPoint,
+                           roughness: Double,
+                           rng: inout SketchRNG,
+                           into path: CGMutablePath) {
+        let len = hypot(b.x - a.x, b.y - a.y)
+        let m = CGFloat(max(1.0, min(6.0, Double(len) * 0.02)) * roughness)
+        for pass in 0 ..< 2 {
+            let k: CGFloat = pass == 0 ? 1.0 : 0.55
+            let start = CGPoint(x: a.x + rng.signed() * m * k, y: a.y + rng.signed() * m * k)
+            let bend = CGPoint(x: control.x + rng.signed() * m * 2 * k,
+                               y: control.y + rng.signed() * m * 2 * k)
+            let end = CGPoint(x: b.x + rng.signed() * m * k, y: b.y + rng.signed() * m * k)
+            path.move(to: start)
+            path.addQuadCurve(to: end, control: bend)
+        }
+    }
+
     static func roughPolygon(_ pts: [CGPoint], roughness: Double, rng: inout SketchRNG, into path: CGMutablePath) {
         guard pts.count > 1 else { return }
         for i in 0 ..< pts.count {
@@ -122,6 +141,7 @@ enum Renderer {
         ctx.setLineJoin(.round)
         ctx.setLineWidth(CGFloat(el.style.strokeWidth))
         ctx.setStrokeColor(el.style.stroke.cgColor)
+        applyStrokeStyle(el.style.strokeStyle, in: ctx)
 
         var rng = SketchRNG(seed: el.seed)
         let rough = el.style.roughness
@@ -134,19 +154,20 @@ enum Renderer {
             ctx.strokePath()
 
         case .line:
-            let path = roughLinePath(for: el, from: pts[0], to: pts[pts.count - 1], roughness: rough, rng: &rng)
+            let path = roughLinePath(for: el, points: pts, roughness: rough, rng: &rng)
             ctx.addPath(path)
             ctx.strokePath()
 
         case .arrow:
             let a = pts[0], b = pts[pts.count - 1]
-            let shaft = roughLinePath(for: el, from: a, to: b, roughness: rough, rng: &rng)
+            let shaft = roughLinePath(for: el, points: pts, roughness: rough, rng: &rng)
             ctx.addPath(shaft)
             ctx.strokePath()
 
             let dist = hypot(b.x - a.x, b.y - a.y)
             guard dist > 1 else { break }
-            let ang = atan2(b.y - a.y, b.x - a.x)
+            let tangentStart = pts.count >= 3 ? pts[pts.count - 2] : a
+            let ang = atan2(b.y - tangentStart.y, b.x - tangentStart.x)
             let hl = max(14, min(dist * 0.28, 30))
             let spread = CGFloat.pi / 7
             let left = CGPoint(x: b.x - hl * cos(ang - spread), y: b.y - hl * sin(ang - spread))
@@ -155,8 +176,20 @@ enum Renderer {
             head.move(to: left)
             head.addLine(to: b)
             head.addLine(to: right)
-            ctx.addPath(head)
-            ctx.strokePath()
+            switch el.style.arrowheadStyle {
+            case .open:
+                ctx.addPath(head)
+                ctx.strokePath()
+            case .closed:
+                head.closeSubpath()
+                ctx.addPath(head)
+                ctx.strokePath()
+            case .filled:
+                head.closeSubpath()
+                ctx.addPath(head)
+                ctx.setFillColor(el.style.stroke.cgColor)
+                ctx.fillPath()
+            }
 
         case .rectangle, .ellipse, .diamond:
             let rect = CGRect(corner: pts[0], pts[pts.count - 1])
@@ -205,6 +238,7 @@ enum Renderer {
         ctx.setStrokeColor(color)
         ctx.setLineWidth(1.2)
         ctx.setLineCap(.round)
+        ctx.setLineDash(phase: 0, lengths: [])
         let step: CGFloat = 10
         var offset = -rect.height
         while offset < rect.width + rect.height {
@@ -217,14 +251,17 @@ enum Renderer {
     }
 
     private static func roughLinePath(for element: Element,
-                                      from start: CGPoint,
-                                      to end: CGPoint,
+                                      points: [CGPoint],
                                       roughness: Double,
                                       rng: inout SketchRNG) -> CGPath {
         let key = "line-\(element.hashValue)" as NSString
         if let cached = roughPathCache.path(forKey: key) { return cached }
         let path = CGMutablePath()
-        Sketch.roughLine(start, end, roughness: roughness, rng: &rng, into: path)
+        if points.count >= 3 {
+            Sketch.roughCurve(points[0], points[1], points[2], roughness: roughness, rng: &rng, into: path)
+        } else if points.count >= 2 {
+            Sketch.roughLine(points[0], points[1], roughness: roughness, rng: &rng, into: path)
+        }
         roughPathCache.insert(path, forKey: key)
         return path
     }
@@ -243,17 +280,53 @@ enum Renderer {
 
     private static func drawText(_ el: Element, at p: CGPoint, in ctx: CGContext) {
         guard !el.text.isEmpty else { return }
-        let font = CTFontCreateWithName("HelveticaNeue" as CFString, CGFloat(el.style.fontSize), nil)
-        let attrs: [NSAttributedString.Key: Any] = [
+        var font = CTFontCreateWithName(el.style.fontFamily as CFString, CGFloat(el.style.fontSize), nil)
+        var traits: CTFontSymbolicTraits = []
+        if el.style.fontWeight == .bold || el.style.fontWeight == .semibold {
+            traits.insert(.traitBold)
+        }
+        if el.style.textDecoration == .italic {
+            traits.insert(.traitItalic)
+        }
+        if !traits.isEmpty {
+            font = CTFontCreateCopyWithSymbolicTraits(font, 0, nil, traits, traits) ?? font
+        }
+        var attrs: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: el.style.stroke.cgColor,
         ]
+        switch el.style.textDecoration {
+        case .underline:
+            attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
+        case .strikethrough:
+            attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+        case .none, .italic:
+            break
+        }
         let line = CTLineCreateWithAttributedString(NSAttributedString(string: el.text, attributes: attrs))
+        let flush: CGFloat
+        switch el.style.textAlignment {
+        case .leading: flush = 0
+        case .center: flush = 0.5
+        case .trailing: flush = 1
+        }
+        let offset = CTLineGetPenOffsetForFlush(line, flush, CGFloat(el.style.textWidth))
         ctx.saveGState()
         ctx.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
-        ctx.textPosition = CGPoint(x: p.x, y: p.y + CGFloat(el.style.fontSize))
+        ctx.textPosition = CGPoint(x: p.x + offset, y: p.y + CGFloat(el.style.fontSize))
         CTLineDraw(line, ctx)
         ctx.restoreGState()
+    }
+
+    private static func applyStrokeStyle(_ style: StrokeStyle, in ctx: CGContext) {
+        switch style {
+        case .solid:
+            ctx.setLineDash(phase: 0, lengths: [])
+        case .dashed:
+            ctx.setLineDash(phase: 0, lengths: [8, 6])
+        case .dotted:
+            ctx.setLineDash(phase: 0, lengths: [1, 6])
+        }
     }
 
     private static func drawImage(_ el: Element, in ctx: CGContext) {

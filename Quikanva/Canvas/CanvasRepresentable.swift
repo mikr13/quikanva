@@ -8,6 +8,9 @@ enum CanvasCommand: Equatable {
     case resetZoom
     case updateSelectionStyle(ElementStyle)
     case updateSelectedImageShadow(Bool)
+    case updateSelectedCurve(Double)
+    case bringSelectionToFront
+    case sendSelectionToBack
 }
 
 struct CanvasRepresentable: NSViewRepresentable {
@@ -18,6 +21,7 @@ struct CanvasRepresentable: NSViewRepresentable {
     var onChange: (CanvasScene) -> Void
     var onSelectionChange: (ElementStyle?) -> Void
     var onImageShadowChange: (Bool?) -> Void
+    var onCurveChange: (Double?) -> Void
     var onCommandHandled: () -> Void
 
     func makeNSView(context: Context) -> CanvasNSView {
@@ -28,6 +32,7 @@ struct CanvasRepresentable: NSViewRepresentable {
         view.onCommit = onChange
         view.onSelectionChange = onSelectionChange
         view.onImageShadowChange = onImageShadowChange
+        view.onCurveChange = onCurveChange
         view.command = command
         view.onCommandHandled = onCommandHandled
         return view
@@ -39,6 +44,7 @@ struct CanvasRepresentable: NSViewRepresentable {
         view.onCommit = onChange
         view.onSelectionChange = onSelectionChange
         view.onImageShadowChange = onImageShadowChange
+        view.onCurveChange = onCurveChange
         view.onCommandHandled = onCommandHandled
         if view.command != command {
             view.command = command

@@ -51,6 +51,65 @@ enum FillStyle: String, Codable, Hashable {
     case none, solid, hachure
 }
 
+enum StrokeStyle: String, Codable, CaseIterable, Identifiable, Hashable {
+    case solid, dashed, dotted
+
+    var id: String { rawValue }
+
+    var label: String {
+        rawValue.capitalized
+    }
+}
+
+enum ArrowheadStyle: String, Codable, CaseIterable, Identifiable, Hashable {
+    case open, closed, filled
+
+    var id: String { rawValue }
+
+    var label: String {
+        rawValue.capitalized
+    }
+}
+
+enum FontWeight: String, Codable, CaseIterable, Identifiable, Hashable {
+    case regular, medium, semibold, bold
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .regular: "Regular"
+        case .medium: "Medium"
+        case .semibold: "Semibold"
+        case .bold: "Bold"
+        }
+    }
+}
+
+enum TextAlignment: String, Codable, CaseIterable, Identifiable, Hashable {
+    case leading, center, trailing
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .leading: "Leading"
+        case .center: "Center"
+        case .trailing: "Trailing"
+        }
+    }
+}
+
+enum TextDecoration: String, Codable, CaseIterable, Identifiable, Hashable {
+    case none, italic, underline, strikethrough
+
+    var id: String { rawValue }
+
+    var label: String {
+        rawValue.capitalized
+    }
+}
+
 struct RGBAColor: Codable, Hashable {
     var r: Double
     var g: Double
@@ -71,10 +130,70 @@ struct ElementStyle: Codable, Hashable {
     var stroke: RGBAColor = .black
     var fill: RGBAColor = .clear
     var fillStyle: FillStyle = .none
+    var strokeStyle: StrokeStyle = .solid
+    var arrowheadStyle: ArrowheadStyle = .open
     var strokeWidth: Double = 2.5
     var opacity: Double = 1
     var roughness: Double = 1.2
     var fontSize: Double = 20
+    var fontFamily: String = "Helvetica Neue"
+    var fontWeight: FontWeight = .regular
+    var textAlignment: TextAlignment = .leading
+    var textDecoration: TextDecoration = .none
+    var textWidth: Double = 260
+
+    private enum CodingKeys: String, CodingKey {
+        case stroke, fill, fillStyle, strokeStyle, arrowheadStyle, strokeWidth, opacity
+        case roughness, fontSize, fontFamily, fontWeight, textAlignment, textDecoration, textWidth
+    }
+
+    init(stroke: RGBAColor = .black,
+         fill: RGBAColor = .clear,
+         fillStyle: FillStyle = .none,
+         strokeStyle: StrokeStyle = .solid,
+         arrowheadStyle: ArrowheadStyle = .open,
+         strokeWidth: Double = 2.5,
+         opacity: Double = 1,
+         roughness: Double = 1.2,
+         fontSize: Double = 20,
+         fontFamily: String = "Helvetica Neue",
+         fontWeight: FontWeight = .regular,
+         textAlignment: TextAlignment = .leading,
+         textDecoration: TextDecoration = .none,
+         textWidth: Double = 260) {
+        self.stroke = stroke
+        self.fill = fill
+        self.fillStyle = fillStyle
+        self.strokeStyle = strokeStyle
+        self.arrowheadStyle = arrowheadStyle
+        self.strokeWidth = strokeWidth
+        self.opacity = opacity
+        self.roughness = roughness
+        self.fontSize = fontSize
+        self.fontFamily = fontFamily
+        self.fontWeight = fontWeight
+        self.textAlignment = textAlignment
+        self.textDecoration = textDecoration
+        self.textWidth = textWidth
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        stroke = try values.decodeIfPresent(RGBAColor.self, forKey: .stroke) ?? .black
+        fill = try values.decodeIfPresent(RGBAColor.self, forKey: .fill) ?? .clear
+        fillStyle = try values.decodeIfPresent(FillStyle.self, forKey: .fillStyle) ?? .none
+        strokeStyle = try values.decodeIfPresent(StrokeStyle.self, forKey: .strokeStyle) ?? .solid
+        arrowheadStyle = try values.decodeIfPresent(ArrowheadStyle.self, forKey: .arrowheadStyle) ?? .open
+        strokeWidth = try values.decodeIfPresent(Double.self, forKey: .strokeWidth) ?? 2.5
+        opacity = try values.decodeIfPresent(Double.self, forKey: .opacity) ?? 1
+        roughness = try values.decodeIfPresent(Double.self, forKey: .roughness) ?? 1.2
+        fontSize = try values.decodeIfPresent(Double.self, forKey: .fontSize) ?? 20
+        fontFamily = try values.decodeIfPresent(String.self, forKey: .fontFamily) ?? "Helvetica Neue"
+        fontWeight = try values.decodeIfPresent(FontWeight.self, forKey: .fontWeight) ?? .regular
+        textAlignment = try values.decodeIfPresent(TextAlignment.self, forKey: .textAlignment) ?? .leading
+        textDecoration = try values.decodeIfPresent(TextDecoration.self, forKey: .textDecoration) ?? .none
+        textWidth = try values.decodeIfPresent(Double.self, forKey: .textWidth) ?? 260
+    }
 }
 
 struct Element: Codable, Identifiable, Hashable {

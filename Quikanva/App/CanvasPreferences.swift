@@ -31,6 +31,9 @@ enum CanvasAspectRatio: String, CaseIterable, Identifiable {
 enum CanvasPreferences {
     static let defaultAspectRatioKey = "defaultCanvasAspectRatio"
     static let discardEmptyCanvasesKey = "discardEmptyCanvases"
+    static let defaultBackgroundKey = "defaultCanvasBackground"
+    static let defaultStyleKey = "defaultElementStyle"
+    static let maxOpenCanvasPanelsKey = "maxOpenCanvasPanels"
 
     static var defaultAspectRatio: CanvasAspectRatio {
         get {
@@ -51,5 +54,38 @@ enum CanvasPreferences {
         set {
             UserDefaults.standard.set(newValue, forKey: discardEmptyCanvasesKey)
         }
+    }
+
+    static var defaultBackground: RGBAColor {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: defaultBackgroundKey),
+                  let background = try? JSONDecoder().decode(RGBAColor.self, from: data) else {
+                return .beige
+            }
+            return background
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: defaultBackgroundKey)
+        }
+    }
+
+    static var defaultStyle: ElementStyle {
+        get {
+            guard let data = UserDefaults.standard.data(forKey: defaultStyleKey),
+                  let style = try? JSONDecoder().decode(ElementStyle.self, from: data) else {
+                return ElementStyle()
+            }
+            return style
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: defaultStyleKey)
+        }
+    }
+
+    static var maxOpenCanvasPanels: Int {
+        get { UserDefaults.standard.integer(forKey: maxOpenCanvasPanelsKey) }
+        set { UserDefaults.standard.set(max(0, newValue), forKey: maxOpenCanvasPanelsKey) }
     }
 }

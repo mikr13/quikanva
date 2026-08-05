@@ -35,9 +35,13 @@ final class CanvasWindowManager {
     private var context: ModelContext? { container?.mainContext }
 
     func newCanvas() {
+        if let maximum = openCanvasLimit, windows.count >= maximum {
+            windows.values.first.map(activate)
+            return
+        }
         guard let context else { return }
         let doc = CanvasDocument(title: CanvasTitle.dated(),
-                                 sceneData: SceneCodec.encode(CanvasScene()))
+                                 sceneData: SceneCodec.encode(CanvasScene(background: CanvasPreferences.defaultBackground)))
         context.insert(doc)
         try? context.save()
         present(doc)
@@ -99,6 +103,10 @@ final class CanvasWindowManager {
         guard let context else { return }
         if let existing = windows[doc.id] {
             activate(existing)
+            return
+        }
+        if let maximum = openCanvasLimit, windows.count >= maximum {
+            windows.values.first.map(activate)
             return
         }
 
@@ -186,6 +194,11 @@ final class CanvasWindowManager {
     private func activate(_ window: NSWindow) {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    private var openCanvasLimit: Int? {
+        let maximum = CanvasPreferences.maxOpenCanvasPanels
+        return maximum > 0 ? maximum : nil
     }
 
     private var activeWindow: FloatingCanvasWindow? {

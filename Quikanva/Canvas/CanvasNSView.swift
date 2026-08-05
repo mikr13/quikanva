@@ -15,6 +15,7 @@ final class CanvasNSView: NSView {
     var onCommit: ((CanvasScene) -> Void)?
     var onSelectionChange: ((ElementStyle?) -> Void)?
     var onImageShadowChange: ((Bool?) -> Void)?
+    var onCurveChange: ((Double?) -> Void)?
     var onCommandHandled: (() -> Void)?
     var command: CanvasCommand? {
         didSet {
@@ -192,9 +193,17 @@ final class CanvasNSView: NSView {
         return selected.imageShadow ?? true
     }
 
+    private var selectedCurve: Double? {
+        guard selectedIDs.count == 1,
+              let selected = scene.elements.first(where: { selectedIDs.contains($0.id) }),
+              selected.kind == .line || selected.kind == .arrow else { return nil }
+        return Self.curveValue(for: selected)
+    }
+
     func notifySelectionChange() {
         onSelectionChange?(selectedStyle)
         onImageShadowChange?(selectedImageShadow)
+        onCurveChange?(selectedCurve)
     }
 
     private func handlePoint(_ handle: SelectionHandle, in box: CGRect) -> CGPoint {
@@ -654,6 +663,20 @@ final class CanvasNSView: NSView {
         commit(updated)
     }
 
+    private func reorderSelection(toFront: Bool) {
+        guard !selectedIDs.isEmpty else { return }
+        var updated = scene
+        let ordered = updated.elements.sorted { $0.zIndex < $1.zIndex }
+        let selected = ordered.filter { selectedIDs.contains($0.id) }
+        let remaining = ordered.filter { !selectedIDs.contains($0.id) }
+        let reordered = toFront ? remaining + selected : selected + remaining
+        for (zIndex, element) in reordered.enumerated() {
+            guard let index = updated.elements.firstIndex(where: { $0.id == element.id }) else { continue }
+            updated.elements[index].zIndex = zIndex
+        }
+        commit(updated)
+    }
+
     private func undo() {
         guard canvasUndoManager.canUndo else { return }
         canvasUndoManager.undo()
@@ -709,9 +732,41 @@ final class CanvasNSView: NSView {
             }
             commit(updated)
             notifySelectionChange()
+        case .updateSelectedCurve(let curve):
+            guard !selectedIDs.isEmpty else { break }
+            var updated = scene
+            for index in updated.elements.indices where selectedIDs.contains(updated.elements[index].id) {
+                guard updated.elements[index].kind == .line || updated.elements[index].kind == .arrow,
+                      updated.elements[index].points.count >= 2 else { continue }
+                let start = updated.elements[index].points[0].cg
+                let end = updated.elements[index].points.last?.cg ?? start
+                let clamped = max(-1, min(1, curve))
+                if abs(clamped) < 0.001 {
+                    updated.elements[index].points = [updated.elements[index].points[0],
+                                                       updated.elements[index].points.last ?? updated.elements[index].points[0]]
+                } else {
+                    let dx = end.x - start.x
+                    let dy = end.y - start.y
+                    let length = max(1, hypot(dx, dy))
+                    let midpoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+                    let offset = clamped * length * 0.5
+                    let control = CGPoint(x: midpoint.x - dy / length * offset,
+                                          y: midpoint.y + dx / length * offset)
+                    updated.elements[index].points = [updated.elements[index].points[0],
+                                                       Point(control),
+                                                       updated.elements[index].points.last ?? updated.elements[index].points[0]]
+                }
+            }
+            commit(updated)
+            notifySelectionChange()
+        case .bringSelectionToFront:
+            reorderSelection(toFront: true)
+        case .sendSelectionToBack:
+            reorderSelection(toFront: false)
         }
         switch command {
-        case .updateSelectionStyle, .updateSelectedImageShadow:
+        case .updateSelectionStyle, .updateSelectedImageShadow, .updateSelectedCurve,
+             .bringSelectionToFront, .sendSelectionToBack:
             break
         default:
             onCommit?(scene)
@@ -854,7 +909,7 @@ final class CanvasNSView: NSView {
         let origin = viewPoint(p)
         let size = max(8, CGFloat(style.fontSize) * zoom)
         let field = NSTextField(frame: NSRect(x: origin.x, y: origin.y, width: 260, height: size + 10))
-        field.font = NSFont(name: "HelveticaNeue", size: size) ?? NSFont.systemFont(ofSize: size)
+        field.font = NSFont(name: style.fontFamily, size: size) ?? NSFont.systemFont(ofSize: size)
         field.textColor = NSColor(cgColor: style.stroke.cgColor) ?? .labelColor
         field.drawsBackground = false
         field.isBordered = false
@@ -910,6 +965,9 @@ final class CanvasNSView: NSView {
             return (bounds(of: element) ?? .null).insetBy(dx: -tolerance, dy: -tolerance).contains(p)
         case .line, .arrow:
             guard points.count >= 2 else { return false }
+            if points.count >= 3 {
+                return quadraticDistance(p, start: points[0], control: points[1], end: points[2]) <= tolerance
+            }
             return segmentDistance(p, segment: points[0], points[points.count - 1]) <= tolerance
         case .freedraw:
             return (0 ..< max(0, points.count - 1)).contains { index in
@@ -922,7 +980,7 @@ final class CanvasNSView: NSView {
         let points = element.points.map(\.cg)
         guard let first = points.first else { return nil }
         if element.kind == .text {
-            let width = max(24, CGFloat(element.text.count) * CGFloat(element.style.fontSize) * 0.58)
+            let width = max(24, CGFloat(element.style.textWidth))
             return CGRect(x: first.x, y: first.y, width: width, height: CGFloat(element.style.fontSize) * 1.3)
         }
         return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { $0.union(CGRect(origin: $1, size: .zero)) }
@@ -938,6 +996,36 @@ final class CanvasNSView: NSView {
         guard lengthSquared > 0 else { return hypot(p.x - a.x, p.y - a.y) }
         let t = max(0, min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSquared))
         return hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
+    }
+
+    private static func quadraticDistance(_ p: CGPoint,
+                                          start a: CGPoint,
+                                          control c: CGPoint,
+                                          end b: CGPoint) -> CGFloat {
+        var previous = a
+        var closest = CGFloat.greatestFiniteMagnitude
+        for step in 1 ... 24 {
+            let t = CGFloat(step) / 24
+            let inverse = 1 - t
+            let point = CGPoint(x: inverse * inverse * a.x + 2 * inverse * t * c.x + t * t * b.x,
+                                y: inverse * inverse * a.y + 2 * inverse * t * c.y + t * t * b.y)
+            closest = min(closest, segmentDistance(p, segment: previous, point))
+            previous = point
+        }
+        return closest
+    }
+
+    private static func curveValue(for element: Element) -> Double {
+        guard element.points.count >= 3 else { return 0 }
+        let start = element.points[0].cg
+        let control = element.points[1].cg
+        let end = element.points[2].cg
+        let dx = end.x - start.x
+        let dy = end.y - start.y
+        let length = max(1, hypot(dx, dy))
+        let midpoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+        let offset = (control.x - midpoint.x) * (-dy / length) + (control.y - midpoint.y) * (dx / length)
+        return max(-1, min(1, offset / (length * 0.5)))
     }
 }
 

@@ -19,6 +19,7 @@ struct CanvasToolbar: View {
     @Binding var style: ElementStyle
     @Binding var selectedStyle: ElementStyle?
     @Binding var selectedImageShadow: Bool?
+    @Binding var selectedCurve: Double?
     @Binding var background: Color
     @Binding var includeExportBackground: Bool
     var onSave: () -> Void = {}
@@ -32,6 +33,9 @@ struct CanvasToolbar: View {
     var onResetZoom: () -> Void = {}
     var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
     var onApplySelectedImageShadow: (Bool) -> Void = { _ in }
+    var onApplySelectedCurve: (Double) -> Void = { _ in }
+    var onBringSelectionToFront: () -> Void = {}
+    var onSendSelectionToBack: () -> Void = {}
     var availableWidth: CGFloat = 900
 
     @State private var showingInspector = false
@@ -91,6 +95,16 @@ struct CanvasToolbar: View {
 
                 Divider()
                 Section(selectedStyle == nil ? "Style for new shapes" : "Style for selection") {
+                    Menu("Stroke style") {
+                        ForEach(StrokeStyle.allCases) { strokeStyle in
+                            Button(strokeStyle.label) { updateStyle { $0.strokeStyle = strokeStyle } }
+                        }
+                    }
+                    Menu("Arrowhead style") {
+                        ForEach(ArrowheadStyle.allCases) { arrowheadStyle in
+                            Button(arrowheadStyle.label) { updateStyle { $0.arrowheadStyle = arrowheadStyle } }
+                        }
+                    }
                     Menu("Fill style") {
                         Button("No fill") { updateStyle { $0.fillStyle = .none } }
                         Button("Solid") { updateStyle { $0.fillStyle = .solid } }
@@ -109,6 +123,14 @@ struct CanvasToolbar: View {
                     if selectedStyle != nil {
                         Button("Edit all style settings…") { showingInspector = true }
                     }
+                }
+
+                Divider()
+                Section("Arrange") {
+                    Button("Send to Back") { onSendSelectionToBack() }
+                        .keyboardShortcut("[", modifiers: .command)
+                    Button("Bring to Front") { onBringSelectionToFront() }
+                        .keyboardShortcut("]", modifiers: .command)
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -175,7 +197,9 @@ struct CanvasToolbar: View {
             if selectedStyle != nil {
                 CanvasStyleInspector(style: selectedStyleBinding,
                                      imageShadow: selectedImageShadowBinding,
-                                     showsImageShadow: selectedImageShadow != nil)
+                                     showsImageShadow: selectedImageShadow != nil,
+                                     curve: selectedCurveBinding,
+                                     showsCurve: selectedCurve != nil)
             }
         }
         .popover(item: $colorTarget, arrowEdge: .bottom) { target in
@@ -282,12 +306,21 @@ struct CanvasToolbar: View {
             set: { onApplySelectedImageShadow($0) }
         )
     }
+
+    private var selectedCurveBinding: Binding<Double> {
+        Binding(
+            get: { selectedCurve ?? 0 },
+            set: { onApplySelectedCurve($0) }
+        )
+    }
 }
 
 private struct CanvasStyleInspector: View {
     @Binding var style: ElementStyle
     @Binding var imageShadow: Bool
     let showsImageShadow: Bool
+    @Binding var curve: Double
+    let showsCurve: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -345,6 +378,42 @@ private struct CanvasStyleInspector: View {
             } maximumValueLabel: {
                 Text("72")
                     .font(.caption2)
+            }
+
+            if showsCurve {
+                Slider(value: $curve, in: -1 ... 1, step: 0.05) {
+                    Text("Line curve")
+                } minimumValueLabel: {
+                    Text("Left")
+                        .font(.caption2)
+                } maximumValueLabel: {
+                    Text("Right")
+                        .font(.caption2)
+                }
+            }
+
+            Menu("Font family") {
+                ForEach(["Helvetica Neue", "Avenir Next", "Comic Sans MS", "Georgia", "Menlo"], id: \.self) { family in
+                    Button(family) { style.fontFamily = family }
+                }
+            }
+
+            Picker("Font weight", selection: $style.fontWeight) {
+                ForEach(FontWeight.allCases) { weight in
+                    Text(weight.label).tag(weight)
+                }
+            }
+
+            Picker("Text alignment", selection: $style.textAlignment) {
+                ForEach(TextAlignment.allCases) { alignment in
+                    Text(alignment.label).tag(alignment)
+                }
+            }
+
+            Picker("Text style", selection: $style.textDecoration) {
+                ForEach(TextDecoration.allCases) { decoration in
+                    Text(decoration.label).tag(decoration)
+                }
             }
         }
         .padding(16)
