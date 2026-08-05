@@ -8,6 +8,7 @@ final class CanvasNSView: NSView {
             guard tool != oldValue else { return }
             endTextEditing()
             window?.invalidateCursorRects(for: self)
+            redraw()
         }
     }
     var style = ElementStyle()
