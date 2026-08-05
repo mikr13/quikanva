@@ -4,11 +4,13 @@ import AppKit
 
 struct GalleryView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \CanvasDocument.updatedAt, order: .reverse) private var docs: [CanvasDocument]
 
     @State private var renaming: CanvasDocument?
     @State private var renameText = ""
     @State private var deleting: CanvasDocument?
+    @State private var hasAppeared = false
 
     private let columns = [GridItem(.adaptive(minimum: 220, maximum: 300), spacing: 20)]
 
@@ -18,17 +20,21 @@ struct GalleryView: View {
                 emptyState
             } else {
                 LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(docs) { doc in
-                        GalleryCard(doc: doc)
-                            .onTapGesture(count: 2) { open(doc) }
+                    ForEach(Array(docs.enumerated()), id: \.element.id) { item in
+                        GalleryCard(doc: item.element)
+                            .opacity(hasAppeared ? 1 : 0)
+                            .offset(y: hasAppeared ? 0 : 8)
+                            .animation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.92)
+                                .delay(Double(item.offset) * 0.035), value: hasAppeared)
+                            .onTapGesture(count: 2) { open(item.element) }
                             .contextMenu {
-                                Button("Open") { open(doc) }
+                                Button("Open") { open(item.element) }
                                 Button("Rename…") {
-                                    renaming = doc
-                                    renameText = doc.title
+                                    renaming = item.element
+                                    renameText = item.element.title
                                 }
                                 Divider()
-                                Button("Delete", role: .destructive) { deleting = doc }
+                                Button("Delete", role: .destructive) { deleting = item.element }
                             }
                     }
                 }
@@ -38,6 +44,7 @@ struct GalleryView: View {
         .frame(minWidth: 640, minHeight: 460)
         .background(.background)
         .navigationTitle("Quikkanva")
+        .onAppear { hasAppeared = true }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: newCanvas) { Label("New Sketch", systemImage: "plus") }
