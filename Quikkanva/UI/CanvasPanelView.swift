@@ -54,6 +54,8 @@ struct CanvasPanelView: View {
     @State private var includeExportBackground = true
     @State private var selectedStyle: ElementStyle?
     @StateObject private var autosave: CanvasAutosaveCoordinator
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     init(
         doc: CanvasDocument,
@@ -159,8 +161,13 @@ struct CanvasPanelView: View {
         }
         .buttonStyle(.borderless)
         .foregroundStyle(.primary)
-        .background(.regularMaterial, in: Circle())
-        .overlay(Circle().strokeBorder(.white.opacity(0.14)))
+        .background(
+            reduceTransparency
+                ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
+                : AnyShapeStyle(.regularMaterial),
+            in: Circle()
+        )
+        .overlay(Circle().strokeBorder(Color.primary.opacity(contrast == .increased ? 0.3 : 0.14)))
         .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
         .keyboardShortcut(.cancelAction)
         .help("Close canvas")

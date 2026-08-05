@@ -18,6 +18,8 @@ struct CanvasToolbar: View {
     var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
 
     @State private var showingInspector = false
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     private let tools: [ToolKind] = [
         .select, .hand, .freedraw, .rectangle, .ellipse, .diamond, .line, .arrow, .text, .eraser,
@@ -140,8 +142,16 @@ struct CanvasToolbar: View {
             .accessibilityLabel("Export or copy sketch")
         }
         .padding(6)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.12)))
+        .background(
+            reduceTransparency
+                ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
+                : AnyShapeStyle(.regularMaterial),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.primary.opacity(contrast == .increased ? 0.3 : 0.12))
+        )
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .popover(isPresented: $showingInspector, arrowEdge: .bottom) {
             if selectedStyle != nil {
