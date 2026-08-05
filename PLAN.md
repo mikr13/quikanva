@@ -111,7 +111,7 @@ gallery grid, and export to images.
 - [x] Send elements in canvas to back/front (z-order)
 - [x] Choose stroke style (solid, dashed, dotted)
 - [x] Choose arrowhead style (open, closed, filled)
-- [x] Allow bending / curving of lines and arrows with draggable endpoints/control point (⌘↵ or ⌘-double-click)
+- [x] Allow bending / curving of lines and arrows with default draggable endpoints/midpoint; bent paths retain resize/rotate selection handles
 - [x] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
 - [x] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
 - [ ] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel

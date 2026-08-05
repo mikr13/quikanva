@@ -152,6 +152,38 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testNewLineEntersPointEditingByDefault() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .line
+
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: 40, y: 80),
+                      to: CGPoint(x: 160, y: 80))
+
+        XCTAssertEqual(view.tool, .select)
+        XCTAssertTrue(view.pointEditingEnabled)
+        XCTAssertEqual(view.scene.elements.first?.kind, .line)
+        window.orderOut(nil)
+    }
+
+    func testClickingAwayFromTextReturnsToSelectTool() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .text
+
+        clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
+        let editor = view.subviews.compactMap { $0 as? NSTextField }.first
+        editor?.stringValue = "Hello"
+
+        clickElement(at: CGPoint(x: 240, y: 180), in: view, window: window)
+
+        XCTAssertEqual(view.tool, .select)
+        XCTAssertEqual(view.scene.elements.last?.text, "Hello")
+        window.orderOut(nil)
+    }
+
     func testSelectedStyleCommandUpdatesShape() {
         let element = Element(kind: .rectangle,
                                points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])

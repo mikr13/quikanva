@@ -20,6 +20,7 @@ struct CanvasRepresentable: NSViewRepresentable {
     var style: ElementStyle
     var command: CanvasCommand?
     var onChange: (CanvasScene) -> Void
+    var onToolChange: (ToolKind) -> Void
     var onSelectionChange: (ElementStyle?) -> Void
     var onImageShadowChange: (Bool?) -> Void
     var onCurveChange: (Double?) -> Void
@@ -28,6 +29,7 @@ struct CanvasRepresentable: NSViewRepresentable {
     func makeNSView(context: Context) -> CanvasNSView {
         let view = CanvasNSView()
         view.scene = scene
+        view.onToolChange = onToolChange
         view.tool = tool
         view.style = style
         view.onCommit = onChange
@@ -43,6 +45,7 @@ struct CanvasRepresentable: NSViewRepresentable {
         view.tool = tool
         view.style = style
         view.onCommit = onChange
+        view.onToolChange = onToolChange
         view.onSelectionChange = onSelectionChange
         view.onImageShadowChange = onImageShadowChange
         view.onCurveChange = onCurveChange

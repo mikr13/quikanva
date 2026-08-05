@@ -10,10 +10,12 @@ final class CanvasNSView: NSView {
             isEditingPoints = false
             window?.invalidateCursorRects(for: self)
             redraw()
+            onToolChange?(tool)
         }
     }
     var style = ElementStyle()
     var onCommit: ((CanvasScene) -> Void)?
+    var onToolChange: ((ToolKind) -> Void)?
     var onSelectionChange: ((ElementStyle?) -> Void)?
     var onImageShadowChange: ((Bool?) -> Void)?
     var onCurveChange: ((Double?) -> Void)?
@@ -146,42 +148,44 @@ final class CanvasNSView: NSView {
         guard tool == .select, let box = selectionBounds else { return }
         let zoom = CGFloat(scene.camera.zoom)
         ctx.saveGState()
-        if isEditingPoints, let element = editableElement {
-            drawPointEditingHandles(for: element, in: ctx, zoom: zoom)
-            ctx.restoreGState()
-            return
-        }
-        ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-        ctx.setLineWidth(1.5 / zoom)
-        ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
-        ctx.stroke(box)
-        ctx.setLineDash(phase: 0, lengths: [])
-        let handles = [SelectionHandle.topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
-        for handle in handles {
-            let point = handlePoint(handle, in: box)
-            let size = 8 / zoom
-            let rect = CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
-            ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
-            ctx.fillEllipse(in: rect)
+        let pointEditingElement = isEditingPoints ? editableElement : nil
+        let showsSelectionBox = (pointEditingElement?.points.count ?? 0) >= 3 || pointEditingElement == nil
+        if showsSelectionBox {
             ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-            ctx.strokeEllipse(in: rect)
+            ctx.setLineWidth(1.5 / zoom)
+            ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
+            ctx.stroke(box)
+            ctx.setLineDash(phase: 0, lengths: [])
+            let handles = [SelectionHandle.topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
+            for handle in handles {
+                let point = handlePoint(handle, in: box)
+                let size = 8 / zoom
+                let rect = CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
+                ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
+                ctx.fillEllipse(in: rect)
+                ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+                ctx.strokeEllipse(in: rect)
+            }
+            let rotatePoint = handlePoint(.rotate, in: box)
+            ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+            ctx.setLineWidth(1 / zoom)
+            ctx.move(to: CGPoint(x: box.midX, y: box.minY))
+            ctx.addLine(to: rotatePoint)
+            ctx.strokePath()
+            ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
+            ctx.fillEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
+                                       y: rotatePoint.y - 4 / zoom,
+                                       width: 8 / zoom,
+                                       height: 8 / zoom))
+            ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+            ctx.strokeEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
+                                         y: rotatePoint.y - 4 / zoom,
+                                         width: 8 / zoom,
+                                         height: 8 / zoom))
         }
-        let rotatePoint = handlePoint(.rotate, in: box)
-        ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-        ctx.setLineWidth(1 / zoom)
-        ctx.move(to: CGPoint(x: box.midX, y: box.minY))
-        ctx.addLine(to: rotatePoint)
-        ctx.strokePath()
-        ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
-        ctx.fillEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
-                                   y: rotatePoint.y - 4 / zoom,
-                                   width: 8 / zoom,
-                                   height: 8 / zoom))
-        ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-        ctx.strokeEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
-                                     y: rotatePoint.y - 4 / zoom,
-                                     width: 8 / zoom,
-                                     height: 8 / zoom))
+        if let pointEditingElement {
+            drawPointEditingHandles(for: pointEditingElement, in: ctx, zoom: zoom)
+        }
         ctx.restoreGState()
     }
 
@@ -189,15 +193,6 @@ final class CanvasNSView: NSView {
         let start = element.points[0].cg
         let end = element.points.last?.cg ?? start
         let control = controlPoint(for: element)
-
-        ctx.setStrokeColor(NSColor.controlAccentColor.withAlphaComponent(0.45).cgColor)
-        ctx.setLineWidth(1 / zoom)
-        ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
-        ctx.move(to: start)
-        ctx.addLine(to: control)
-        ctx.addLine(to: end)
-        ctx.strokePath()
-        ctx.setLineDash(phase: 0, lengths: [])
 
         drawPointHandle(at: start, in: ctx, zoom: zoom, filled: false)
         drawPointHandle(at: control, in: ctx, zoom: zoom, filled: true)
@@ -288,7 +283,9 @@ final class CanvasNSView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        let wasTextEditing = textEditor != nil
         endTextEditing()
+        if wasTextEditing { tool = .select }
         stopCameraAnimation()
         window?.makeFirstResponder(self)
         let p = scenePoint(event)
@@ -472,7 +469,14 @@ final class CanvasNSView: NSView {
         var updated = scene
         element.zIndex = (updated.elements.map(\.zIndex).max() ?? 0) + 1
         updated.elements.append(element)
+        let entersPointEditing = element.kind == .line || element.kind == .arrow
+        if entersPointEditing { tool = .select }
         commit(updated)
+        if entersPointEditing {
+            selectedIDs = [element.id]
+            isEditingPoints = true
+            notifySelectionChange()
+        }
     }
 
     private func smoothed(_ points: [Point]) -> [Point] {
@@ -1042,15 +1046,18 @@ final class CanvasNSView: NSView {
 
     private func endTextEditing() {
         guard let field = textEditor else { return }
+        let returnsToSelect = tool == .text
         textEditor = nil
         let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         field.removeFromSuperview()
-        guard !value.isEmpty else { return }
-        var element = Element(kind: .text, points: [Point(textAnchor)], style: style, text: value)
-        element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
-        var updated = scene
-        updated.elements.append(element)
-        commit(updated)
+        if !value.isEmpty {
+            var element = Element(kind: .text, points: [Point(textAnchor)], style: style, text: value)
+            element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
+            var updated = scene
+            updated.elements.append(element)
+            commit(updated)
+        }
+        if returnsToSelect { tool = .select }
     }
 
     override func updateTrackingAreas() {
@@ -1150,6 +1157,7 @@ final class CanvasNSView: NSView {
 extension CanvasNSView: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         endTextEditing()
+        if tool == .text { tool = .select }
     }
 }
 

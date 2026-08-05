@@ -81,6 +81,8 @@ struct CanvasPanelView: View {
             CanvasRepresentable(scene: scene, tool: tool, style: style, command: canvasCommand) { updated in
                 scene = updated
                 autosave.schedule(updated)
+            } onToolChange: { updated in
+                tool = updated
             } onSelectionChange: { updated in
                 selectedStyle = updated
             } onImageShadowChange: { updated in
