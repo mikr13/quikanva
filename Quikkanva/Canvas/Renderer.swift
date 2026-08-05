@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import CoreGraphics
 import CoreText
 
@@ -59,7 +60,29 @@ enum Sketch {
     }
 }
 
+private final class CachedPath: NSObject, @unchecked Sendable {
+    let path: CGPath
+
+    init(_ path: CGPath) {
+        self.path = path
+    }
+}
+
+private final class RoughPathCache: @unchecked Sendable {
+    private let storage = NSCache<NSString, CachedPath>()
+
+    func path(forKey key: NSString) -> CGPath? {
+        storage.object(forKey: key)?.path
+    }
+
+    func insert(_ path: CGPath, forKey key: NSString) {
+        storage.setObject(CachedPath(path), forKey: key)
+    }
+}
+
 enum Renderer {
+    private static let roughPathCache = RoughPathCache()
+
     static func draw(_ scene: CanvasScene, in ctx: CGContext, live: Element?) {
         var all = scene.elements
         if let live { all.append(live) }
@@ -90,15 +113,13 @@ enum Renderer {
             ctx.strokePath()
 
         case .line:
-            let path = CGMutablePath()
-            Sketch.roughLine(pts[0], pts[pts.count - 1], roughness: rough, rng: &rng, into: path)
+            let path = roughLinePath(for: el, from: pts[0], to: pts[pts.count - 1], roughness: rough, rng: &rng)
             ctx.addPath(path)
             ctx.strokePath()
 
         case .arrow:
             let a = pts[0], b = pts[pts.count - 1]
-            let shaft = CGMutablePath()
-            Sketch.roughLine(a, b, roughness: rough, rng: &rng, into: shaft)
+            let shaft = roughLinePath(for: el, from: a, to: b, roughness: rough, rng: &rng)
             ctx.addPath(shaft)
             ctx.strokePath()
 
@@ -141,8 +162,7 @@ enum Renderer {
             case .hachure:
                 drawHachure(fill, in: rect, color: el.style.fill.cgColor, ctx: ctx)
             }
-            let path = CGMutablePath()
-            Sketch.roughPolygon(corners, roughness: rough, rng: &rng, into: path)
+            let path = roughPolygonPath(for: el, corners: corners, roughness: rough, rng: &rng)
             ctx.addPath(path)
             ctx.setStrokeColor(el.style.stroke.cgColor)
             ctx.strokePath()
@@ -170,6 +190,31 @@ enum Renderer {
         }
         ctx.strokePath()
         ctx.restoreGState()
+    }
+
+    private static func roughLinePath(for element: Element,
+                                      from start: CGPoint,
+                                      to end: CGPoint,
+                                      roughness: Double,
+                                      rng: inout SketchRNG) -> CGPath {
+        let key = "line-\(element.hashValue)" as NSString
+        if let cached = roughPathCache.path(forKey: key) { return cached }
+        let path = CGMutablePath()
+        Sketch.roughLine(start, end, roughness: roughness, rng: &rng, into: path)
+        roughPathCache.insert(path, forKey: key)
+        return path
+    }
+
+    private static func roughPolygonPath(for element: Element,
+                                         corners: [CGPoint],
+                                         roughness: Double,
+                                         rng: inout SketchRNG) -> CGPath {
+        let key = "polygon-\(element.hashValue)" as NSString
+        if let cached = roughPathCache.path(forKey: key) { return cached }
+        let path = CGMutablePath()
+        Sketch.roughPolygon(corners, roughness: roughness, rng: &rng, into: path)
+        roughPathCache.insert(path, forKey: key)
+        return path
     }
 
     private static func drawText(_ el: Element, at p: CGPoint, in ctx: CGContext) {
