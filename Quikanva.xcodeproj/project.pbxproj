@@ -14,6 +14,7 @@
 		2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9287128C437921E883590D /* CanvasPreferences.swift */; };
 		3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED410A05B90D3939CA637312 /* AppDelegate.swift */; };
 		3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */; };
+		46CD6455384F7209FEBD229D /* SingleInstanceLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */; };
 		4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13348EA603D0D317F86C54A /* CanvasScene.swift */; };
 		4EE33CBF3205D2E79E251F55 /* ColorBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */; };
 		508917C2A089BEC6685D4E43 /* CanvasRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */; };
@@ -63,6 +64,7 @@
 		B13348EA603D0D317F86C54A /* CanvasScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasScene.swift; sourceTree = "<group>"; };
 		B466F862487CD5729EE0117A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 		C5981E4D7ED53A0867210313 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleInstanceLaunchTests.swift; sourceTree = "<group>"; };
 		D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTests.swift; sourceTree = "<group>"; };
 		E9E8581F2189735894A6118B /* Quikanva.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Quikanva.icon; sourceTree = "<group>"; };
 		ED410A05B90D3939CA637312 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -166,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */,
+				D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */,
 			);
 			path = QuikanvaTests;
 			sourceTree = "<group>";
@@ -314,6 +317,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */,
+				46CD6455384F7209FEBD229D /* SingleInstanceLaunchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
