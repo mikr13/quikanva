@@ -107,9 +107,20 @@ final class CanvasWindowManager {
         window.center()
 
         let id = doc.id
-        window.onClose = { [weak self] in self?.windows.removeValue(forKey: id) }
+        window.onClose = { [weak self] in
+            self?.didClose(doc, id: id)
+        }
         windows[id] = window
         activate(window)
+    }
+
+    private func didClose(_ doc: CanvasDocument, id: UUID) {
+        windows.removeValue(forKey: id)
+        guard let context,
+              doc.title.hasPrefix("Sketch — "),
+              SceneCodec.decode(doc.sceneData).elements.isEmpty else { return }
+        context.delete(doc)
+        try? context.save()
     }
 
     private func activate(_ window: NSWindow) {

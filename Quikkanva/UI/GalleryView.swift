@@ -50,7 +50,7 @@ struct GalleryView: View {
             TextField("Name", text: $renameText)
             Button("Save") {
                 if let doc = renaming {
-                    doc.title = renameText
+                    doc.title = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
                     doc.updatedAt = .now
                     try? context.save()
                 }
