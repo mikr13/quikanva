@@ -199,9 +199,15 @@ struct CanvasToolbar: View {
                     .labelStyle(.iconOnly)
                     .font(.system(size: 14, weight: .medium))
                     .frame(width: 30, height: 28)
-                    .background(tool == item ? Color.accentColor.opacity(0.18) : Color.clear,
+                    .background(tool == item ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 7))
-                    .foregroundStyle(tool == item ? Color.accentColor : Color.primary)
+                    .foregroundStyle(tool == item ? Color(nsColor: .selectedTextColor) : Color.primary)
+                    .overlay {
+                        if tool == item {
+                            RoundedRectangle(cornerRadius: 7)
+                                .strokeBorder(Color(nsColor: .selectedTextColor).opacity(0.24))
+                        }
+                    }
                     .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
