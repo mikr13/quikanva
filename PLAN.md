@@ -47,6 +47,7 @@ gallery grid, and export to images.
 - [x] Two-layer rendering: committed scene layer + live overlay layer
 - [x] Camera pan (scrollWheel + Hand-tool drag) + pinch zoom (magnify); programmatic zoom transitions use an interruptible spring-like settle
 - [x] Zoom in, zoom out, zoom to fit, zoom to selection, and reset tools combined into the ellipsis menu
+- [x] Default canvas window scales to a portrait 9:16 frame within the available screen
 - [ ] **Verify:** smooth pan/zoom in Instruments (500+ elements, no dropped frames)
 
 ## Phase 2 — Tools + the sketchy look
@@ -60,7 +61,7 @@ gallery grid, and export to images.
 - [x] Deterministic per-element `seed` (no shimmer on redraw/pan/zoom)
 - [x] Roughened-path cache keyed by deterministic element hash
 - [x] Tool keyboard shortcuts (V/H/R/O/D/L/A/P/T/E) and arrow-key movement
-- [x] Floating translucent toolbar: tools + stroke & background color + Save + Share (press feedback)
+- [x] Floating translucent toolbar: responsive tool overflow + stroke/fill/background color + Save + Share
 - [x] Image elements (paste/drop)
 - [x] Image presentation: optional subtle shadow; selection overlay shown only in Select mode
 - [ ] **Verify:** every shape renders with stable sketch style; freehand feels good
@@ -106,6 +107,10 @@ gallery grid, and export to images.
 
 ## Phase 7 — Stretch (post-v1)
 
+- [ ] Send elements to back/front (z-order)
+- [ ] Choose stroke style (solid, dashed, dotted)
+- [ ] Choose arrowhead style (open, closed, filled)
+- [ ] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
 - [ ] Snapping / alignment guides
 - [ ] PDF / SVG export
 - [ ] Launch at login
@@ -116,7 +121,7 @@ gallery grid, and export to images.
 ## Verification checklist
 
 - [x] `xcodebuild -scheme Quikkanva build` succeeds
-- [ ] Unit tests: scene Codable round-trip · hit-testing · `RoughGenerator` determinism ·
+- [x] Unit tests: scene Codable round-trip · hit-testing · `RoughGenerator` determinism ·
       command undo/redo · exporter output · auto-title generation
 - [ ] Instruments: no dropped frames at 500+ sketchy elements during draw + pan/zoom
 - [ ] Manual pass: every tool, resize/rotate, multi-select, undo chain, close-without-save,
