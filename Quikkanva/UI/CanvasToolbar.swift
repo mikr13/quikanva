@@ -50,6 +50,32 @@ struct CanvasToolbar: View {
 
             Divider().frame(height: 22).padding(.horizontal, 2)
 
+            Menu {
+                Button("Zoom In") { onZoomIn() }
+                    .keyboardShortcut("=", modifiers: .command)
+                Button("Zoom Out") { onZoomOut() }
+                    .keyboardShortcut("-", modifiers: .command)
+                Button("Zoom to Fit") { onZoomToFit() }
+                    .keyboardShortcut("1", modifiers: .command)
+                Button("Zoom to Selection") { onZoomToSelection() }
+                    .keyboardShortcut("2", modifiers: .command)
+                Button("Reset Zoom") { onResetZoom() }
+                    .keyboardShortcut("0", modifiers: .command)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 30, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.button)
+            .buttonStyle(PressableStyle())
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("More tools")
+            .accessibilityLabel("More canvas tools")
+
+            Divider().frame(height: 22).padding(.horizontal, 2)
+
             Button(action: onSave) {
                 Label("Save sketch", systemImage: "square.and.arrow.down")
                     .labelStyle(.iconOnly)
@@ -83,32 +109,6 @@ struct CanvasToolbar: View {
             .fixedSize()
             .help("Share")
             .accessibilityLabel("Export or copy sketch")
-
-            Divider().frame(height: 22).padding(.horizontal, 2)
-
-            Menu {
-                Button("Zoom In") { onZoomIn() }
-                    .keyboardShortcut("=", modifiers: .command)
-                Button("Zoom Out") { onZoomOut() }
-                    .keyboardShortcut("-", modifiers: .command)
-                Button("Zoom to Fit") { onZoomToFit() }
-                    .keyboardShortcut("1", modifiers: .command)
-                Button("Zoom to Selection") { onZoomToSelection() }
-                    .keyboardShortcut("2", modifiers: .command)
-                Button("Reset Zoom") { onResetZoom() }
-                    .keyboardShortcut("0", modifiers: .command)
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 14, weight: .medium))
-                    .frame(width: 30, height: 28)
-                    .contentShape(Rectangle())
-            }
-            .menuStyle(.button)
-            .buttonStyle(PressableStyle())
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Zoom")
-            .accessibilityLabel("Zoom canvas")
         }
         .padding(6)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
