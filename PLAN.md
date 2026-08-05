@@ -45,7 +45,7 @@ gallery grid, and export to images.
 - [x] `CanvasNSView` (layer-backed) + `CanvasRepresentable` bridge
 - [x] `Renderer` (Core Graphics) + hit-testing (bbox + point-to-segment distance)
 - [ ] Two-layer rendering: committed scene layer + live overlay layer
-- [~] Camera pan (scrollWheel + Hand-tool drag) + pinch zoom (magnify); spring smoothing pending
+- [x] Camera pan (scrollWheel + Hand-tool drag) + pinch zoom (magnify); programmatic zoom transitions use an interruptible spring-like settle
 - [x] Zoom in, zoom out, zoom to fit, zoom to selection, and reset tools combined into the ellipsis menu
 - [ ] **Verify:** smooth pan/zoom in Instruments (500+ elements, no dropped frames)
 

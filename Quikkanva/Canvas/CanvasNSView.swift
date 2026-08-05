@@ -25,6 +25,15 @@ final class CanvasNSView: NSView {
     private var textEditor: NSTextField?
     private var textAnchor = CGPoint.zero
     private let canvasUndoManager = UndoManager()
+    private var cameraTimer: Timer?
+    private var cameraAnimation: CameraAnimation?
+
+    private struct CameraAnimation {
+        let from: Camera
+        let to: Camera
+        let start: TimeInterval
+        let duration: TimeInterval
+    }
 
     private enum SelectionHandle {
         case topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left, rotate
@@ -49,6 +58,10 @@ final class CanvasNSView: NSView {
         return true
     }
 
+    private func redraw() {
+        needsDisplay = true
+    }
+
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
     override var undoManager: UndoManager? { canvasUndoManager }
@@ -59,6 +72,11 @@ final class CanvasNSView: NSView {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewWillMove(toWindow newWindow: NSWindow?) {
+        if newWindow == nil { stopCameraAnimation() }
+        super.viewWillMove(toWindow: newWindow)
+    }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
@@ -170,6 +188,7 @@ final class CanvasNSView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         endTextEditing()
+        stopCameraAnimation()
         window?.makeFirstResponder(self)
         let p = scenePoint(event)
         switch tool {
@@ -523,13 +542,15 @@ final class CanvasNSView: NSView {
     }
 
     override func scrollWheel(with event: NSEvent) {
+        stopCameraAnimation()
         scene.camera.panX += Double(event.scrollingDeltaX)
         scene.camera.panY += Double(event.scrollingDeltaY)
-        needsDisplay = true
+        redraw()
         onCommit?(scene)
     }
 
     override func magnify(with event: NSEvent) {
+        stopCameraAnimation()
         let anchor = convert(event.locationInWindow, from: nil)
         let sceneAnchor = scenePoint(event)
         let zoom = max(0.2, min(6, scene.camera.zoom * (1 + Double(event.magnification))))
@@ -537,7 +558,7 @@ final class CanvasNSView: NSView {
         let adjustedAnchor = viewPoint(sceneAnchor)
         scene.camera.panX += Double(anchor.x - adjustedAnchor.x)
         scene.camera.panY += Double(anchor.y - adjustedAnchor.y)
-        needsDisplay = true
+        redraw()
         onCommit?(scene)
     }
 
@@ -545,9 +566,7 @@ final class CanvasNSView: NSView {
         switch command {
         case .zoomIn: zoom(by: 1.2)
         case .zoomOut: zoom(by: 1 / 1.2)
-        case .resetZoom:
-            scene.camera = Camera()
-            needsDisplay = true
+        case .resetZoom: animateCamera(to: Camera())
         case .zoomToFit: zoomToFit(selectionBounds ?? contentBounds)
         case .zoomToSelection: zoomToFit(selectionBounds)
         case .updateSelectionStyle(let style):
@@ -572,11 +591,13 @@ final class CanvasNSView: NSView {
     private func zoom(by factor: CGFloat) {
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
         let before = scenePoint(center)
-        scene.camera.zoom = max(0.2, min(6, scene.camera.zoom * Double(factor)))
-        let after = viewPoint(before)
-        scene.camera.panX += Double(center.x - after.x)
-        scene.camera.panY += Double(center.y - after.y)
-        needsDisplay = true
+        var target = scene.camera
+        target.zoom = max(0.2, min(6, target.zoom * Double(factor)))
+        let after = CGPoint(x: before.x * CGFloat(target.zoom) + CGFloat(target.panX),
+                            y: before.y * CGFloat(target.zoom) + CGFloat(target.panY))
+        target.panX += Double(center.x - after.x)
+        target.panY += Double(center.y - after.y)
+        animateCamera(to: target)
     }
 
     private func zoomToFit(_ box: CGRect?) {
@@ -584,10 +605,52 @@ final class CanvasNSView: NSView {
         let padding: CGFloat = 80
         let scale = min((bounds.width - padding * 2) / box.width,
                         (bounds.height - padding * 2) / box.height)
-        scene.camera.zoom = max(0.2, min(6, Double(scale)))
-        scene.camera.panX = Double(bounds.midX - box.midX * CGFloat(scene.camera.zoom))
-        scene.camera.panY = Double(bounds.midY - box.midY * CGFloat(scene.camera.zoom))
-        needsDisplay = true
+        let zoom = max(0.2, min(6, Double(scale)))
+        animateCamera(to: Camera(panX: Double(bounds.midX - box.midX * CGFloat(zoom)),
+                                 panY: Double(bounds.midY - box.midY * CGFloat(zoom)),
+                                 zoom: zoom))
+    }
+
+    private func animateCamera(to target: Camera) {
+        stopCameraAnimation()
+        guard scene.camera != target else { return }
+        cameraAnimation = CameraAnimation(from: scene.camera,
+                                          to: target,
+                                          start: ProcessInfo.processInfo.systemUptime,
+                                          duration: 0.28)
+        cameraTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.stepCameraAnimation()
+        }
+        stepCameraAnimation()
+    }
+
+    private func stepCameraAnimation() {
+        guard let animation = cameraAnimation else {
+            stopCameraAnimation()
+            return
+        }
+        let elapsed = ProcessInfo.processInfo.systemUptime - animation.start
+        let time = min(1, max(0, elapsed / animation.duration))
+        let progress = 1 - exp(-12 * time) * (1 + 12 * time)
+        scene.camera = Camera(
+            panX: animation.from.panX + (animation.to.panX - animation.from.panX) * progress,
+            panY: animation.from.panY + (animation.to.panY - animation.from.panY) * progress,
+            zoom: animation.from.zoom + (animation.to.zoom - animation.from.zoom) * progress
+        )
+        redraw()
+        onCommit?(scene)
+        if time >= 1 {
+            scene.camera = animation.to
+            stopCameraAnimation()
+            redraw()
+            onCommit?(scene)
+        }
+    }
+
+    private func stopCameraAnimation() {
+        cameraTimer?.invalidate()
+        cameraTimer = nil
+        cameraAnimation = nil
     }
 
     private func selectionHandle(at p: CGPoint) -> SelectionHandle? {
