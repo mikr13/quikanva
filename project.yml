@@ -1,4 +1,4 @@
-name: Quikkanva
+name: Quikanva
 options:
   bundleIdPrefix: com.mihirpandey
   deploymentTarget:
@@ -22,51 +22,51 @@ packages:
     from: "3.0.0"
 
 targets:
-  Quikkanva:
+  Quikanva:
     type: application
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - path: Quikkanva
+      - path: Quikanva
     dependencies:
       - package: KeyboardShortcuts
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikkanva
-        PRODUCT_NAME: Quikkanva
+        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikanva
+        PRODUCT_NAME: Quikanva
     info:
-      path: Quikkanva/Resources/Info.plist
+      path: Quikanva/Resources/Info.plist
       properties:
         LSUIElement: true
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         NSHumanReadableCopyright: ""
         CFBundleURLTypes:
-          - CFBundleURLName: com.mihirpandey.quikkanva
-            CFBundleURLSchemes: [quikkanva]
+          - CFBundleURLName: com.mihirpandey.quikanva
+            CFBundleURLSchemes: [quikanva]
 
-  QuikkanvaTests:
+  QuikanvaTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "14.0"
     sources:
-      - path: QuikkanvaTests
+      - path: QuikanvaTests
     dependencies:
-      - target: Quikkanva
+      - target: Quikanva
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikkanva.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikanva.tests
         GENERATE_INFOPLIST_FILE: YES
 
 schemes:
-  Quikkanva:
+  Quikanva:
     build:
       targets:
-        Quikkanva: all
+        Quikanva: all
     run:
       config: Debug
     archive:
       config: Release
     test:
       targets:
-        - QuikkanvaTests
+        - QuikanvaTests

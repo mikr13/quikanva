@@ -3,15 +3,15 @@ import SwiftData
 import AppKit
 
 @main
-struct QuikkanvaApp: App {
+struct QuikanvaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let container: ModelContainer
 
     init() {
         do {
-            let base = URL.applicationSupportDirectory.appending(path: "Quikkanva", directoryHint: .isDirectory)
+            let base = URL.applicationSupportDirectory.appending(path: "Quikanva", directoryHint: .isDirectory)
             try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
-            let config = ModelConfiguration(url: base.appending(path: "Quikkanva.store"))
+            let config = ModelConfiguration(url: base.appending(path: "Quikanva.store"))
             container = try ModelContainer(for: CanvasDocument.self, configurations: config)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
@@ -94,7 +94,7 @@ private struct MenuBarContent: View {
         }
         .keyboardShortcut(",")
 
-        Button("Quit Quikkanva") {
+        Button("Quit Quikanva") {
             NSApp.terminate(nil)
         }
         .keyboardShortcut("q")

@@ -1,7 +1,7 @@
 import XCTest
 import AppKit
 import CoreGraphics
-@testable import Quikkanva
+@testable import Quikanva
 
 @MainActor
 final class CanvasTests: XCTestCase {
@@ -68,7 +68,7 @@ final class CanvasTests: XCTestCase {
                     points: [Point(x: 340, y: 150), Point(x: 380, y: 180), Point(x: 440, y: 150)]),
             Element(kind: .text,
                     points: [Point(x: 20, y: 250)],
-                    text: "Quikkanva"),
+                    text: "Quikanva"),
             image,
         ])
 

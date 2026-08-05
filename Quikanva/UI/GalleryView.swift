@@ -43,7 +43,7 @@ struct GalleryView: View {
         }
         .frame(minWidth: 640, minHeight: 460)
         .background(.background)
-        .navigationTitle("Quikkanva")
+        .navigationTitle("Quikanva")
         .onAppear { hasAppeared = true }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -78,7 +78,7 @@ struct GalleryView: View {
             }
             Button("Cancel", role: .cancel) { deleting = nil }
         } message: {
-            Text("This sketch will be permanently removed from Quikkanva.")
+            Text("This sketch will be permanently removed from Quikanva.")
         }
     }
 

@@ -78,7 +78,7 @@ final class CanvasWindowManager {
     }
 
     func route(_ url: URL) {
-        guard url.scheme == "quikkanva" else { return }
+        guard url.scheme == "quikanva" else { return }
         switch url.host {
         case "new":
             newCanvas()

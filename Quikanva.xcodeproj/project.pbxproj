@@ -1,0 +1,549 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		11A25FEDB289AC16D568D054 /* CanvasNSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E421D1A989290401E9D263 /* CanvasNSView.swift */; };
+		12535141ABF0B8B6D3966ECC /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D94AE76AAE6762AE832420 /* Element.swift */; };
+		155B606ED1831B760CF55BE1 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */; };
+		1B83AC1BB3D3CE467DE09FD8 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B466F862487CD5729EE0117A /* GalleryView.swift */; };
+		2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9287128C437921E883590D /* CanvasPreferences.swift */; };
+		3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED410A05B90D3939CA637312 /* AppDelegate.swift */; };
+		3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */; };
+		4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13348EA603D0D317F86C54A /* CanvasScene.swift */; };
+		4EE33CBF3205D2E79E251F55 /* ColorBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */; };
+		508917C2A089BEC6685D4E43 /* CanvasRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */; };
+		64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */; };
+		652992688D460C1E221E89E6 /* Exporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */; };
+		6DEEA7908AD87AD95B0E9733 /* CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */; };
+		8781E30CCB30136310A5A56F /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */; };
+		9C62BDE5712DEA0DA0033891 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8515A7ACEC34D555B4CCC251 /* Renderer.swift */; };
+		9DEB8A68CAB351B464044943 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5981E4D7ED53A0867210313 /* SettingsView.swift */; };
+		D2C74B9FDEA838104F83CE6C /* CanvasWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */; };
+		DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */; };
+		E4F0F69A32C60963D8EA8F4F /* Thumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A793C28CD455347F171ACCDF /* Thumbnailer.swift */; };
+		EEB9C094384CAC05BAD56EA4 /* QuikanvaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DA38288B5FC592BD8FA6F7C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A3F0D9902DE4B31D5B384E67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1D772CC43CEBF9207EBB16A;
+			remoteInfo = Quikanva;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		013CBB88E892090BDD3BDED6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		065E6DB5CBA6EE8A471D8B43 /* QuikanvaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuikanvaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPanelView.swift; sourceTree = "<group>"; };
+		0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasRepresentable.swift; sourceTree = "<group>"; };
+		0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorBridging.swift; sourceTree = "<group>"; };
+		3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
+		46D94AE76AAE6762AE832420 /* Element.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Element.swift; sourceTree = "<group>"; };
+		53E421D1A989290401E9D263 /* CanvasNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNSView.swift; sourceTree = "<group>"; };
+		5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuikanvaApp.swift; sourceTree = "<group>"; };
+		63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasWindowManager.swift; sourceTree = "<group>"; };
+		6D9287128C437921E883590D /* CanvasPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPreferences.swift; sourceTree = "<group>"; };
+		8515A7ACEC34D555B4CCC251 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
+		A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDocument.swift; sourceTree = "<group>"; };
+		A6B46C1CA6A09856107E4858 /* Quikanva.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quikanva.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A793C28CD455347F171ACCDF /* Thumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnailer.swift; sourceTree = "<group>"; };
+		AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exporter.swift; sourceTree = "<group>"; };
+		B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
+		B13348EA603D0D317F86C54A /* CanvasScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasScene.swift; sourceTree = "<group>"; };
+		B466F862487CD5729EE0117A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
+		C5981E4D7ED53A0867210313 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTests.swift; sourceTree = "<group>"; };
+		ED410A05B90D3939CA637312 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CD11B263636C508508C445C7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8781E30CCB30136310A5A56F /* KeyboardShortcuts in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05EFD8EC8DA7FDE5B6AC142C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				013CBB88E892090BDD3BDED6 /* Info.plist */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		1C3D49C2FA4DFBBE045377A1 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */,
+				B13348EA603D0D317F86C54A /* CanvasScene.swift */,
+				46D94AE76AAE6762AE832420 /* Element.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		27EAD33845ABB0F18A821A3B /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */,
+				B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */,
+				0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */,
+				B466F862487CD5729EE0117A /* GalleryView.swift */,
+				C5981E4D7ED53A0867210313 /* SettingsView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		28C827BD0049E8AA0B7ABF68 /* Canvas */ = {
+			isa = PBXGroup;
+			children = (
+				53E421D1A989290401E9D263 /* CanvasNSView.swift */,
+				0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */,
+				AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */,
+				8515A7ACEC34D555B4CCC251 /* Renderer.swift */,
+				A793C28CD455347F171ACCDF /* Thumbnailer.swift */,
+			);
+			path = Canvas;
+			sourceTree = "<group>";
+		};
+		3AA66799927325D1693BE70C /* Quikanva */ = {
+			isa = PBXGroup;
+			children = (
+				B0D9425F735D0CA308CD21AC /* App */,
+				28C827BD0049E8AA0B7ABF68 /* Canvas */,
+				1C3D49C2FA4DFBBE045377A1 /* Model */,
+				05EFD8EC8DA7FDE5B6AC142C /* Resources */,
+				27EAD33845ABB0F18A821A3B /* UI */,
+			);
+			path = Quikanva;
+			sourceTree = "<group>";
+		};
+		4ABFBDF174CACE23AF135C22 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A6B46C1CA6A09856107E4858 /* Quikanva.app */,
+				065E6DB5CBA6EE8A471D8B43 /* QuikanvaTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4F0AED4886500E1B599F4476 = {
+			isa = PBXGroup;
+			children = (
+				3AA66799927325D1693BE70C /* Quikanva */,
+				6B589BAAAC7E37CAFA36CE67 /* QuikanvaTests */,
+				4ABFBDF174CACE23AF135C22 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6B589BAAAC7E37CAFA36CE67 /* QuikanvaTests */ = {
+			isa = PBXGroup;
+			children = (
+				D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */,
+			);
+			path = QuikanvaTests;
+			sourceTree = "<group>";
+		};
+		B0D9425F735D0CA308CD21AC /* App */ = {
+			isa = PBXGroup;
+			children = (
+				ED410A05B90D3939CA637312 /* AppDelegate.swift */,
+				6D9287128C437921E883590D /* CanvasPreferences.swift */,
+				63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */,
+				3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */,
+				5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		97A694BA80D29D400E79BBE8 /* QuikanvaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 597BB90B60399C20156FE51F /* Build configuration list for PBXNativeTarget "QuikanvaTests" */;
+			buildPhases = (
+				C95AA39C517D8D199740D190 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				EB704C097430CF6CC8317D1B /* PBXTargetDependency */,
+			);
+			name = QuikanvaTests;
+			packageProductDependencies = (
+			);
+			productName = QuikanvaTests;
+			productReference = 065E6DB5CBA6EE8A471D8B43 /* QuikanvaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A1D772CC43CEBF9207EBB16A /* Quikanva */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5EF1D68734C6F54CD86C10B6 /* Build configuration list for PBXNativeTarget "Quikanva" */;
+			buildPhases = (
+				A3714F944C04FF266F97E415 /* Sources */,
+				CD11B263636C508508C445C7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Quikanva;
+			packageProductDependencies = (
+				3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */,
+			);
+			productName = Quikanva;
+			productReference = A6B46C1CA6A09856107E4858 /* Quikanva.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A3F0D9902DE4B31D5B384E67 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					97A694BA80D29D400E79BBE8 = {
+						ProvisioningStyle = Manual;
+					};
+					A1D772CC43CEBF9207EBB16A = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 22F7BD1D91043A052164AF75 /* Build configuration list for PBXProject "Quikanva" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 4F0AED4886500E1B599F4476;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				91527F7F7D8E68E629CC0A4E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 4ABFBDF174CACE23AF135C22 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1D772CC43CEBF9207EBB16A /* Quikanva */,
+				97A694BA80D29D400E79BBE8 /* QuikanvaTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A3714F944C04FF266F97E415 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */,
+				6DEEA7908AD87AD95B0E9733 /* CanvasDocument.swift in Sources */,
+				11A25FEDB289AC16D568D054 /* CanvasNSView.swift in Sources */,
+				3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */,
+				2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */,
+				508917C2A089BEC6685D4E43 /* CanvasRepresentable.swift in Sources */,
+				4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */,
+				155B606ED1831B760CF55BE1 /* CanvasToolbar.swift in Sources */,
+				D2C74B9FDEA838104F83CE6C /* CanvasWindowManager.swift in Sources */,
+				4EE33CBF3205D2E79E251F55 /* ColorBridging.swift in Sources */,
+				12535141ABF0B8B6D3966ECC /* Element.swift in Sources */,
+				652992688D460C1E221E89E6 /* Exporter.swift in Sources */,
+				1B83AC1BB3D3CE467DE09FD8 /* GalleryView.swift in Sources */,
+				DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */,
+				EEB9C094384CAC05BAD56EA4 /* QuikanvaApp.swift in Sources */,
+				9C62BDE5712DEA0DA0033891 /* Renderer.swift in Sources */,
+				9DEB8A68CAB351B464044943 /* SettingsView.swift in Sources */,
+				E4F0F69A32C60963D8EA8F4F /* Thumbnailer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C95AA39C517D8D199740D190 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		EB704C097430CF6CC8317D1B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1D772CC43CEBF9207EBB16A /* Quikanva */;
+			targetProxy = DA38288B5FC592BD8FA6F7C7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0F66B1826D1E7AFE75C7B741 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quikanva.app/Contents/MacOS/Quikanva";
+			};
+			name = Release;
+		};
+		55DFBAA80208CD095BC6830C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		98BC908FED2106130C0C2957 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva;
+				PRODUCT_NAME = Quikanva;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		AB5872709F199DE58545191A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva;
+				PRODUCT_NAME = Quikanva;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D2DAFB9C74125F47A2A84480 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quikanva.app/Contents/MacOS/Quikanva";
+			};
+			name = Debug;
+		};
+		F38BB259CA7E5662E133173C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		22F7BD1D91043A052164AF75 /* Build configuration list for PBXProject "Quikanva" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F38BB259CA7E5662E133173C /* Debug */,
+				55DFBAA80208CD095BC6830C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		597BB90B60399C20156FE51F /* Build configuration list for PBXNativeTarget "QuikanvaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D2DAFB9C74125F47A2A84480 /* Debug */,
+				0F66B1826D1E7AFE75C7B741 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5EF1D68734C6F54CD86C10B6 /* Build configuration list for PBXNativeTarget "Quikanva" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				98BC908FED2106130C0C2957 /* Debug */,
+				AB5872709F199DE58545191A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		91527F7F7D8E68E629CC0A4E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 91527F7F7D8E68E629CC0A4E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A3F0D9902DE4B31D5B384E67 /* Project object */;
+}

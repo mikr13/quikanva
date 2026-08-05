@@ -56,7 +56,7 @@ final class CanvasNSView: NSView {
     }
     private var drag: Drag = .none
 
-    private static let pasteboardType = NSPasteboard.PasteboardType("com.mihirpandey.quikkanva.elements")
+    private static let pasteboardType = NSPasteboard.PasteboardType("com.mihirpandey.quikanva.elements")
 
     var isInteracting: Bool {
         if case .none = drag { return false }

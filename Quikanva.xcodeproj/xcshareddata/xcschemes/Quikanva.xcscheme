@@ -15,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C7760E6D243684B4B872E640"
-               BuildableName = "Quikkanva.app"
-               BlueprintName = "Quikkanva"
-               ReferencedContainer = "container:Quikkanva.xcodeproj">
+               BlueprintIdentifier = "A1D772CC43CEBF9207EBB16A"
+               BuildableName = "Quikanva.app"
+               BlueprintName = "Quikanva"
+               ReferencedContainer = "container:Quikanva.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +32,10 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C7760E6D243684B4B872E640"
-            BuildableName = "Quikkanva.app"
-            BlueprintName = "Quikkanva"
-            ReferencedContainer = "container:Quikkanva.xcodeproj">
+            BlueprintIdentifier = "A1D772CC43CEBF9207EBB16A"
+            BuildableName = "Quikanva.app"
+            BlueprintName = "Quikanva"
+            ReferencedContainer = "container:Quikanva.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -44,10 +44,10 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "BE224DE3FF47779464F73976"
-               BuildableName = "QuikkanvaTests.xctest"
-               BlueprintName = "QuikkanvaTests"
-               ReferencedContainer = "container:Quikkanva.xcodeproj">
+               BlueprintIdentifier = "97A694BA80D29D400E79BBE8"
+               BuildableName = "QuikanvaTests.xctest"
+               BlueprintName = "QuikanvaTests"
+               ReferencedContainer = "container:Quikanva.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -68,10 +68,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C7760E6D243684B4B872E640"
-            BuildableName = "Quikkanva.app"
-            BlueprintName = "Quikkanva"
-            ReferencedContainer = "container:Quikkanva.xcodeproj">
+            BlueprintIdentifier = "A1D772CC43CEBF9207EBB16A"
+            BuildableName = "Quikanva.app"
+            BlueprintName = "Quikanva"
+            ReferencedContainer = "container:Quikanva.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -87,10 +87,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C7760E6D243684B4B872E640"
-            BuildableName = "Quikkanva.app"
-            BlueprintName = "Quikkanva"
-            ReferencedContainer = "container:Quikkanva.xcodeproj">
+            BlueprintIdentifier = "A1D772CC43CEBF9207EBB16A"
+            BuildableName = "Quikanva.app"
+            BlueprintName = "Quikanva"
+            ReferencedContainer = "container:Quikanva.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

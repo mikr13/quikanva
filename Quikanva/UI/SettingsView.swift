@@ -43,6 +43,6 @@ struct SettingsView: View {
 
     private func bringSettingsToFront() {
         NSApp.activate(ignoringOtherApps: true)
-        NSApp.windows.first { $0.title == "Quikkanva Settings" }?.makeKeyAndOrderFront(nil)
+        NSApp.windows.first { $0.title == "Quikanva Settings" }?.makeKeyAndOrderFront(nil)
     }
 }

@@ -2,15 +2,15 @@
 
 # Required parameters:
 # @raycast.schemaVersion 1
-# @raycast.title Open Quikkanva Gallery
+# @raycast.title Open Quikanva Gallery
 # @raycast.mode silent
 
 # Optional parameters:
 # @raycast.icon 🖼️
-# @raycast.packageName Quikkanva
+# @raycast.packageName Quikanva
 
 # Documentation:
-# @raycast.description Open the Quikkanva sketch gallery.
+# @raycast.description Open the Quikanva sketch gallery.
 # @raycast.author Mihir Pandey
 
-open "quikkanva://gallery"
+open "quikanva://gallery"
