@@ -128,13 +128,18 @@ enum Renderer {
             default:
                 corners = Sketch.ellipsePoints(in: rect)
             }
-            if el.style.fillStyle == .solid {
-                let fill = CGMutablePath()
-                fill.addLines(between: corners)
-                fill.closeSubpath()
+            let fill = CGMutablePath()
+            fill.addLines(between: corners)
+            fill.closeSubpath()
+            switch el.style.fillStyle {
+            case .none:
+                break
+            case .solid:
                 ctx.addPath(fill)
                 ctx.setFillColor(el.style.fill.cgColor)
                 ctx.fillPath()
+            case .hachure:
+                drawHachure(fill, in: rect, color: el.style.fill.cgColor, ctx: ctx)
             }
             let path = CGMutablePath()
             Sketch.roughPolygon(corners, roughness: rough, rng: &rng, into: path)
@@ -146,6 +151,24 @@ enum Renderer {
             drawText(el, at: pts[0], in: ctx)
         }
 
+        ctx.restoreGState()
+    }
+
+    private static func drawHachure(_ path: CGPath, in rect: CGRect, color: CGColor, ctx: CGContext) {
+        ctx.saveGState()
+        ctx.addPath(path)
+        ctx.clip()
+        ctx.setStrokeColor(color)
+        ctx.setLineWidth(1.2)
+        ctx.setLineCap(.round)
+        let step: CGFloat = 10
+        var offset = -rect.height
+        while offset < rect.width + rect.height {
+            ctx.move(to: CGPoint(x: rect.minX + offset, y: rect.maxY))
+            ctx.addLine(to: CGPoint(x: rect.minX + offset + rect.height, y: rect.minY))
+            offset += step
+        }
+        ctx.strokePath()
         ctx.restoreGState()
     }
 
