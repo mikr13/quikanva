@@ -2,6 +2,43 @@ import SwiftUI
 import SwiftData
 import AppKit
 
+@MainActor
+private final class CanvasAutosaveCoordinator: ObservableObject {
+    private let save: (CanvasScene) -> Void
+    private var pendingScene: CanvasScene?
+    private var task: Task<Void, Never>?
+
+    init(save: @escaping (CanvasScene) -> Void) {
+        self.save = save
+    }
+
+    func schedule(_ scene: CanvasScene) {
+        pendingScene = scene
+        task?.cancel()
+        task = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: 300_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.flush()
+        }
+    }
+
+    func flush() {
+        task?.cancel()
+        task = nil
+        guard let pendingScene else { return }
+        self.pendingScene = nil
+        save(pendingScene)
+    }
+
+    deinit {
+        task?.cancel()
+    }
+}
+
 struct CanvasPanelView: View {
     let doc: CanvasDocument
     let context: ModelContext
@@ -15,6 +52,7 @@ struct CanvasPanelView: View {
     @State private var draftName = ""
     @State private var canvasCommand: CanvasCommand?
     @State private var includeExportBackground = true
+    @StateObject private var autosave: CanvasAutosaveCoordinator
 
     init(
         doc: CanvasDocument,
@@ -27,13 +65,16 @@ struct CanvasPanelView: View {
         self.onClose = onClose
         self.onTitleChange = onTitleChange
         _scene = State(initialValue: SceneCodec.decode(doc.sceneData))
+        _autosave = StateObject(wrappedValue: CanvasAutosaveCoordinator { scene in
+            Self.persist(scene, doc: doc, context: context)
+        })
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             CanvasRepresentable(scene: scene, tool: tool, style: style, command: canvasCommand) { updated in
                 scene = updated
-                persist(updated)
+                autosave.schedule(updated)
             } onCommandHandled: {
                 canvasCommand = nil
             }
@@ -71,6 +112,7 @@ struct CanvasPanelView: View {
         }
         .frame(minWidth: 480, minHeight: 360)
         .ignoresSafeArea()
+        .onDisappear { autosave.flush() }
         .alert("Save Sketch", isPresented: $showNamePrompt) {
             TextField("Name", text: $draftName)
             Button("Cancel", role: .cancel) {}
@@ -93,13 +135,14 @@ struct CanvasPanelView: View {
             get: { scene.background?.swiftUIColor ?? RGBAColor.beige.swiftUIColor },
             set: { newColor in
                 scene.background = RGBAColor(newColor)
-                persist(scene)
+                autosave.schedule(scene)
             }
         )
     }
 
     private var closeButton: some View {
         Button {
+            autosave.flush()
             onClose()
         } label: {
             Label("Close canvas", systemImage: "xmark")
@@ -118,6 +161,10 @@ struct CanvasPanelView: View {
     }
 
     private func persist(_ scene: CanvasScene) {
+        Self.persist(scene, doc: doc, context: context)
+    }
+
+    private static func persist(_ scene: CanvasScene, doc: CanvasDocument, context: ModelContext) {
         let encoded = SceneCodec.encode(scene)
         guard encoded != doc.sceneData else { return }
         doc.sceneData = encoded

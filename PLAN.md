@@ -77,7 +77,7 @@ gallery grid, and export to images.
 
 - [x] SwiftData `@Model CanvasDocument` (id/title/createdAt/updatedAt/sceneData/thumbnail)
 - [x] `SceneCodec` (scene JSON) + `Thumbnailer` (fitted PNG); private namespaced store
-- [~] Autosave on each element/camera commit with dirty-only persistence; time-debounce + thumbnail throttle pending
+- [x] Autosave on each element/camera commit with dirty-only persistence, 300 ms debounce, and close-time flush
 - [x] Auto-title `Sketch — <date, time>` on create; discard-empty-untitled on close
 - [x] Gallery `LazyVGrid`: create / open (dbl-click) / rename / delete
 - [x] Manual **Save** (name this sketch, ⌘S) + canvas background color from toolbar
