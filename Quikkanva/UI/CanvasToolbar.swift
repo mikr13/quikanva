@@ -51,16 +51,35 @@ struct CanvasToolbar: View {
             Divider().frame(height: 22).padding(.horizontal, 2)
 
             Menu {
-                Button("Zoom In") { onZoomIn() }
-                    .keyboardShortcut("=", modifiers: .command)
-                Button("Zoom Out") { onZoomOut() }
-                    .keyboardShortcut("-", modifiers: .command)
-                Button("Zoom to Fit") { onZoomToFit() }
-                    .keyboardShortcut("1", modifiers: .command)
-                Button("Zoom to Selection") { onZoomToSelection() }
-                    .keyboardShortcut("2", modifiers: .command)
-                Button("Reset Zoom") { onResetZoom() }
-                    .keyboardShortcut("0", modifiers: .command)
+                Section("Zoom") {
+                    Button("Zoom In") { onZoomIn() }
+                        .keyboardShortcut("=", modifiers: .command)
+                    Button("Zoom Out") { onZoomOut() }
+                        .keyboardShortcut("-", modifiers: .command)
+                    Button("Zoom to Fit") { onZoomToFit() }
+                        .keyboardShortcut("1", modifiers: .command)
+                    Button("Zoom to Selection") { onZoomToSelection() }
+                        .keyboardShortcut("2", modifiers: .command)
+                    Button("Reset Zoom") { onResetZoom() }
+                        .keyboardShortcut("0", modifiers: .command)
+                }
+                Divider()
+                Section("Style for new shapes") {
+                    Picker("Fill style", selection: $style.fillStyle) {
+                        Text("No fill").tag(FillStyle.none)
+                        Text("Solid").tag(FillStyle.solid)
+                        Text("Hachure").tag(FillStyle.hachure)
+                    }
+                    ColorPicker("Fill color", selection: fillColorBinding, supportsOpacity: true)
+                    Divider()
+                    Button("Fine stroke") { style.strokeWidth = 1.5 }
+                    Button("Medium stroke") { style.strokeWidth = 2.5 }
+                    Button("Bold stroke") { style.strokeWidth = 4 }
+                    Divider()
+                    Button("Subtle roughness") { style.roughness = 0.6 }
+                    Button("Sketchy roughness") { style.roughness = 1.2 }
+                    Button("Loose roughness") { style.roughness = 2 }
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 14, weight: .medium))
@@ -138,6 +157,13 @@ struct CanvasToolbar: View {
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         }
         .help(help)
+    }
+
+    private var fillColorBinding: Binding<Color> {
+        Binding(
+            get: { style.fill.swiftUIColor },
+            set: { style.fill = RGBAColor($0) }
+        )
     }
 }
 
