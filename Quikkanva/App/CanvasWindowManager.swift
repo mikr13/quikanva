@@ -125,9 +125,19 @@ final class CanvasWindowManager {
     }
 
     private func makeWindow() -> FloatingCanvasWindow {
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+        let idealContentSize = NSSize(width: 675, height: 1200)
+        let idealFrameSize = NSWindow.frameRect(forContentRect: NSRect(origin: .zero, size: idealContentSize),
+                                                styleMask: styleMask).size
+        let availableFrameSize = NSScreen.main?.visibleFrame.insetBy(dx: 24, dy: 24).size ?? idealFrameSize
+        let scale = min(1,
+                        availableFrameSize.width / idealFrameSize.width,
+                        availableFrameSize.height / idealFrameSize.height)
+        let contentSize = NSSize(width: idealContentSize.width * scale,
+                                 height: idealContentSize.height * scale)
         let window = FloatingCanvasWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
-            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+            contentRect: NSRect(origin: .zero, size: contentSize),
+            styleMask: styleMask,
             backing: .buffered,
             defer: false)
         window.titleVisibility = .hidden
@@ -140,7 +150,7 @@ final class CanvasWindowManager {
         window.standardWindowButton(.closeButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.standardWindowButton(.zoomButton)?.isHidden = true
-        window.minSize = NSSize(width: 480, height: 360)
+        window.minSize = NSSize(width: 360, height: 640)
         window.collectionBehavior.insert(.fullScreenPrimary)
         return window
     }

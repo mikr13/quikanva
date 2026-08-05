@@ -18,6 +18,7 @@ struct CanvasToolbar: View {
     var onResetZoom: () -> Void = {}
     var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
     var onApplySelectedImageShadow: (Bool) -> Void = { _ in }
+    var availableWidth: CGFloat = 900
 
     @State private var showingInspector = false
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -27,40 +28,32 @@ struct CanvasToolbar: View {
         .select, .hand, .freedraw, .rectangle, .ellipse, .diamond, .line, .arrow, .text, .eraser,
     ]
 
+    private var visibleTools: ArraySlice<ToolKind> {
+        tools.prefix(visibleToolCount)
+    }
+
+    private var overflowTools: ArraySlice<ToolKind> {
+        tools.dropFirst(visibleToolCount)
+    }
+
+    private var visibleToolCount: Int {
+        let reservedWidth: CGFloat = 300
+        let buttonWidth: CGFloat = 34
+        return min(tools.count, max(2, Int((availableWidth - reservedWidth) / buttonWidth)))
+    }
+
     var body: some View {
         HStack(spacing: 4) {
-            ForEach(tools) { item in
-                Button { tool = item } label: {
-                    Label(item.rawValue.capitalized, systemImage: item.symbol)
-                        .labelStyle(.iconOnly)
-                        .font(.system(size: 14, weight: .medium))
-                        .frame(width: 30, height: 28)
-                        .background(tool == item ? Color.accentColor.opacity(0.18) : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 7))
-                        .foregroundStyle(tool == item ? Color.accentColor : Color.primary)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PressableStyle())
-                .help("\(item.rawValue.capitalized) (\(item.shortcut))")
-                .accessibilityLabel(item.rawValue.capitalized)
-                .accessibilityHint("Select drawing tool")
-                .accessibilityAddTraits(tool == item ? .isSelected : [])
-            }
-
-            Divider().frame(height: 22).padding(.horizontal, 2)
-
-            colorSwatch(icon: "pencil.tip", help: "Stroke color", color: Binding(
-                get: { style.stroke.swiftUIColor },
-                set: { style.stroke = RGBAColor($0) }
-            ))
-
-            colorSwatch(icon: "paintbrush.fill", help: "Fill color", color: fillColorBinding)
-
-            colorSwatch(icon: "square.fill", help: "Canvas background", color: $background)
-
-            Divider().frame(height: 22).padding(.horizontal, 2)
+            toolButtons(visibleTools)
 
             Menu {
+                if !overflowTools.isEmpty {
+                    Section("Tools") {
+                        toolMenuItems(overflowTools)
+                    }
+                    Divider()
+                }
+
                 Section("Zoom") {
                     Button("Zoom In") { onZoomIn() }
                         .keyboardShortcut("=", modifiers: .command)
@@ -73,26 +66,27 @@ struct CanvasToolbar: View {
                     Button("Reset Zoom") { onResetZoom() }
                         .keyboardShortcut("0", modifiers: .command)
                 }
+
                 Divider()
-                Section("Style for new shapes") {
-                    Picker("Fill style", selection: $style.fillStyle) {
-                        Text("No fill").tag(FillStyle.none)
-                        Text("Solid").tag(FillStyle.solid)
-                        Text("Hachure").tag(FillStyle.hachure)
+                Section(selectedStyle == nil ? "Style for new shapes" : "Style for selection") {
+                    Menu("Fill style") {
+                        Button("No fill") { updateStyle { $0.fillStyle = .none } }
+                        Button("Solid") { updateStyle { $0.fillStyle = .solid } }
+                        Button("Hachure") { updateStyle { $0.fillStyle = .hachure } }
                     }
-                    Divider()
-                    Button("Fine stroke") { style.strokeWidth = 1.5 }
-                    Button("Medium stroke") { style.strokeWidth = 2.5 }
-                    Button("Bold stroke") { style.strokeWidth = 4 }
-                    Divider()
-                    Button("Subtle roughness") { style.roughness = 0.6 }
-                    Button("Sketchy roughness") { style.roughness = 1.2 }
-                    Button("Loose roughness") { style.roughness = 2 }
-                }
-                Divider()
-                Section("Selected elements") {
-                    Button("Edit selected style…") { showingInspector = true }
-                        .disabled(selectedStyle == nil)
+                    Menu("Stroke width") {
+                        Button("Fine") { updateStyle { $0.strokeWidth = 1.5 } }
+                        Button("Medium") { updateStyle { $0.strokeWidth = 2.5 } }
+                        Button("Bold") { updateStyle { $0.strokeWidth = 4 } }
+                    }
+                    Menu("Roughness") {
+                        Button("Subtle") { updateStyle { $0.roughness = 0.6 } }
+                        Button("Sketchy") { updateStyle { $0.roughness = 1.2 } }
+                        Button("Loose") { updateStyle { $0.roughness = 2 } }
+                    }
+                    if selectedStyle != nil {
+                        Button("Edit all style settings…") { showingInspector = true }
+                    }
                 }
             } label: {
                 Image(systemName: "ellipsis")
@@ -106,6 +100,14 @@ struct CanvasToolbar: View {
             .fixedSize()
             .help("More tools")
             .accessibilityLabel("More canvas tools")
+
+            Divider().frame(height: 22).padding(.horizontal, 2)
+
+            colorSwatch(icon: "pencil.tip", help: "Stroke color", color: strokeColorBinding)
+
+            colorSwatch(icon: "paintbrush.fill", help: "Fill color", color: fillColorBinding)
+
+            colorSwatch(icon: "square.fill", help: "Canvas background", color: $background)
 
             Divider().frame(height: 22).padding(.horizontal, 2)
 
@@ -164,6 +166,34 @@ struct CanvasToolbar: View {
         }
     }
 
+    @ViewBuilder
+    private func toolButtons(_ items: ArraySlice<ToolKind>) -> some View {
+        ForEach(items) { item in
+            Button { tool = item } label: {
+                Label(item.rawValue.capitalized, systemImage: item.symbol)
+                    .labelStyle(.iconOnly)
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 30, height: 28)
+                    .background(tool == item ? Color.accentColor.opacity(0.18) : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 7))
+                    .foregroundStyle(tool == item ? Color.accentColor : Color.primary)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressableStyle())
+            .help("\(item.rawValue.capitalized) (\(item.shortcut))")
+            .accessibilityLabel(item.rawValue.capitalized)
+            .accessibilityHint("Select drawing tool")
+            .accessibilityAddTraits(tool == item ? .isSelected : [])
+        }
+    }
+
+    @ViewBuilder
+    private func toolMenuItems(_ items: ArraySlice<ToolKind>) -> some View {
+        ForEach(items) { item in
+            Button(item.rawValue.capitalized) { tool = item }
+        }
+    }
+
     private func colorSwatch(icon: String, help: String, color: Binding<Color>) -> some View {
         HStack(spacing: 4) {
             Image(systemName: icon)
@@ -190,9 +220,25 @@ struct CanvasToolbar: View {
 
     private var fillColorBinding: Binding<Color> {
         Binding(
-            get: { style.fill.swiftUIColor },
-            set: { style.fill = RGBAColor($0) }
+            get: { selectedStyle?.fill.swiftUIColor ?? style.fill.swiftUIColor },
+            set: { newColor in updateStyle { $0.fill = RGBAColor(newColor) } }
         )
+    }
+
+    private var strokeColorBinding: Binding<Color> {
+        Binding(
+            get: { selectedStyle?.stroke.swiftUIColor ?? style.stroke.swiftUIColor },
+            set: { newColor in updateStyle { $0.stroke = RGBAColor(newColor) } }
+        )
+    }
+
+    private func updateStyle(_ update: (inout ElementStyle) -> Void) {
+        if var selectedStyle {
+            update(&selectedStyle)
+            onApplySelectedStyle(selectedStyle)
+        } else {
+            update(&style)
+        }
     }
 
     private var selectedStyleBinding: Binding<ElementStyle> {

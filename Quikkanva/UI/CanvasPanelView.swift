@@ -98,35 +98,44 @@ struct CanvasPanelView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-            CanvasToolbar(
-                tool: $tool,
-                style: $style,
-                selectedStyle: $selectedStyle,
-                selectedImageShadow: $selectedImageShadow,
-                background: backgroundBinding,
-                includeExportBackground: $includeExportBackground,
-                onSave: {
-                    draftName = doc.title
-                    showNamePrompt = true
-                },
-                onCopyImage: { Exporter.copyToClipboard(scene, background: includeExportBackground) },
-                onExportPNG: { Exporter.exportWithPanel(scene, format: .png, suggestedName: doc.title, background: includeExportBackground) },
-                onExportJPEG: { Exporter.exportWithPanel(scene, format: .jpeg, suggestedName: doc.title, background: includeExportBackground) },
-                onZoomIn: { canvasCommand = .zoomIn },
-                onZoomOut: { canvasCommand = .zoomOut },
-                onZoomToFit: { canvasCommand = .zoomToFit },
-                onZoomToSelection: { canvasCommand = .zoomToSelection },
-                onResetZoom: { canvasCommand = .resetZoom },
-                onApplySelectedStyle: { updated in
-                    canvasCommand = .updateSelectionStyle(updated)
-                },
-                onApplySelectedImageShadow: { enabled in
-                    canvasCommand = .updateSelectedImageShadow(enabled)
+            GeometryReader { proxy in
+                HStack {
+                    Spacer(minLength: 0)
+                    CanvasToolbar(
+                        tool: $tool,
+                        style: $style,
+                        selectedStyle: $selectedStyle,
+                        selectedImageShadow: $selectedImageShadow,
+                        background: backgroundBinding,
+                        includeExportBackground: $includeExportBackground,
+                        onSave: {
+                            draftName = doc.title
+                            showNamePrompt = true
+                        },
+                        onCopyImage: { Exporter.copyToClipboard(scene, background: includeExportBackground) },
+                        onExportPNG: { Exporter.exportWithPanel(scene, format: .png, suggestedName: doc.title, background: includeExportBackground) },
+                        onExportJPEG: { Exporter.exportWithPanel(scene, format: .jpeg, suggestedName: doc.title, background: includeExportBackground) },
+                        onZoomIn: { canvasCommand = .zoomIn },
+                        onZoomOut: { canvasCommand = .zoomOut },
+                        onZoomToFit: { canvasCommand = .zoomToFit },
+                        onZoomToSelection: { canvasCommand = .zoomToSelection },
+                        onResetZoom: { canvasCommand = .resetZoom },
+                        onApplySelectedStyle: { updated in
+                            canvasCommand = .updateSelectionStyle(updated)
+                        },
+                        onApplySelectedImageShadow: { enabled in
+                            canvasCommand = .updateSelectedImageShadow(enabled)
+                        },
+                        availableWidth: max(0, proxy.size.width - 32)
+                    )
+                    Spacer(minLength: 0)
                 }
-            )
-            .padding(.bottom, 16)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
         }
-        .frame(minWidth: 480, minHeight: 360)
+        .frame(minWidth: 360, minHeight: 640)
         .ignoresSafeArea()
         .onDisappear { autosave.flush() }
         .alert("Save Sketch", isPresented: $showNamePrompt) {
