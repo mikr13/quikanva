@@ -27,6 +27,7 @@ final class CanvasWindowManager {
     var openGallery: (() -> Void)?
 
     private var windows: [UUID: FloatingCanvasWindow] = [:]
+    private var prewarmedWindow: FloatingCanvasWindow?
 
     private init() {}
 
@@ -39,6 +40,14 @@ final class CanvasWindowManager {
         context.insert(doc)
         try? context.save()
         present(doc)
+    }
+
+    func prewarm() {
+        guard prewarmedWindow == nil else { return }
+        let window = makeWindow()
+        window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
+        window.orderOut(nil)
+        prewarmedWindow = window
     }
 
     func open(_ id: UUID) {
@@ -90,24 +99,9 @@ final class CanvasWindowManager {
             return
         }
 
-        let window = FloatingCanvasWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
-            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
-            backing: .buffered,
-            defer: false)
-        window.titleVisibility = .hidden
-        window.titlebarAppearsTransparent = true
+        let window = prewarmedWindow ?? makeWindow()
+        prewarmedWindow = nil
         window.title = doc.title
-        window.isMovableByWindowBackground = false
-        window.hidesOnDeactivate = false
-        window.isReleasedWhenClosed = false
-        window.animationBehavior = .none
-        window.tabbingMode = .disallowed
-        window.standardWindowButton(.closeButton)?.isHidden = true
-        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        window.standardWindowButton(.zoomButton)?.isHidden = true
-        window.minSize = NSSize(width: 480, height: 360)
-        window.collectionBehavior.insert(.fullScreenPrimary)
 
         window.contentView = NSHostingView(rootView: CanvasPanelView(
             doc: doc,
@@ -127,6 +121,28 @@ final class CanvasWindowManager {
         }
         windows[id] = window
         activate(window)
+        prewarm()
+    }
+
+    private func makeWindow() -> FloatingCanvasWindow {
+        let window = FloatingCanvasWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 1100, height: 760),
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
+            backing: .buffered,
+            defer: false)
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.isMovableByWindowBackground = false
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        window.animationBehavior = .none
+        window.tabbingMode = .disallowed
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
+        window.minSize = NSSize(width: 480, height: 360)
+        window.collectionBehavior.insert(.fullScreenPrimary)
+        return window
     }
 
     private func didClose(_ doc: CanvasDocument, id: UUID) {

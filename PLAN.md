@@ -88,7 +88,7 @@ gallery grid, and export to images.
 ## Phase 5 — Launch integrations
 
 - [x] `KeyboardShortcuts.Name` (+ default ⌘⇧K) → global hotkey opens instant canvas
-- [~] Instant open via `openWindow` (no custom anim); hidden-window prewarm pending
+- [x] Instant open via `openWindow` (no custom anim) with a hidden-window prewarm
 - [x] Settings screen with `KeyboardShortcuts.Recorder`
 - [x] URL scheme handler: `quikkanva://new | gallery | open?id=UUID`
 - [x] Menu bar menu actions (New Canvas / Open Gallery / Settings / Quit)
