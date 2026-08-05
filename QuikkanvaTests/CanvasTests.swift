@@ -40,9 +40,37 @@ final class CanvasTests: XCTestCase {
     }
 
     func testExporterProducesReadableImages() {
-        let element = Element(kind: .rectangle,
-                               points: [Point(x: 20, y: 20), Point(x: 180, y: 120)])
-        let scene = CanvasScene(elements: [element])
+        var filledStyle = ElementStyle()
+        filledStyle.fillStyle = .solid
+        filledStyle.fill = RGBAColor(r: 0.2, g: 0.6, b: 0.9, a: 1)
+
+        var hatchedStyle = ElementStyle()
+        hatchedStyle.fillStyle = .hachure
+        hatchedStyle.fill = RGBAColor(r: 0.9, g: 0.3, b: 0.2, a: 1)
+
+        var image = Element(kind: .image,
+                            points: [Point(x: 240, y: 190), Point(x: 360, y: 280)])
+        image.imageData = testImageData()
+        let scene = CanvasScene(elements: [
+            Element(kind: .rectangle,
+                    points: [Point(x: 20, y: 20), Point(x: 180, y: 120)],
+                    style: filledStyle),
+            Element(kind: .ellipse,
+                    points: [Point(x: 200, y: 20), Point(x: 360, y: 120)],
+                    style: hatchedStyle),
+            Element(kind: .diamond,
+                    points: [Point(x: 380, y: 20), Point(x: 520, y: 120)]),
+            Element(kind: .line,
+                    points: [Point(x: 20, y: 150), Point(x: 160, y: 220)]),
+            Element(kind: .arrow,
+                    points: [Point(x: 180, y: 150), Point(x: 320, y: 220)]),
+            Element(kind: .freedraw,
+                    points: [Point(x: 340, y: 150), Point(x: 380, y: 180), Point(x: 440, y: 150)]),
+            Element(kind: .text,
+                    points: [Point(x: 20, y: 250)],
+                    text: "Quikkanva"),
+            image,
+        ])
 
         let png = Exporter.data(for: scene, format: .png)
         let jpeg = Exporter.data(for: scene, format: .jpeg)
@@ -51,6 +79,7 @@ final class CanvasTests: XCTestCase {
         XCTAssertNotNil(jpeg)
         XCTAssertNotNil(png.flatMap(NSImage.init(data:)))
         XCTAssertNotNil(jpeg.flatMap(NSImage.init(data:)))
+        XCTAssertEqual(png, Exporter.data(for: scene, format: .png))
     }
 
     func testCanvasMoveSupportsUndoAndRedo() {
@@ -142,5 +171,22 @@ final class CanvasTests: XCTestCase {
                            eventNumber: 0,
                            clickCount: 1,
                            pressure: 1)!
+    }
+
+    private func testImageData() -> Data {
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
+                                   pixelsWide: 40,
+                                   pixelsHigh: 40,
+                                   bitsPerSample: 8,
+                                   samplesPerPixel: 4,
+                                   hasAlpha: true,
+                                   isPlanar: false,
+                                   colorSpaceName: .deviceRGB,
+                                   bytesPerRow: 0,
+                                   bitsPerPixel: 0)!
+        let context = NSGraphicsContext(bitmapImageRep: rep)!
+        context.cgContext.setFillColor(RGBAColor(r: 0.2, g: 0.8, b: 0.4, a: 1).cgColor)
+        context.cgContext.fill(CGRect(x: 0, y: 0, width: 40, height: 40))
+        return rep.representation(using: .png, properties: [:])!
     }
 }
