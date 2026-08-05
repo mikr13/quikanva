@@ -123,6 +123,7 @@ final class CanvasWindowManager {
                 window?.title = doc.title
             }
         ))
+        window.setContentSize(initialContentSize(for: aspectRatio))
         window.center()
 
         let id = doc.id
@@ -136,22 +137,14 @@ final class CanvasWindowManager {
 
     private func makeWindow(aspectRatio: CanvasAspectRatio = CanvasPreferences.defaultAspectRatio) -> FloatingCanvasWindow {
         let styleMask: NSWindow.StyleMask = [.titled, .closable, .resizable, .fullSizeContentView]
-        let idealHeight: CGFloat = 1200
-        let idealContentSize = NSSize(width: idealHeight * aspectRatio.widthToHeight,
-                                      height: idealHeight)
-        let idealFrameSize = NSWindow.frameRect(forContentRect: NSRect(origin: .zero, size: idealContentSize),
-                                                styleMask: styleMask).size
-        let availableFrameSize = NSScreen.main?.visibleFrame.insetBy(dx: 24, dy: 24).size ?? idealFrameSize
-        let scale = min(1,
-                        availableFrameSize.width / idealFrameSize.width,
-                        availableFrameSize.height / idealFrameSize.height)
-        let contentSize = NSSize(width: idealContentSize.width * scale,
-                                 height: idealContentSize.height * scale)
+        let contentSize = initialContentSize(for: aspectRatio)
         let window = FloatingCanvasWindow(
             contentRect: NSRect(origin: .zero, size: contentSize),
             styleMask: styleMask,
             backing: .buffered,
             defer: false)
+        window.minSize = NSSize(width: 360, height: 640)
+        window.contentAspectRatio = NSSize(width: aspectRatio.widthToHeight, height: 1)
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = false
@@ -162,9 +155,23 @@ final class CanvasWindowManager {
         window.standardWindowButton(.closeButton)?.isHidden = true
         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
         window.standardWindowButton(.zoomButton)?.isHidden = true
-        window.minSize = NSSize(width: 360, height: 640)
         window.collectionBehavior.insert(.fullScreenPrimary)
         return window
+    }
+
+    private func initialContentSize(for aspectRatio: CanvasAspectRatio) -> NSSize {
+        let idealHeight: CGFloat = 1200
+        let idealContentSize = NSSize(width: idealHeight * aspectRatio.widthToHeight,
+                                      height: idealHeight)
+        let styleMask: NSWindow.StyleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+        let idealFrameSize = NSWindow.frameRect(forContentRect: NSRect(origin: .zero, size: idealContentSize),
+                                                styleMask: styleMask).size
+        let availableFrameSize = NSScreen.main?.visibleFrame.insetBy(dx: 24, dy: 24).size ?? idealFrameSize
+        let scale = min(1,
+                        availableFrameSize.width / idealFrameSize.width,
+                        availableFrameSize.height / idealFrameSize.height)
+        return NSSize(width: idealContentSize.width * scale,
+                      height: idealContentSize.height * scale)
     }
 
     private func didClose(_ doc: CanvasDocument, id: UUID) {
