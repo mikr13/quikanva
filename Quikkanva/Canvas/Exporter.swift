@@ -56,8 +56,8 @@ enum Exporter {
     }
 
     @MainActor
-    static func copyToClipboard(_ scene: CanvasScene, scale: CGFloat = 2) {
-        guard let rep = bitmap(for: scene, scale: scale, background: true) else { return }
+    static func copyToClipboard(_ scene: CanvasScene, scale: CGFloat = 2, background: Bool = true) {
+        guard let rep = bitmap(for: scene, scale: scale, background: background) else { return }
         let image = NSImage(size: NSSize(width: rep.pixelsWide, height: rep.pixelsHigh))
         image.addRepresentation(rep)
         NSPasteboard.general.clearContents()
@@ -65,14 +65,17 @@ enum Exporter {
     }
 
     @MainActor
-    static func exportWithPanel(_ scene: CanvasScene, format: ExportFormat, suggestedName: String) {
+    static func exportWithPanel(_ scene: CanvasScene,
+                                format: ExportFormat,
+                                suggestedName: String,
+                                background: Bool = true) {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [format.contentType]
         panel.nameFieldStringValue = "\(sanitized(suggestedName)).\(format.fileExtension)"
         panel.canCreateDirectories = true
         panel.begin { response in
             guard response == .OK, let url = panel.url,
-                  let data = data(for: scene, format: format) else { return }
+                  let data = data(for: scene, format: format, background: background) else { return }
             try? data.write(to: url)
         }
     }
