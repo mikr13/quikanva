@@ -52,6 +52,7 @@ struct CanvasPanelView: View {
     @State private var draftName = ""
     @State private var canvasCommand: CanvasCommand?
     @State private var includeExportBackground = true
+    @State private var selectedStyle: ElementStyle?
     @StateObject private var autosave: CanvasAutosaveCoordinator
 
     init(
@@ -75,6 +76,8 @@ struct CanvasPanelView: View {
             CanvasRepresentable(scene: scene, tool: tool, style: style, command: canvasCommand) { updated in
                 scene = updated
                 autosave.schedule(updated)
+            } onSelectionChange: { updated in
+                selectedStyle = updated
             } onCommandHandled: {
                 canvasCommand = nil
             }
@@ -93,6 +96,7 @@ struct CanvasPanelView: View {
             CanvasToolbar(
                 tool: $tool,
                 style: $style,
+                selectedStyle: $selectedStyle,
                 background: backgroundBinding,
                 includeExportBackground: $includeExportBackground,
                 onSave: {
@@ -106,7 +110,10 @@ struct CanvasPanelView: View {
                 onZoomOut: { canvasCommand = .zoomOut },
                 onZoomToFit: { canvasCommand = .zoomToFit },
                 onZoomToSelection: { canvasCommand = .zoomToSelection },
-                onResetZoom: { canvasCommand = .resetZoom }
+                onResetZoom: { canvasCommand = .resetZoom },
+                onApplySelectedStyle: { updated in
+                    canvasCommand = .updateSelectionStyle(updated)
+                }
             )
             .padding(.bottom, 16)
         }

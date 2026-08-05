@@ -11,6 +11,7 @@ final class CanvasNSView: NSView {
     }
     var style = ElementStyle()
     var onCommit: ((CanvasScene) -> Void)?
+    var onSelectionChange: ((ElementStyle?) -> Void)?
     var onCommandHandled: (() -> Void)?
     var command: CanvasCommand? {
         didSet {
@@ -127,6 +128,17 @@ final class CanvasNSView: NSView {
         }?.insetBy(dx: -6, dy: -6)
     }
 
+    private var selectedStyle: ElementStyle? {
+        let selected = scene.elements.filter { selectedIDs.contains($0.id) }
+        guard let first = selected.first?.style,
+              selected.dropFirst().allSatisfy({ $0.style == first }) else { return nil }
+        return first
+    }
+
+    func notifySelectionChange() {
+        onSelectionChange?(selectedStyle)
+    }
+
     private func handlePoint(_ handle: SelectionHandle, in box: CGRect) -> CGPoint {
         switch handle {
         case .topLeft: CGPoint(x: box.minX, y: box.minY)
@@ -210,9 +222,11 @@ final class CanvasNSView: NSView {
                 } else {
                     selectedIDs.insert(hit.id)
                 }
+                notifySelectionChange()
                 return
             }
             if !selectedIDs.contains(hit.id) { selectedIDs = [hit.id] }
+            notifySelectionChange()
             let starts = Dictionary(uniqueKeysWithValues: selectedIDs.compactMap { id in
                 scene.elements.first(where: { $0.id == id }).map { (id, $0.points) }
             })
@@ -221,6 +235,7 @@ final class CanvasNSView: NSView {
         }
 
         if !shift { selectedIDs.removeAll() }
+        notifySelectionChange()
         drag = .selecting(start: p, current: p, additive: shift, initial: selectedIDs)
     }
 
@@ -281,6 +296,7 @@ final class CanvasNSView: NSView {
                 return box.intersects(bounds) || box.contains(bounds)
             }.map(\.id)
             selectedIDs = additive ? initial.union(matches) : Set(matches)
+            notifySelectionChange()
         case .panning(let original, _, _):
             if tool == .hand { NSCursor.openHand.set() }
             if original.camera != scene.camera { onCommit?(scene) }
@@ -421,6 +437,7 @@ final class CanvasNSView: NSView {
         var updated = scene
         updated.elements.removeAll { selectedIDs.contains($0.id) }
         selectedIDs.removeAll()
+        notifySelectionChange()
         commit(updated)
     }
 
@@ -533,8 +550,16 @@ final class CanvasNSView: NSView {
             needsDisplay = true
         case .zoomToFit: zoomToFit(selectionBounds ?? contentBounds)
         case .zoomToSelection: zoomToFit(selectionBounds)
+        case .updateSelectionStyle(let style):
+            guard !selectedIDs.isEmpty else { break }
+            var updated = scene
+            for index in updated.elements.indices where selectedIDs.contains(updated.elements[index].id) {
+                updated.elements[index].style = style
+            }
+            commit(updated)
+            notifySelectionChange()
         }
-        onCommit?(scene)
+        if case .updateSelectionStyle = command {} else { onCommit?(scene) }
         onCommandHandled?()
     }
 

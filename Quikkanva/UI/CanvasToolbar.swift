@@ -3,6 +3,7 @@ import SwiftUI
 struct CanvasToolbar: View {
     @Binding var tool: ToolKind
     @Binding var style: ElementStyle
+    @Binding var selectedStyle: ElementStyle?
     @Binding var background: Color
     @Binding var includeExportBackground: Bool
     var onSave: () -> Void = {}
@@ -14,6 +15,9 @@ struct CanvasToolbar: View {
     var onZoomToFit: () -> Void = {}
     var onZoomToSelection: () -> Void = {}
     var onResetZoom: () -> Void = {}
+    var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
+
+    @State private var showingInspector = false
 
     private let tools: [ToolKind] = [
         .select, .hand, .freedraw, .rectangle, .ellipse, .diamond, .line, .arrow, .text, .eraser,
@@ -81,6 +85,11 @@ struct CanvasToolbar: View {
                     Button("Sketchy roughness") { style.roughness = 1.2 }
                     Button("Loose roughness") { style.roughness = 2 }
                 }
+                Divider()
+                Section("Selected elements") {
+                    Button("Edit selected style…") { showingInspector = true }
+                        .disabled(selectedStyle == nil)
+                }
             } label: {
                 Image(systemName: "ellipsis")
                     .font(.system(size: 14, weight: .medium))
@@ -134,6 +143,11 @@ struct CanvasToolbar: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.white.opacity(0.12)))
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
+        .popover(isPresented: $showingInspector, arrowEdge: .bottom) {
+            if selectedStyle != nil {
+                CanvasStyleInspector(style: selectedStyleBinding)
+            }
+        }
     }
 
     private func colorSwatch(icon: String, help: String, color: Binding<Color>) -> some View {
@@ -161,6 +175,89 @@ struct CanvasToolbar: View {
     }
 
     private var fillColorBinding: Binding<Color> {
+        Binding(
+            get: { style.fill.swiftUIColor },
+            set: { style.fill = RGBAColor($0) }
+        )
+    }
+
+    private var selectedStyleBinding: Binding<ElementStyle> {
+        Binding(
+            get: { selectedStyle ?? style },
+            set: { onApplySelectedStyle($0) }
+        )
+    }
+}
+
+private struct CanvasStyleInspector: View {
+    @Binding var style: ElementStyle
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Selected style")
+                .font(.headline)
+
+            ColorPicker("Stroke", selection: strokeBinding, supportsOpacity: true)
+            ColorPicker("Fill", selection: fillBinding, supportsOpacity: true)
+
+            Picker("Fill style", selection: $style.fillStyle) {
+                Text("No fill").tag(FillStyle.none)
+                Text("Solid").tag(FillStyle.solid)
+                Text("Hachure").tag(FillStyle.hachure)
+            }
+
+            Slider(value: $style.strokeWidth, in: 0.5 ... 8, step: 0.5) {
+                Text("Stroke width")
+            } minimumValueLabel: {
+                Text("0.5")
+                    .font(.caption2)
+            } maximumValueLabel: {
+                Text("8")
+                    .font(.caption2)
+            }
+
+            Slider(value: $style.opacity, in: 0.05 ... 1, step: 0.05) {
+                Text("Opacity")
+            } minimumValueLabel: {
+                Text("0")
+                    .font(.caption2)
+            } maximumValueLabel: {
+                Text("1")
+                    .font(.caption2)
+            }
+
+            Slider(value: $style.roughness, in: 0 ... 2.5, step: 0.1) {
+                Text("Roughness")
+            } minimumValueLabel: {
+                Text("Clean")
+                    .font(.caption2)
+            } maximumValueLabel: {
+                Text("Loose")
+                    .font(.caption2)
+            }
+
+            Slider(value: $style.fontSize, in: 10 ... 72, step: 1) {
+                Text("Text size")
+            } minimumValueLabel: {
+                Text("10")
+                    .font(.caption2)
+            } maximumValueLabel: {
+                Text("72")
+                    .font(.caption2)
+            }
+        }
+        .padding(16)
+        .frame(width: 280)
+    }
+
+    private var strokeBinding: Binding<Color> {
+        Binding(
+            get: { style.stroke.swiftUIColor },
+            set: { style.stroke = RGBAColor($0) }
+        )
+    }
+
+    private var fillBinding: Binding<Color> {
         Binding(
             get: { style.fill.swiftUIColor },
             set: { style.fill = RGBAColor($0) }

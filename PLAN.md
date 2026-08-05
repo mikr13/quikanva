@@ -69,7 +69,7 @@ gallery grid, and export to images.
 - [x] Selection: click, shift-click, and marquee
 - [x] Move (1:1), resize (8 handles, shift=aspect), and rotate handle
 - [x] Delete (⌫), z-order, duplicate (⌘D), and copy-paste
-- [ ] Inspector panel: stroke/fill/opacity/width/font/arrowheads/dash + roughness/fill-style
+- [x] Inspector panel: stroke/fill/opacity/width/font-size + roughness/fill-style
 - [x] Command-based mutations use the view's native `UndoManager` and app-level Edit commands
 - [ ] **Verify:** full manipulation + undo/redo correctness
 
