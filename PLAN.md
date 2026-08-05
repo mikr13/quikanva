@@ -106,7 +106,7 @@ gallery grid, and export to images.
 
 ## Phase 7 — More polish
 
-- [~] 3D App icon with layers / assets (using Apple Icon Composer)
+- [x] 3D App icon with layers / assets (using Apple Icon Composer)
 - [ ] Bundle the unsigned app for direct download (Developer ID signing deferred until v2)
 - [ ] Send elements to back/front (z-order)
 - [ ] Choose stroke style (solid, dashed, dotted)
