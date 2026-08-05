@@ -143,11 +143,7 @@ struct CanvasPanelView: View {
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !name.isEmpty {
-                    doc.title = name
-                    onTitleChange()
-                }
-                persist(scene)
+                persist(scene, title: name.isEmpty ? nil : name)
             }
             .keyboardShortcut(.defaultAction)
         } message: {
@@ -190,16 +186,29 @@ struct CanvasPanelView: View {
         .accessibilityLabel("Close canvas")
     }
 
-    private func persist(_ scene: CanvasScene) {
-        Self.persist(scene, doc: doc, context: context)
+    private func persist(_ scene: CanvasScene, title: String? = nil) {
+        Self.persist(scene, title: title, doc: doc, context: context, onTitleChange: onTitleChange)
     }
 
-    private static func persist(_ scene: CanvasScene, doc: CanvasDocument, context: ModelContext) {
+    private static func persist(_ scene: CanvasScene,
+                                title: String? = nil,
+                                doc: CanvasDocument,
+                                context: ModelContext,
+                                onTitleChange: () -> Void = {}) {
         let encoded = SceneCodec.encode(scene)
-        guard encoded != doc.sceneData else { return }
-        doc.sceneData = encoded
+        let sceneChanged = encoded != doc.sceneData
+        let titleChanged = title.map { $0 != doc.title } ?? false
+        guard sceneChanged || titleChanged else { return }
+
+        if sceneChanged {
+            doc.sceneData = encoded
+            doc.thumbnail = Thumbnailer.png(for: scene)
+        }
+        if let title, titleChanged {
+            doc.title = title
+            onTitleChange()
+        }
         doc.updatedAt = .now
-        doc.thumbnail = Thumbnailer.png(for: scene)
         try? context.save()
     }
 }
