@@ -23,8 +23,7 @@ final class CanvasNSView: NSView {
     private var selectedIDs = Set<UUID>()
     private var textEditor: NSTextField?
     private var textAnchor = CGPoint.zero
-    private var undoStack: [CanvasScene] = []
-    private var redoStack: [CanvasScene] = []
+    private let canvasUndoManager = UndoManager()
 
     private enum SelectionHandle {
         case topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left, rotate
@@ -51,6 +50,7 @@ final class CanvasNSView: NSView {
 
     override var isFlipped: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+    override var undoManager: UndoManager? { canvasUndoManager }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -329,17 +329,33 @@ final class CanvasNSView: NSView {
 
     private func commit(_ updated: CanvasScene) {
         guard updated != scene else { return }
-        undoStack.append(scene)
-        redoStack.removeAll()
+        registerUndo(for: scene)
         scene = updated
         onCommit?(updated)
     }
 
     private func finishMutation(from original: CanvasScene) {
         guard original != scene else { return }
-        undoStack.append(original)
-        redoStack.removeAll()
+        registerUndo(for: original)
         onCommit?(scene)
+    }
+
+    private func registerUndo(for previous: CanvasScene) {
+        canvasUndoManager.registerUndo(withTarget: self) { view in
+            view.restore(previous)
+        }
+        canvasUndoManager.setActionName("Edit Canvas")
+    }
+
+    private func restore(_ restored: CanvasScene) {
+        let current = scene
+        canvasUndoManager.registerUndo(withTarget: self) { view in
+            view.restore(current)
+        }
+        scene = restored
+        selectedIDs = selectedIDs.intersection(restored.elements.map(\.id))
+        onCommit?(scene)
+        needsDisplay = true
     }
 
     override func keyDown(with event: NSEvent) {
@@ -480,19 +496,13 @@ final class CanvasNSView: NSView {
     }
 
     private func undo() {
-        guard let previous = undoStack.popLast() else { return }
-        redoStack.append(scene)
-        scene = previous
-        selectedIDs = selectedIDs.intersection(previous.elements.map(\.id))
-        onCommit?(scene)
+        guard canvasUndoManager.canUndo else { return }
+        canvasUndoManager.undo()
     }
 
     private func redo() {
-        guard let next = redoStack.popLast() else { return }
-        undoStack.append(scene)
-        scene = next
-        selectedIDs = selectedIDs.intersection(next.elements.map(\.id))
-        onCommit?(scene)
+        guard canvasUndoManager.canRedo else { return }
+        canvasUndoManager.redo()
     }
 
     override func scrollWheel(with event: NSEvent) {

@@ -27,6 +27,18 @@ struct QuikkanvaApp: App {
         }
         .modelContainer(container)
         .commands {
+            CommandGroup(replacing: .undoRedo) {
+                Button("Undo") {
+                    CanvasWindowManager.shared.undo()
+                }
+                .keyboardShortcut("z", modifiers: .command)
+
+                Button("Redo") {
+                    CanvasWindowManager.shared.redo()
+                }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+            }
+
             CommandMenu("Canvas") {
                 Button("New Canvas") {
                     CanvasWindowManager.shared.newCanvas()

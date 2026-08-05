@@ -70,7 +70,7 @@ gallery grid, and export to images.
 - [x] Move (1:1), resize (8 handles, shift=aspect), and rotate handle
 - [x] Delete (⌫), z-order, duplicate (⌘D), and copy-paste
 - [ ] Inspector panel: stroke/fill/opacity/width/font/arrowheads/dash + roughness/fill-style
-- [~] Command-based mutations use a custom snapshot undo/redo stack; native `UndoManager` remains
+- [x] Command-based mutations use the view's native `UndoManager` and app-level Edit commands
 - [ ] **Verify:** full manipulation + undo/redo correctness
 
 ## Phase 4 — Persistence, autosave, gallery

@@ -57,6 +57,14 @@ final class CanvasWindowManager {
         windows[id]?.close()
     }
 
+    func undo() {
+        activeWindow?.undoManager?.undo()
+    }
+
+    func redo() {
+        activeWindow?.undoManager?.redo()
+    }
+
     func route(_ url: URL) {
         guard url.scheme == "quikkanva" else { return }
         switch url.host {
@@ -133,5 +141,9 @@ final class CanvasWindowManager {
     private func activate(_ window: NSWindow) {
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+    }
+
+    private var activeWindow: FloatingCanvasWindow? {
+        windows.values.first(where: \.isKeyWindow)
     }
 }
