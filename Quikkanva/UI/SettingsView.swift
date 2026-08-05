@@ -20,6 +20,7 @@ struct SettingsView: View {
                 Text("Background color changes do not count as canvas content.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Section("Shortcuts") {
@@ -27,6 +28,6 @@ struct SettingsView: View {
             }
         }
         .padding(20)
-        .frame(width: 420)
+        .frame(width: 480)
     }
 }
