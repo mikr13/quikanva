@@ -45,6 +45,19 @@ targets:
           - CFBundleURLName: com.mihirpandey.quikkanva
             CFBundleURLSchemes: [quikkanva]
 
+  QuikkanvaTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: QuikkanvaTests
+    dependencies:
+      - target: Quikkanva
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikkanva.tests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   Quikkanva:
     build:
@@ -54,3 +67,6 @@ schemes:
       config: Debug
     archive:
       config: Release
+    test:
+      targets:
+        - QuikkanvaTests

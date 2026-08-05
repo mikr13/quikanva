@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		02C373B2A683704D308A37D1 /* CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DACC3A77B2CF8CF4C7F2CEA /* CanvasDocument.swift */; };
+		0B92541AAA4FABFE25BE5E46 /* CanvasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E06F406987BAB16741333BF /* CanvasTests.swift */; };
 		20A871B14CE03F58F922DDF0 /* CanvasRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 622DCA1212B96CC3BE46311A /* CanvasRepresentable.swift */; };
 		25DCB333FC91AAE10860A7B9 /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19E8B460A873EB2214D9B /* GlobalHotkeys.swift */; };
 		3259D59A1D2C1EC26B77A49E /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53A45820051F51DC9E30E0A /* CanvasToolbar.swift */; };
@@ -27,6 +28,16 @@
 		ED1476F1DF43EB651989630D /* CanvasPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996D66ABEFF40B00CC9146DB /* CanvasPanelView.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		794E0BAEAD1A47CE2B281AA0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B9C04BB4DBB2F00518897642 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C7760E6D243684B4B872E640;
+			remoteInfo = Quikkanva;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		0147D2277364BAC47FF249A9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		095DA6215F94083E26B485AE /* QuikkanvaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuikkanvaApp.swift; sourceTree = "<group>"; };
@@ -37,6 +48,7 @@
 		622DCA1212B96CC3BE46311A /* CanvasRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasRepresentable.swift; sourceTree = "<group>"; };
 		6EFB6B7CE6E7EBA3BD5D41D9 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		7683F2A71F1BEC6356A5F1D6 /* Thumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnailer.swift; sourceTree = "<group>"; };
+		7E06F406987BAB16741333BF /* CanvasTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTests.swift; sourceTree = "<group>"; };
 		8054C9B254B83E0984E7368C /* CanvasScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasScene.swift; sourceTree = "<group>"; };
 		91B22B39ED2671F7E4701722 /* ColorBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorBridging.swift; sourceTree = "<group>"; };
 		94A3EAF65A0D720789D48FA1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -44,6 +56,7 @@
 		A7A538809A631D2FED714898 /* Exporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exporter.swift; sourceTree = "<group>"; };
 		BFF81F62B3E2B6102D599F74 /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 		C7E57BF8A766018A30AB1B7F /* Quikkanva.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quikkanva.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D48828B6D75D30382AF89B8C /* QuikkanvaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuikkanvaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D53A45820051F51DC9E30E0A /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
 		F7390369DF7FCE625F7745F2 /* CanvasNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNSView.swift; sourceTree = "<group>"; };
 		F80F6FBB6B101A0100224243 /* Element.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Element.swift; sourceTree = "<group>"; };
@@ -77,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				1630120BEC1372F9E1D90A47 /* Quikkanva */,
+				B2B2C16E5EC28820FA716BCE /* QuikkanvaTests */,
 				A9781A3F5253D92C7A381A6F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -93,8 +107,17 @@
 			isa = PBXGroup;
 			children = (
 				C7E57BF8A766018A30AB1B7F /* Quikkanva.app */,
+				D48828B6D75D30382AF89B8C /* QuikkanvaTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B2B2C16E5EC28820FA716BCE /* QuikkanvaTests */ = {
+			isa = PBXGroup;
+			children = (
+				7E06F406987BAB16741333BF /* CanvasTests.swift */,
+			);
+			path = QuikkanvaTests;
 			sourceTree = "<group>";
 		};
 		CA1ED9B061A9C61290A60EF7 /* Canvas */ = {
@@ -145,6 +168,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		BE224DE3FF47779464F73976 /* QuikkanvaTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CBA2EBC86E9E19E6E689B2AD /* Build configuration list for PBXNativeTarget "QuikkanvaTests" */;
+			buildPhases = (
+				FA3D35DC5729308A94F68530 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				8610BD94F578CFB1D94BA192 /* PBXTargetDependency */,
+			);
+			name = QuikkanvaTests;
+			packageProductDependencies = (
+			);
+			productName = QuikkanvaTests;
+			productReference = D48828B6D75D30382AF89B8C /* QuikkanvaTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		C7760E6D243684B4B872E640 /* Quikkanva */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = D953A4516308E7BA5549EC42 /* Build configuration list for PBXNativeTarget "Quikkanva" */;
@@ -173,6 +214,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					BE224DE3FF47779464F73976 = {
+						ProvisioningStyle = Manual;
+					};
 					C7760E6D243684B4B872E640 = {
 						ProvisioningStyle = Manual;
 					};
@@ -196,6 +240,7 @@
 			projectRoot = "";
 			targets = (
 				C7760E6D243684B4B872E640 /* Quikkanva */,
+				BE224DE3FF47779464F73976 /* QuikkanvaTests */,
 			);
 		};
 /* End PBXProject section */
@@ -225,7 +270,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA3D35DC5729308A94F68530 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0B92541AAA4FABFE25BE5E46 /* CanvasTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		8610BD94F578CFB1D94BA192 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C7760E6D243684B4B872E640 /* Quikkanva */;
+			targetProxy = 794E0BAEAD1A47CE2B281AA0 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		04B9CE53766EA48627887F1D /* Release */ = {
@@ -393,9 +454,54 @@
 			};
 			name = Debug;
 		};
+		8E5CA6E12B2CA7C5C740700D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikkanva.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quikkanva.app/Contents/MacOS/Quikkanva";
+			};
+			name = Release;
+		};
+		DC8DFAEFDF9D1634533F70F3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikkanva.tests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Quikkanva.app/Contents/MacOS/Quikkanva";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		CBA2EBC86E9E19E6E689B2AD /* Build configuration list for PBXNativeTarget "QuikkanvaTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DC8DFAEFDF9D1634533F70F3 /* Debug */,
+				8E5CA6E12B2CA7C5C740700D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		D953A4516308E7BA5549EC42 /* Build configuration list for PBXNativeTarget "Quikkanva" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

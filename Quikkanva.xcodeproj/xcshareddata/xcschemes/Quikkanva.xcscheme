@@ -39,7 +39,20 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "BE224DE3FF47779464F73976"
+               BuildableName = "QuikkanvaTests.xctest"
+               BlueprintName = "QuikkanvaTests"
+               ReferencedContainer = "container:Quikkanva.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
