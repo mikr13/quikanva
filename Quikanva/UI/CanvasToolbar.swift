@@ -34,6 +34,7 @@ struct CanvasToolbar: View {
     var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
     var onApplySelectedImageShadow: (Bool) -> Void = { _ in }
     var onApplySelectedCurve: (Double) -> Void = { _ in }
+    var onTogglePointEditing: () -> Void = {}
     var onBringSelectionToFront: () -> Void = {}
     var onSendSelectionToBack: () -> Void = {}
     var availableWidth: CGFloat = 900
@@ -127,6 +128,11 @@ struct CanvasToolbar: View {
 
                 Divider()
                 Section("Arrange") {
+                    if selectedCurve != nil {
+                        Button("Edit line points") { onTogglePointEditing() }
+                            .keyboardShortcut(.return, modifiers: .command)
+                            .help("Cmd-Return or Cmd-double-click a line to edit its points")
+                    }
                     Button("Send to Back") { onSendSelectionToBack() }
                         .keyboardShortcut("[", modifiers: .command)
                     Button("Bring to Front") { onBringSelectionToFront() }

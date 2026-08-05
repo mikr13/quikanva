@@ -134,6 +134,9 @@ struct CanvasPanelView: View {
                         onApplySelectedCurve: { curve in
                             canvasCommand = .updateSelectedCurve(curve)
                         },
+                        onTogglePointEditing: {
+                            canvasCommand = .togglePointEditing
+                        },
                         onBringSelectionToFront: {
                             canvasCommand = .bringSelectionToFront
                         },

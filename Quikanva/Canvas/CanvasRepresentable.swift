@@ -9,6 +9,7 @@ enum CanvasCommand: Equatable {
     case updateSelectionStyle(ElementStyle)
     case updateSelectedImageShadow(Bool)
     case updateSelectedCurve(Double)
+    case togglePointEditing
     case bringSelectionToFront
     case sendSelectionToBack
 }

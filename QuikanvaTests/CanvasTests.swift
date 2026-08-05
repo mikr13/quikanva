@@ -128,6 +128,30 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testCommandReturnEntersPointEditingAndDraggingMidpointBendsArrow() {
+        let arrow = Element(kind: .arrow,
+                             points: [Point(x: 40, y: 80), Point(x: 160, y: 80)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [arrow])
+        view.tool = .select
+
+        selectElement(at: CGPoint(x: 100, y: 80), in: view, window: window)
+        view.keyDown(with: keyEvent(for: window, modifiers: [.command], characters: "\r", keyCode: 36))
+
+        XCTAssertTrue(view.pointEditingEnabled)
+
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: 100, y: 80),
+                      to: CGPoint(x: 100, y: 140))
+
+        XCTAssertEqual(view.scene.elements[0].points.count, 3)
+        XCTAssertEqual(view.scene.elements[0].points[1].x, 100, accuracy: 0.001)
+        XCTAssertEqual(view.scene.elements[0].points[1].y, 140, accuracy: 0.001)
+        window.orderOut(nil)
+    }
+
     func testSelectedStyleCommandUpdatesShape() {
         let element = Element(kind: .rectangle,
                                points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
@@ -358,6 +382,22 @@ final class CanvasTests: XCTestCase {
                                             charactersIgnoringModifiers: "",
                                             isARepeat: false,
                                             keyCode: 51)!)
+    }
+
+    private func keyEvent(for window: NSWindow,
+                          modifiers: NSEvent.ModifierFlags,
+                          characters: String,
+                          keyCode: UInt16) -> NSEvent {
+        NSEvent.keyEvent(with: .keyDown,
+                         location: .zero,
+                         modifierFlags: modifiers,
+                         timestamp: 0,
+                         windowNumber: window.windowNumber,
+                         context: nil,
+                         characters: characters,
+                         charactersIgnoringModifiers: characters,
+                         isARepeat: false,
+                         keyCode: keyCode)!
     }
 
     private func windowPoint(for scenePoint: CGPoint, in view: CanvasNSView) -> CGPoint {

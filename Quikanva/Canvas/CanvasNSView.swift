@@ -7,6 +7,7 @@ final class CanvasNSView: NSView {
         didSet {
             guard tool != oldValue else { return }
             endTextEditing()
+            isEditingPoints = false
             window?.invalidateCursorRects(for: self)
             redraw()
         }
@@ -45,6 +46,10 @@ final class CanvasNSView: NSView {
         case topLeft, top, topRight, right, bottomRight, bottom, bottomLeft, left, rotate
     }
 
+    private enum PointHandle {
+        case start, control, end
+    }
+
     private enum Drag {
         case none
         case drawing
@@ -52,10 +57,12 @@ final class CanvasNSView: NSView {
         case moving(original: CanvasScene, origin: CGPoint, starts: [UUID: [Point]])
         case resizing(original: CanvasScene, handle: SelectionHandle, bounds: CGRect, points: [Point])
         case rotating(original: CanvasScene, center: CGPoint, startAngle: CGFloat, points: [Point])
+        case editingPoint(original: CanvasScene, elementID: UUID, handle: PointHandle)
         case selecting(start: CGPoint, current: CGPoint, additive: Bool, initial: Set<UUID>)
         case panning(original: CanvasScene, startPan: CGPoint, startMouse: CGPoint)
     }
     private var drag: Drag = .none
+    private var isEditingPoints = false
 
     private static let pasteboardType = NSPasteboard.PasteboardType("com.mihirpandey.quikanva.elements")
 
@@ -63,6 +70,8 @@ final class CanvasNSView: NSView {
         if case .none = drag { return false }
         return true
     }
+
+    var pointEditingEnabled: Bool { isEditingPoints }
 
     private func redraw() {
         needsDisplay = true
@@ -137,6 +146,11 @@ final class CanvasNSView: NSView {
         guard tool == .select, let box = selectionBounds else { return }
         let zoom = CGFloat(scene.camera.zoom)
         ctx.saveGState()
+        if isEditingPoints, let element = editableElement {
+            drawPointEditingHandles(for: element, in: ctx, zoom: zoom)
+            ctx.restoreGState()
+            return
+        }
         ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
         ctx.setLineWidth(1.5 / zoom)
         ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
@@ -171,6 +185,35 @@ final class CanvasNSView: NSView {
         ctx.restoreGState()
     }
 
+    private func drawPointEditingHandles(for element: Element, in ctx: CGContext, zoom: CGFloat) {
+        let start = element.points[0].cg
+        let end = element.points.last?.cg ?? start
+        let control = controlPoint(for: element)
+
+        ctx.setStrokeColor(NSColor.controlAccentColor.withAlphaComponent(0.45).cgColor)
+        ctx.setLineWidth(1 / zoom)
+        ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
+        ctx.move(to: start)
+        ctx.addLine(to: control)
+        ctx.addLine(to: end)
+        ctx.strokePath()
+        ctx.setLineDash(phase: 0, lengths: [])
+
+        drawPointHandle(at: start, in: ctx, zoom: zoom, filled: false)
+        drawPointHandle(at: control, in: ctx, zoom: zoom, filled: true)
+        drawPointHandle(at: end, in: ctx, zoom: zoom, filled: false)
+    }
+
+    private func drawPointHandle(at point: CGPoint, in ctx: CGContext, zoom: CGFloat, filled: Bool) {
+        let size = 10 / zoom
+        let rect = CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
+        ctx.setFillColor(filled ? NSColor.controlAccentColor.cgColor : NSColor.windowBackgroundColor.cgColor)
+        ctx.fillEllipse(in: rect)
+        ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+        ctx.setLineWidth(1.5 / zoom)
+        ctx.strokeEllipse(in: rect)
+    }
+
     private var selectionBounds: CGRect? {
         selectedIDs.compactMap { id in
             scene.elements.first(where: { $0.id == id }).flatMap(Self.bounds(of:))
@@ -200,7 +243,16 @@ final class CanvasNSView: NSView {
         return Self.curveValue(for: selected)
     }
 
+    private var editableElement: Element? {
+        guard selectedIDs.count == 1,
+              let element = scene.elements.first(where: { selectedIDs.contains($0.id) }),
+              (element.kind == .line || element.kind == .arrow),
+              element.points.count >= 2 else { return nil }
+        return element
+    }
+
     func notifySelectionChange() {
+        if editableElement == nil { isEditingPoints = false }
         onSelectionChange?(selectedStyle)
         onImageShadowChange?(selectedImageShadow)
         onCurveChange?(selectedCurve)
@@ -247,6 +299,19 @@ final class CanvasNSView: NSView {
                             startPan: CGPoint(x: scene.camera.panX, y: scene.camera.panY),
                             startMouse: convert(event.locationInWindow, from: nil))
         case .select:
+            if event.modifierFlags.contains(.command), event.clickCount >= 2,
+               let hit = pickElement(p), hit.kind == .line || hit.kind == .arrow {
+                selectedIDs = [hit.id]
+                notifySelectionChange()
+                isEditingPoints = true
+                redraw()
+                return
+            }
+            if isEditingPoints, let handle = pointHandle(at: p), let element = editableElement {
+                drag = .editingPoint(original: scene, elementID: element.id, handle: handle)
+                redraw()
+                return
+            }
             beginSelection(at: p, event: event)
         case .eraser:
             drag = .erasing(original: scene)
@@ -338,6 +403,24 @@ final class CanvasNSView: NSView {
             let angle = atan2(p.y - center.y, p.x - center.x) - startAngle
             scene.elements[index].points = points.map { Point(rotate($0.cg, around: center, by: angle)) }
             scene.elements[index].rotation = angle
+        case .editingPoint(_, let elementID, let handle):
+            guard let index = scene.elements.firstIndex(where: { $0.id == elementID }) else { return }
+            var points = scene.elements[index].points
+            let start = points[0]
+            let end = points.last ?? start
+            switch handle {
+            case .start:
+                points[0] = Point(p)
+            case .control:
+                if points.count < 3 {
+                    points = [start, Point(p), end]
+                } else {
+                    points[1] = Point(p)
+                }
+            case .end:
+                points[points.count - 1] = Point(p)
+            }
+            scene.elements[index].points = points
         case .selecting(let start, _, let additive, let initial):
             drag = .selecting(start: start, current: p, additive: additive, initial: initial)
         case .panning(let original, let startPan, let startMouse):
@@ -356,6 +439,8 @@ final class CanvasNSView: NSView {
         case .drawing:
             commitLive()
         case .erasing(let original), .moving(let original, _, _), .resizing(let original, _, _, _), .rotating(let original, _, _, _):
+            finishMutation(from: original)
+        case .editingPoint(let original, _, _):
             finishMutation(from: original)
         case .selecting(let start, let current, let additive, let initial):
             let box = CGRect(corner: start, current)
@@ -448,6 +533,10 @@ final class CanvasNSView: NSView {
         let command = flags.contains(.command)
         let shift = flags.contains(.shift)
         if command {
+            if event.keyCode == 36 {
+                togglePointEditing()
+                return
+            }
             switch event.charactersIgnoringModifiers?.lowercased() {
             case "z": shift ? redo() : undo()
             case "y": redo()
@@ -759,13 +848,15 @@ final class CanvasNSView: NSView {
             }
             commit(updated)
             notifySelectionChange()
+        case .togglePointEditing:
+            togglePointEditing()
         case .bringSelectionToFront:
             reorderSelection(toFront: true)
         case .sendSelectionToBack:
             reorderSelection(toFront: false)
         }
         switch command {
-        case .updateSelectionStyle, .updateSelectedImageShadow, .updateSelectedCurve,
+        case .updateSelectionStyle, .updateSelectedImageShadow, .updateSelectedCurve, .togglePointEditing,
              .bringSelectionToFront, .sendSelectionToBack:
             break
         default:
@@ -848,10 +939,37 @@ final class CanvasNSView: NSView {
     }
 
     private func selectionHandle(at p: CGPoint) -> SelectionHandle? {
+        guard !isEditingPoints else { return nil }
         guard let box = selectionBounds, selectedIDs.count == 1 else { return nil }
         let tolerance = 10 / CGFloat(scene.camera.zoom)
         let handles = [SelectionHandle.rotate, .topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
         return handles.first { distance(p, to: handlePoint($0, in: box)) <= tolerance }
+    }
+
+    private func controlPoint(for element: Element) -> CGPoint {
+        guard element.points.count >= 3 else {
+            let start = element.points[0].cg
+            let end = element.points.last?.cg ?? start
+            return CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+        }
+        return element.points[1].cg
+    }
+
+    private func pointHandle(at p: CGPoint) -> PointHandle? {
+        guard let element = editableElement else { return nil }
+        let tolerance = 12 / CGFloat(scene.camera.zoom)
+        let candidates: [(PointHandle, CGPoint)] = [
+            (.start, element.points[0].cg),
+            (.control, controlPoint(for: element)),
+            (.end, element.points.last?.cg ?? element.points[0].cg),
+        ]
+        return candidates.first { distance(p, to: $0.1) <= tolerance }?.0
+    }
+
+    private func togglePointEditing() {
+        guard editableElement != nil else { return }
+        isEditingPoints.toggle()
+        redraw()
     }
 
     private func resizeBounds(_ original: CGRect, handle: SelectionHandle, pointer: CGPoint, preserveAspect: Bool) -> CGRect {
