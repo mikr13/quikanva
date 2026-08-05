@@ -61,7 +61,7 @@ gallery grid, and export to images.
 - [x] Roughened-path cache keyed by deterministic element hash
 - [x] Tool keyboard shortcuts (V/H/R/O/D/L/A/P/T/E) and arrow-key movement
 - [x] Floating translucent toolbar: tools + stroke & background color + Save + Share (press feedback)
-- [ ] Image elements (paste/drop)
+- [x] Image elements (paste/drop)
 - [ ] **Verify:** every shape renders with stable sketch style; freehand feels good
 
 ## Phase 3 — Selection, manipulation, styling, undo
@@ -124,4 +124,4 @@ gallery grid, and export to images.
 ## Out of scope (v1)
 
 Real-time collab · iCloud sync · iOS/iPad · Mac App Store · plugins · shape libraries ·
-presentation/laser mode · PDF/SVG export · snapping guides · image elements.
+presentation/laser mode · PDF/SVG export · snapping guides.

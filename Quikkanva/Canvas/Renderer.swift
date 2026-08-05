@@ -68,6 +68,14 @@ private final class CachedPath: NSObject, @unchecked Sendable {
     }
 }
 
+private final class CachedImage: NSObject, @unchecked Sendable {
+    let image: CGImage
+
+    init(_ image: CGImage) {
+        self.image = image
+    }
+}
+
 private final class RoughPathCache: @unchecked Sendable {
     private let storage = NSCache<NSString, CachedPath>()
 
@@ -80,8 +88,21 @@ private final class RoughPathCache: @unchecked Sendable {
     }
 }
 
+private final class ImageCache: @unchecked Sendable {
+    private let storage = NSCache<NSString, CachedImage>()
+
+    func image(forKey key: NSString) -> CGImage? {
+        storage.object(forKey: key)?.image
+    }
+
+    func insert(_ image: CGImage, forKey key: NSString) {
+        storage.setObject(CachedImage(image), forKey: key)
+    }
+}
+
 enum Renderer {
     private static let roughPathCache = RoughPathCache()
+    private static let imageCache = ImageCache()
 
     static func draw(_ scene: CanvasScene, in ctx: CGContext, live: Element?) {
         var all = scene.elements
@@ -169,6 +190,9 @@ enum Renderer {
 
         case .text:
             drawText(el, at: pts[0], in: ctx)
+
+        case .image:
+            drawImage(el, in: ctx)
         }
 
         ctx.restoreGState()
@@ -230,5 +254,27 @@ enum Renderer {
         ctx.textPosition = CGPoint(x: p.x, y: p.y + CGFloat(el.style.fontSize))
         CTLineDraw(line, ctx)
         ctx.restoreGState()
+    }
+
+    private static func drawImage(_ el: Element, in ctx: CGContext) {
+        guard el.points.count >= 2,
+              let data = el.imageData,
+              let image = image(for: el, data: data) else { return }
+        let rect = CGRect(corner: el.points[0].cg, el.points[1].cg)
+        ctx.saveGState()
+        ctx.translateBy(x: rect.minX, y: rect.maxY)
+        ctx.scaleBy(x: 1, y: -1)
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: rect.width, height: rect.height))
+        ctx.restoreGState()
+    }
+
+    private static func image(for element: Element, data: Data) -> CGImage? {
+        let key = element.id.uuidString as NSString
+        if let cached = imageCache.image(forKey: key) { return cached }
+        guard let nsImage = NSImage(data: data) else { return nil }
+        var proposedRect = NSRect(origin: .zero, size: nsImage.size)
+        guard let image = nsImage.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) else { return nil }
+        imageCache.insert(image, forKey: key)
+        return image
     }
 }

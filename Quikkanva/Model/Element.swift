@@ -44,7 +44,7 @@ enum ToolKind: String, CaseIterable, Identifiable, Hashable {
 }
 
 enum ElementKind: String, Codable, Hashable {
-    case rectangle, ellipse, diamond, line, arrow, freedraw, text
+    case rectangle, ellipse, diamond, line, arrow, freedraw, text, image
 }
 
 enum FillStyle: String, Codable, Hashable {
@@ -84,6 +84,7 @@ struct Element: Codable, Identifiable, Hashable {
     var rotation: Double = 0
     var style: ElementStyle = ElementStyle()
     var text: String = ""
+    var imageData: Data?
     var seed: UInt64 = UInt64.random(in: 1 ... .max)
     var zIndex: Int = 0
 }

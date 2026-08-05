@@ -1,4 +1,5 @@
 import AppKit
+import UniformTypeIdentifiers
 
 final class CanvasNSView: NSView {
     var scene = CanvasScene() { didSet { redraw() } }
@@ -73,6 +74,7 @@ final class CanvasNSView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
+        registerForDraggedTypes([.fileURL, .png, .tiff])
         committedSceneView.owner = self
         liveOverlayView.owner = self
         for subview in [committedSceneView, liveOverlayView] {
@@ -470,6 +472,15 @@ final class CanvasNSView: NSView {
         }
     }
 
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard event.modifierFlags.contains(.command),
+              event.charactersIgnoringModifiers?.lowercased() == "v" else {
+            return super.performKeyEquivalent(with: event)
+        }
+        pasteSelection()
+        return true
+    }
+
     private func movementKey(for event: NSEvent) -> String? {
         switch event.keyCode {
         case 123: return "left"
@@ -535,7 +546,11 @@ final class CanvasNSView: NSView {
     private func pasteSelection() {
         guard let data = NSPasteboard.general.data(forType: Self.pasteboardType),
               var elements = try? JSONDecoder().decode([Element].self, from: data),
-              !elements.isEmpty else { return }
+              !elements.isEmpty else {
+            guard let data = Self.imageData(from: NSPasteboard.general) else { return }
+            insertImage(data, at: scenePoint(CGPoint(x: bounds.midX, y: bounds.midY)))
+            return
+        }
         var updated = scene
         let nextZ = (updated.elements.map(\.zIndex).max() ?? 0) + 1
         var pastedIDs = Set<UUID>()
@@ -549,6 +564,73 @@ final class CanvasNSView: NSView {
         selectedIDs = pastedIDs
         notifySelectionChange()
         commit(updated)
+    }
+
+    private func insertImage(_ data: Data, at center: CGPoint) {
+        guard let image = NSImage(data: data), image.size.width > 0, image.size.height > 0 else { return }
+        let maxDimension: CGFloat = 520
+        let scale = min(1, maxDimension / max(image.size.width, image.size.height))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let origin = CGPoint(x: center.x - size.width / 2, y: center.y - size.height / 2)
+        var element = Element(kind: .image,
+                               points: [Point(origin), Point(x: origin.x + size.width, y: origin.y + size.height)],
+                               style: style)
+        element.imageData = data
+        element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
+        var updated = scene
+        updated.elements.append(element)
+        selectedIDs = [element.id]
+        notifySelectionChange()
+        commit(updated)
+    }
+
+    private static func imageData(from pasteboard: NSPasteboard) -> Data? {
+        for type in [NSPasteboard.PasteboardType.png, .tiff] {
+            if let data = pasteboard.data(forType: type), let normalized = normalizedImageData(data) {
+                return normalized
+            }
+        }
+
+        if let images = pasteboard.readObjects(forClasses: [NSImage.self], options: nil),
+           let image = images.first as? NSImage,
+           let data = normalizedImageData(image) {
+            return data
+        }
+
+        if let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [NSURL] {
+            for url in urls where url.isFileURL {
+                guard let data = try? Data(contentsOf: url as URL),
+                      let normalized = normalizedImageData(data) else { continue }
+                return normalized
+            }
+        }
+        return nil
+    }
+
+    private static func normalizedImageData(_ data: Data) -> Data? {
+        guard let image = NSImage(data: data) else { return nil }
+        return normalizedImageData(image)
+    }
+
+    private static func normalizedImageData(_ image: NSImage) -> Data? {
+        guard let tiff = image.tiffRepresentation,
+              let representation = NSBitmapImageRep(data: tiff) else { return nil }
+        return representation.representation(using: .png, properties: [:])
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        Self.imageData(from: sender.draggingPasteboard) == nil ? [] : .copy
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        draggingEntered(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        guard let data = Self.imageData(from: sender.draggingPasteboard) else { return false }
+        let local = convert(sender.draggingLocation, from: nil)
+        insertImage(data, at: scenePoint(local))
+        return true
     }
 
     private func changeZOrder(forward: Bool) {
@@ -800,7 +882,7 @@ final class CanvasNSView: NSView {
         guard !points.isEmpty else { return false }
         let tolerance = max(8, CGFloat(element.style.strokeWidth) + 6)
         switch element.kind {
-        case .rectangle, .ellipse, .diamond, .text:
+        case .rectangle, .ellipse, .diamond, .text, .image:
             return (bounds(of: element) ?? .null).insetBy(dx: -tolerance, dy: -tolerance).contains(p)
         case .line, .arrow:
             guard points.count >= 2 else { return false }
