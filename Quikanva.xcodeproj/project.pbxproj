@@ -12,7 +12,6 @@
 		155B606ED1831B760CF55BE1 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */; };
 		1B83AC1BB3D3CE467DE09FD8 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B466F862487CD5729EE0117A /* GalleryView.swift */; };
 		2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9287128C437921E883590D /* CanvasPreferences.swift */; };
-		2CCB05BA0EB88273B7CB2109 /* QuikanvaMenuBar.png in Resources */ = {isa = PBXBuildFile; fileRef = 63529B8F74C843671E3022FC /* QuikanvaMenuBar.png */; };
 		3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED410A05B90D3939CA637312 /* AppDelegate.swift */; };
 		3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */; };
 		4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13348EA603D0D317F86C54A /* CanvasScene.swift */; };
@@ -28,6 +27,7 @@
 		D2C74B9FDEA838104F83CE6C /* CanvasWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */; };
 		DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */; };
 		E4F0F69A32C60963D8EA8F4F /* Thumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A793C28CD455347F171ACCDF /* Thumbnailer.swift */; };
+		E540A801D820668D488D8BD2 /* QuikanvaMenuBar.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */; };
 		EEB9C094384CAC05BAD56EA4 /* QuikanvaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -47,11 +47,11 @@
 		0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPanelView.swift; sourceTree = "<group>"; };
 		0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasRepresentable.swift; sourceTree = "<group>"; };
 		0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorBridging.swift; sourceTree = "<group>"; };
+		11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = QuikanvaMenuBar.xcassets; sourceTree = "<group>"; };
 		3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		46D94AE76AAE6762AE832420 /* Element.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Element.swift; sourceTree = "<group>"; };
 		53E421D1A989290401E9D263 /* CanvasNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNSView.swift; sourceTree = "<group>"; };
 		5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuikanvaApp.swift; sourceTree = "<group>"; };
-		63529B8F74C843671E3022FC /* QuikanvaMenuBar.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = QuikanvaMenuBar.png; sourceTree = "<group>"; };
 		63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasWindowManager.swift; sourceTree = "<group>"; };
 		6D9287128C437921E883590D /* CanvasPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPreferences.swift; sourceTree = "<group>"; };
 		8515A7ACEC34D555B4CCC251 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
@@ -101,7 +101,7 @@
 		2388A0774BF59B6AA54674FE /* menu-bar */ = {
 			isa = PBXGroup;
 			children = (
-				63529B8F74C843671E3022FC /* QuikanvaMenuBar.png */,
+				11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */,
 			);
 			path = "menu-bar";
 			sourceTree = "<group>";
@@ -277,7 +277,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				540E21FC47C91976F4254A74 /* Quikanva.icon in Resources */,
-				2CCB05BA0EB88273B7CB2109 /* QuikanvaMenuBar.png in Resources */,
+				E540A801D820668D488D8BD2 /* QuikanvaMenuBar.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

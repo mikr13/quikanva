@@ -7,8 +7,8 @@
       "layers" : [
         {
           "glass" : false,
-          "image-name" : "01-ink.svg",
-          "name" : "01-ink",
+          "image-name" : "05-ink.svg",
+          "name" : "05-ink",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -31,8 +31,8 @@
     {
       "layers" : [
         {
-          "image-name" : "03-panel-beige.svg",
-          "name" : "03-panel-beige",
+          "image-name" : "04-panel-beige.svg",
+          "name" : "04-panel-beige",
           "position" : {
             "scale" : 1,
             "translation-in-points" : [
@@ -42,12 +42,12 @@
           }
         },
         {
-          "image-name" : "02-slate-panel.svg",
-          "name" : "02-slate-panel"
+          "image-name" : "03-slate-panel.svg",
+          "name" : "03-slate-panel"
         },
         {
-          "image-name" : "01-dark-panel.svg",
-          "name" : "01-dark-panel"
+          "image-name" : "02-dark-panel.svg",
+          "name" : "02-dark-panel"
         }
       ],
       "name" : "Canvas stack",
@@ -64,8 +64,9 @@
       "layers" : [
         {
           "blend-mode" : "normal",
-          "image-name" : "02-support.svg",
-          "name" : "02-support"
+          "image-name" : "01-support.svg",
+          "name" : "01-support",
+          "opacity" : 0.7
         }
       ],
       "name" : "Support",

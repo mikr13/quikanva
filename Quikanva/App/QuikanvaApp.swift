@@ -20,8 +20,11 @@ struct QuikanvaApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Quikanva", image: "QuikanvaMenuBar") {
+        MenuBarExtra {
             MenuBarContent()
+        } label: {
+            Image(nsImage: .quikanvaMenuBar)
+                .accessibilityLabel("Quikanva")
         }
         .modelContainer(container)
         .commands {
@@ -104,5 +107,15 @@ private struct MenuBarContent: View {
                 openWindow(id: WindowID.gallery)
             }
         }
+    }
+}
+
+private extension NSImage {
+    static var quikanvaMenuBar: NSImage {
+        guard let base = NSImage(named: "QuikanvaMenuBar") else { return NSImage() }
+        let image = (base.copy() as? NSImage) ?? base
+        image.isTemplate = true
+        image.size = NSSize(width: 18, height: 18)
+        return image
     }
 }

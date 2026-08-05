@@ -31,8 +31,7 @@ targets:
       - path: Quikanva.icon
         type: file
         buildPhase: resources
-      - path: design/menu-bar/QuikanvaMenuBar.png
-        type: file
+      - path: design/menu-bar/QuikanvaMenuBar.xcassets
         buildPhase: resources
     dependencies:
       - package: KeyboardShortcuts

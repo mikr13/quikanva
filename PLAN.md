@@ -47,7 +47,7 @@ gallery grid, and export to images.
 - [x] Camera pan (scrollWheel + Hand-tool drag) + pinch zoom (magnify); programmatic zoom transitions use an interruptible spring-like settle
 - [x] Zoom in, zoom out, zoom to fit, zoom to selection, and reset tools combined into the ellipsis menu
 - [x] Default canvas window scales to a portrait 9:16 frame within the available screen
-- [ ] **Verify:** smooth pan/zoom in Instruments (500+ elements, no dropped frames)
+- [x] **Verify:** smooth pan/zoom in Instruments (500+ elements, no dropped frames)
 
 ## Phase 2 — Tools + the sketchy look
 
@@ -63,7 +63,7 @@ gallery grid, and export to images.
 - [x] Floating translucent toolbar: responsive tool overflow + stroke/fill/background color + Save + Share
 - [x] Image elements (paste/drop)
 - [x] Image presentation: optional subtle shadow; selection overlay shown only in Select mode
-- [ ] **Verify:** every shape renders with stable sketch style; freehand feels good
+- [x] **Verify:** every shape renders with stable sketch style; freehand feels good
 
 ## Phase 3 — Selection, manipulation, styling, undo
 
@@ -104,19 +104,21 @@ gallery grid, and export to images.
 - [ ] Slow-motion animation review
 - [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 
-## Phase 7 — Stretch (post-v1)
+## Phase 7 — More polish
 
-- [ ] 3D App icon with layers / assets (using Apple Icon Composer)
+- [~] 3D App icon with layers / assets (using Apple Icon Composer)
+- [ ] Bundle the unsigned app for direct download (Developer ID signing deferred until v2)
 - [ ] Send elements to back/front (z-order)
 - [ ] Choose stroke style (solid, dashed, dotted)
 - [ ] Choose arrowhead style (open, closed, filled)
 - [ ] Allow bending / curving of lines and arrows
 - [ ] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
-- [ ] Configure max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
+- [ ] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
+- [ ] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel
+
+## Phase 8 — Future ideas
+
 - [ ] PDF / SVG export
-
-## Phase 8 — Stretch (post-v1, continued)
-
 - [ ] Dual random word paired naming for auto-titles (e.g., "Cosmic Ladle - Aug 5th, 2026 at 14:30")
 - [ ] Configure date-time format for auto-titles in settings (e.g., "Aug 5th, 2026 at 14:30" vs "2026-08-05 14:30")
 - [ ] Always-on-top canvas window (for presentations / laser mode)
