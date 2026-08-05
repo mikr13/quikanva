@@ -20,10 +20,8 @@ struct QuikanvaApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra("Quikanva", image: "QuikanvaMenuBar") {
             MenuBarContent()
-        } label: {
-            MenuBarLabel()
         }
         .modelContainer(container)
         .commands {
@@ -76,41 +74,35 @@ private struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("New Canvas") {
-            CanvasWindowManager.shared.newCanvas()
+        Group {
+            Button("New Canvas") {
+                CanvasWindowManager.shared.newCanvas()
+            }
+            .keyboardShortcut("n")
+
+            Button("Open Gallery…") {
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: WindowID.gallery)
+            }
+            .keyboardShortcut("g")
+
+            Divider()
+
+            SettingsLink {
+                Text("Settings…")
+            }
+            .keyboardShortcut(",")
+
+            Button("Quit Quikanva") {
+                NSApp.terminate(nil)
+            }
+            .keyboardShortcut("q")
         }
-        .keyboardShortcut("n")
-
-        Button("Open Gallery…") {
-            NSApp.activate(ignoringOtherApps: true)
-            openWindow(id: WindowID.gallery)
-        }
-        .keyboardShortcut("g")
-
-        Divider()
-
-        SettingsLink {
-            Text("Settings…")
-        }
-        .keyboardShortcut(",")
-
-        Button("Quit Quikanva") {
-            NSApp.terminate(nil)
-        }
-        .keyboardShortcut("q")
-    }
-}
-
-private struct MenuBarLabel: View {
-    @Environment(\.openWindow) private var openWindow
-
-    var body: some View {
-        Image(systemName: "scribble.variable")
-            .onAppear {
-                CanvasWindowManager.shared.openGallery = {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: WindowID.gallery)
-                }
+        .onAppear {
+            CanvasWindowManager.shared.openGallery = {
+                NSApp.activate(ignoringOtherApps: true)
+                openWindow(id: WindowID.gallery)
             }
         }
+    }
 }
