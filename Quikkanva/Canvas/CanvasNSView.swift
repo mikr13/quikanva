@@ -650,7 +650,9 @@ final class CanvasNSView: NSView {
                                           start: ProcessInfo.processInfo.systemUptime,
                                           duration: 0.28)
         cameraTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            self?.stepCameraAnimation()
+            Task { @MainActor [weak self] in
+                self?.stepCameraAnimation()
+            }
         }
         stepCameraAnimation()
     }
