@@ -17,6 +17,7 @@
 		4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = B13348EA603D0D317F86C54A /* CanvasScene.swift */; };
 		4EE33CBF3205D2E79E251F55 /* ColorBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */; };
 		508917C2A089BEC6685D4E43 /* CanvasRepresentable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */; };
+		540E21FC47C91976F4254A74 /* Quikanva.icon in Resources */ = {isa = PBXBuildFile; fileRef = E9E8581F2189735894A6118B /* Quikanva.icon */; };
 		64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */; };
 		652992688D460C1E221E89E6 /* Exporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */; };
 		6DEEA7908AD87AD95B0E9733 /* CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */; };
@@ -61,6 +62,7 @@
 		B466F862487CD5729EE0117A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 		C5981E4D7ED53A0867210313 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTests.swift; sourceTree = "<group>"; };
+		E9E8581F2189735894A6118B /* Quikanva.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Quikanva.icon; sourceTree = "<group>"; };
 		ED410A05B90D3939CA637312 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -144,6 +146,7 @@
 			children = (
 				3AA66799927325D1693BE70C /* Quikanva */,
 				6B589BAAAC7E37CAFA36CE67 /* QuikanvaTests */,
+				E9E8581F2189735894A6118B /* Quikanva.icon */,
 				4ABFBDF174CACE23AF135C22 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -194,6 +197,7 @@
 			buildConfigurationList = 5EF1D68734C6F54CD86C10B6 /* Build configuration list for PBXNativeTarget "Quikanva" */;
 			buildPhases = (
 				A3714F944C04FF266F97E415 /* Sources */,
+				C8A5775BBAE1565577B315AB /* Resources */,
 				CD11B263636C508508C445C7 /* Frameworks */,
 			);
 			buildRules = (
@@ -247,6 +251,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C8A5775BBAE1565577B315AB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				540E21FC47C91976F4254A74 /* Quikanva.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A3714F944C04FF266F97E415 /* Sources */ = {
@@ -376,7 +391,7 @@
 		98BC908FED2106130C0C2957 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Quikanva;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -393,7 +408,7 @@
 		AB5872709F199DE58545191A /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Quikanva;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

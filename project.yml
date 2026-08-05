@@ -28,12 +28,16 @@ targets:
     deploymentTarget: "14.0"
     sources:
       - path: Quikanva
+      - path: Quikanva.icon
+        type: file
+        buildPhase: resources
     dependencies:
       - package: KeyboardShortcuts
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikanva
         PRODUCT_NAME: Quikanva
+        ASSETCATALOG_COMPILER_APPICON_NAME: Quikanva
     info:
       path: Quikanva/Resources/Info.plist
       properties:
