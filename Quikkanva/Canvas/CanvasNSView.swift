@@ -417,6 +417,7 @@ final class CanvasNSView: NSView {
         }
         scene = restored
         selectedIDs = selectedIDs.intersection(restored.elements.map(\.id))
+        notifySelectionChange()
         onCommit?(scene)
         redraw()
     }
@@ -520,6 +521,7 @@ final class CanvasNSView: NSView {
             duplicatedIDs.insert(copy.id)
         }
         selectedIDs = duplicatedIDs
+        notifySelectionChange()
         commit(updated)
     }
 
@@ -545,6 +547,7 @@ final class CanvasNSView: NSView {
             pastedIDs.insert(elements[index].id)
         }
         selectedIDs = pastedIDs
+        notifySelectionChange()
         commit(updated)
     }
 
