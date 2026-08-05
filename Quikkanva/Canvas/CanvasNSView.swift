@@ -370,8 +370,9 @@ final class CanvasNSView: NSView {
             deleteSelection()
             return
         }
-        if selectedIDs.isEmpty == false, let key = event.charactersIgnoringModifiers?.lowercased() {
-            if ["left", "right", "up", "down"].contains(key) { moveSelection(for: key, distance: shift ? 10 : 1); return }
+        if selectedIDs.isEmpty == false, let key = movementKey(for: event) {
+            moveSelection(for: key, distance: shift ? 10 : 1)
+            return
         }
         guard flags.intersection([.shift, .option, .control]).isEmpty,
               let key = event.charactersIgnoringModifiers?.lowercased() else {
@@ -386,6 +387,16 @@ final class CanvasNSView: NSView {
             tool = nextTool
         } else {
             super.keyDown(with: event)
+        }
+    }
+
+    private func movementKey(for event: NSEvent) -> String? {
+        switch event.keyCode {
+        case 123: return "left"
+        case 124: return "right"
+        case 125: return "down"
+        case 126: return "up"
+        default: return nil
         }
     }
 
