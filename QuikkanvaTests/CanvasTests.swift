@@ -135,6 +135,75 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testSelectionResizeRotateDeleteSupportsUndoAndRedo() {
+        let element = Element(kind: .rectangle,
+                               points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let initial = CanvasScene(elements: [element])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = initial
+        view.tool = .select
+
+        selectElement(at: CGPoint(x: 90, y: 80), in: view, window: window)
+
+        resize(view,
+               window: window,
+               from: CGPoint(x: 40, y: 40),
+               to: CGPoint(x: 20, y: 20))
+        XCTAssertEqual(view.scene.elements[0].points[0].x, 20, accuracy: 0.001)
+        XCTAssertEqual(view.scene.elements[0].points[0].y, 20, accuracy: 0.001)
+        view.undoManager?.undo()
+        XCTAssertEqual(view.scene, initial)
+        view.undoManager?.redo()
+        XCTAssertEqual(view.scene.elements[0].points[0].x, 20, accuracy: 0.001)
+
+        view.undoManager?.undo()
+        rotate(view,
+               window: window,
+               from: CGPoint(x: 90, y: 4),
+               to: CGPoint(x: 140, y: 80))
+        XCTAssertEqual(view.scene.elements[0].rotation, .pi / 2, accuracy: 0.02)
+        view.undoManager?.undo()
+        XCTAssertEqual(view.scene, initial)
+        view.undoManager?.redo()
+        XCTAssertEqual(view.scene.elements[0].rotation, .pi / 2, accuracy: 0.02)
+
+        deleteSelection(in: view, window: window)
+        XCTAssertTrue(view.scene.elements.isEmpty)
+        view.undoManager?.undo()
+        XCTAssertEqual(view.scene.elements.count, 1)
+        view.undoManager?.redo()
+        XCTAssertTrue(view.scene.elements.isEmpty)
+        window.orderOut(nil)
+    }
+
+    func testMultiSelectionMovesAsOneUndoableOperation() {
+        let first = Element(kind: .rectangle,
+                            points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let second = Element(kind: .ellipse,
+                             points: [Point(x: 200, y: 40), Point(x: 300, y: 120)])
+        let initial = CanvasScene(elements: [first, second])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = initial
+        view.tool = .select
+
+        selectElement(at: CGPoint(x: 90, y: 80), in: view, window: window)
+        clickElement(at: CGPoint(x: 250, y: 80), in: view, window: window, modifiers: [.shift])
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: 90, y: 80),
+                      to: CGPoint(x: 110, y: 95))
+
+        XCTAssertEqual(view.scene.elements[0].points[0], Point(x: 60, y: 55))
+        XCTAssertEqual(view.scene.elements[1].points[0], Point(x: 220, y: 55))
+        view.undoManager?.undo()
+        XCTAssertEqual(view.scene, initial)
+        view.undoManager?.redo()
+        XCTAssertEqual(view.scene.elements[1].points[1], Point(x: 320, y: 135))
+        window.orderOut(nil)
+    }
+
     func testCanvasTitleUsesSketchPrefix() {
         XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch — "))
     }
@@ -165,6 +234,94 @@ final class CanvasTests: XCTestCase {
         NSEvent.mouseEvent(with: type,
                            location: point,
                            modifierFlags: [],
+                           timestamp: 0,
+                           windowNumber: window.windowNumber,
+                           context: nil,
+                           eventNumber: 0,
+                           clickCount: 1,
+                           pressure: 1)!
+    }
+
+    private func testWindow(for view: CanvasNSView) -> NSWindow {
+        let window = NSWindow(contentRect: view.frame,
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = view
+        return window
+    }
+
+    private func selectElement(at point: CGPoint, in view: CanvasNSView, window: NSWindow) {
+        clickElement(at: point, in: view, window: window)
+    }
+
+    private func clickElement(at point: CGPoint,
+                              in view: CanvasNSView,
+                              window: NSWindow,
+                              modifiers: NSEvent.ModifierFlags = []) {
+        view.mouseDown(with: mouseEvent(.leftMouseDown,
+                                         at: windowPoint(for: point, in: view),
+                                         window: window,
+                                         modifiers: modifiers))
+        view.mouseUp(with: mouseEvent(.leftMouseUp,
+                                       at: windowPoint(for: point, in: view),
+                                       window: window,
+                                       modifiers: modifiers))
+    }
+
+    private func dragSelection(in view: CanvasNSView,
+                               window: NSWindow,
+                               from start: CGPoint,
+                               to end: CGPoint) {
+        view.mouseDown(with: mouseEvent(.leftMouseDown,
+                                         at: windowPoint(for: start, in: view),
+                                         window: window))
+        view.mouseDragged(with: mouseEvent(.leftMouseDragged,
+                                            at: windowPoint(for: end, in: view),
+                                            window: window))
+        view.mouseUp(with: mouseEvent(.leftMouseUp,
+                                      at: windowPoint(for: end, in: view),
+                                      window: window))
+    }
+
+    private func resize(_ view: CanvasNSView,
+                        window: NSWindow,
+                        from start: CGPoint,
+                        to end: CGPoint) {
+        dragSelection(in: view, window: window, from: start, to: end)
+    }
+
+    private func rotate(_ view: CanvasNSView,
+                        window: NSWindow,
+                        from start: CGPoint,
+                        to end: CGPoint) {
+        dragSelection(in: view, window: window, from: start, to: end)
+    }
+
+    private func deleteSelection(in view: CanvasNSView, window: NSWindow) {
+        view.keyDown(with: NSEvent.keyEvent(with: .keyDown,
+                                            location: .zero,
+                                            modifierFlags: [],
+                                            timestamp: 0,
+                                            windowNumber: window.windowNumber,
+                                            context: nil,
+                                            characters: "",
+                                            charactersIgnoringModifiers: "",
+                                            isARepeat: false,
+                                            keyCode: 51)!)
+    }
+
+    private func windowPoint(for scenePoint: CGPoint, in view: CanvasNSView) -> CGPoint {
+        CGPoint(x: scenePoint.x, y: view.bounds.height - scenePoint.y)
+    }
+
+    private func mouseEvent(_ type: NSEvent.EventType,
+                            at point: CGPoint,
+                            window: NSWindow,
+                            modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+        NSEvent.mouseEvent(with: type,
+                           location: point,
+                           modifierFlags: modifiers,
                            timestamp: 0,
                            windowNumber: window.windowNumber,
                            context: nil,
