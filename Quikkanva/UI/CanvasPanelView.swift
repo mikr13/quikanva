@@ -1,0 +1,118 @@
+import SwiftUI
+import SwiftData
+import AppKit
+
+struct CanvasPanelView: View {
+    let doc: CanvasDocument
+    let context: ModelContext
+    let onClose: () -> Void
+
+    @State private var scene: CanvasScene
+    @State private var tool: ToolKind = .freedraw
+    @State private var style = ElementStyle()
+    @State private var showNamePrompt = false
+    @State private var draftName = ""
+    @State private var canvasCommand: CanvasCommand?
+    @State private var includeExportBackground = true
+
+    init(doc: CanvasDocument, context: ModelContext, onClose: @escaping () -> Void = {}) {
+        self.doc = doc
+        self.context = context
+        self.onClose = onClose
+        _scene = State(initialValue: SceneCodec.decode(doc.sceneData))
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            CanvasRepresentable(scene: scene, tool: tool, style: style, command: canvasCommand) { updated in
+                scene = updated
+                persist(updated)
+            } onCommandHandled: {
+                canvasCommand = nil
+            }
+            .ignoresSafeArea()
+
+            VStack {
+                HStack {
+                    closeButton
+                    Spacer()
+                }
+                .padding(16)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+
+            CanvasToolbar(
+                tool: $tool,
+                style: $style,
+                background: backgroundBinding,
+                includeExportBackground: $includeExportBackground,
+                onSave: {
+                    draftName = doc.title
+                    showNamePrompt = true
+                },
+                onCopyImage: { Exporter.copyToClipboard(scene, background: includeExportBackground) },
+                onExportPNG: { Exporter.exportWithPanel(scene, format: .png, suggestedName: doc.title, background: includeExportBackground) },
+                onExportJPEG: { Exporter.exportWithPanel(scene, format: .jpeg, suggestedName: doc.title, background: includeExportBackground) },
+                onZoomIn: { canvasCommand = .zoomIn },
+                onZoomOut: { canvasCommand = .zoomOut },
+                onZoomToFit: { canvasCommand = .zoomToFit },
+                onZoomToSelection: { canvasCommand = .zoomToSelection },
+                onResetZoom: { canvasCommand = .resetZoom }
+            )
+            .padding(.bottom, 16)
+        }
+        .frame(minWidth: 480, minHeight: 360)
+        .ignoresSafeArea()
+        .alert("Save Sketch", isPresented: $showNamePrompt) {
+            TextField("Name", text: $draftName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") {
+                let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !name.isEmpty { doc.title = name }
+                persist(scene)
+            }
+            .keyboardShortcut(.defaultAction)
+        } message: {
+            Text("Give this sketch a name.")
+        }
+    }
+
+    private var backgroundBinding: Binding<Color> {
+        Binding(
+            get: { scene.background?.swiftUIColor ?? RGBAColor.beige.swiftUIColor },
+            set: { newColor in
+                scene.background = RGBAColor(newColor)
+                persist(scene)
+            }
+        )
+    }
+
+    private var closeButton: some View {
+        Button {
+            onClose()
+        } label: {
+            Label("Close canvas", systemImage: "xmark")
+                .labelStyle(.iconOnly)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.borderless)
+        .foregroundStyle(.primary)
+        .background(.regularMaterial, in: Circle())
+        .overlay(Circle().strokeBorder(.white.opacity(0.14)))
+        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
+        .keyboardShortcut(.cancelAction)
+        .help("Close canvas")
+        .accessibilityLabel("Close canvas")
+    }
+
+    private func persist(_ scene: CanvasScene) {
+        let encoded = SceneCodec.encode(scene)
+        guard encoded != doc.sceneData else { return }
+        doc.sceneData = encoded
+        doc.updatedAt = .now
+        doc.thumbnail = Thumbnailer.png(for: scene)
+        try? context.save()
+    }
+}

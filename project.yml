@@ -1,0 +1,56 @@
+name: Quikkanva
+options:
+  bundleIdPrefix: com.mihirpandey
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: NO
+    DEAD_CODE_STRIPPING: YES
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "3.0.0"
+
+targets:
+  Quikkanva:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Quikkanva
+    dependencies:
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mihirpandey.quikkanva
+        PRODUCT_NAME: Quikkanva
+    info:
+      path: Quikkanva/Resources/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSHumanReadableCopyright: ""
+        CFBundleURLTypes:
+          - CFBundleURLName: com.mihirpandey.quikkanva
+            CFBundleURLSchemes: [quikkanva]
+
+schemes:
+  Quikkanva:
+    build:
+      targets:
+        Quikkanva: all
+    run:
+      config: Debug
+    archive:
+      config: Release
