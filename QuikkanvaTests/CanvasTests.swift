@@ -208,6 +208,36 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch — "))
     }
 
+    func testCanvasPreferencesUsePortraitAndDiscardEmptyDefaults() {
+        let defaults = UserDefaults.standard
+        let oldAspectRatio = defaults.object(forKey: CanvasPreferences.defaultAspectRatioKey)
+        let oldDiscardEmpty = defaults.object(forKey: CanvasPreferences.discardEmptyCanvasesKey)
+        defer {
+            if let oldAspectRatio {
+                defaults.set(oldAspectRatio, forKey: CanvasPreferences.defaultAspectRatioKey)
+            } else {
+                defaults.removeObject(forKey: CanvasPreferences.defaultAspectRatioKey)
+            }
+            if let oldDiscardEmpty {
+                defaults.set(oldDiscardEmpty, forKey: CanvasPreferences.discardEmptyCanvasesKey)
+            } else {
+                defaults.removeObject(forKey: CanvasPreferences.discardEmptyCanvasesKey)
+            }
+        }
+
+        defaults.removeObject(forKey: CanvasPreferences.defaultAspectRatioKey)
+        defaults.removeObject(forKey: CanvasPreferences.discardEmptyCanvasesKey)
+
+        XCTAssertEqual(CanvasPreferences.defaultAspectRatio, .portrait)
+        XCTAssertTrue(CanvasPreferences.discardEmptyCanvases)
+
+        CanvasPreferences.defaultAspectRatio = .widescreen
+        CanvasPreferences.discardEmptyCanvases = false
+
+        XCTAssertEqual(CanvasPreferences.defaultAspectRatio, .widescreen)
+        XCTAssertFalse(CanvasPreferences.discardEmptyCanvases)
+    }
+
     private func pathSignature(_ path: CGPath) -> [String] {
         var signature: [String] = []
         path.applyWithBlock { element in

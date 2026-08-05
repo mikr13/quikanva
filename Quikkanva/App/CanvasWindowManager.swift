@@ -28,6 +28,7 @@ final class CanvasWindowManager {
 
     private var windows: [UUID: FloatingCanvasWindow] = [:]
     private var prewarmedWindow: FloatingCanvasWindow?
+    private var prewarmedAspectRatio: CanvasAspectRatio?
 
     private init() {}
 
@@ -44,10 +45,12 @@ final class CanvasWindowManager {
 
     func prewarm() {
         guard prewarmedWindow == nil else { return }
-        let window = makeWindow()
+        let aspectRatio = CanvasPreferences.defaultAspectRatio
+        let window = makeWindow(aspectRatio: aspectRatio)
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
         window.orderOut(nil)
         prewarmedWindow = window
+        prewarmedAspectRatio = aspectRatio
     }
 
     func open(_ id: UUID) {
@@ -99,8 +102,15 @@ final class CanvasWindowManager {
             return
         }
 
-        let window = prewarmedWindow ?? makeWindow()
+        let aspectRatio = CanvasPreferences.defaultAspectRatio
+        let window: FloatingCanvasWindow
+        if let prewarmedWindow, prewarmedAspectRatio == aspectRatio {
+            window = prewarmedWindow
+        } else {
+            window = makeWindow(aspectRatio: aspectRatio)
+        }
         prewarmedWindow = nil
+        prewarmedAspectRatio = nil
         window.title = doc.title
 
         window.contentView = NSHostingView(rootView: CanvasPanelView(
@@ -124,9 +134,11 @@ final class CanvasWindowManager {
         prewarm()
     }
 
-    private func makeWindow() -> FloatingCanvasWindow {
+    private func makeWindow(aspectRatio: CanvasAspectRatio = CanvasPreferences.defaultAspectRatio) -> FloatingCanvasWindow {
         let styleMask: NSWindow.StyleMask = [.titled, .closable, .resizable, .fullSizeContentView]
-        let idealContentSize = NSSize(width: 675, height: 1200)
+        let idealHeight: CGFloat = 1200
+        let idealContentSize = NSSize(width: idealHeight * aspectRatio.widthToHeight,
+                                      height: idealHeight)
         let idealFrameSize = NSWindow.frameRect(forContentRect: NSRect(origin: .zero, size: idealContentSize),
                                                 styleMask: styleMask).size
         let availableFrameSize = NSScreen.main?.visibleFrame.insetBy(dx: 24, dy: 24).size ?? idealFrameSize
@@ -158,7 +170,7 @@ final class CanvasWindowManager {
     private func didClose(_ doc: CanvasDocument, id: UUID) {
         windows.removeValue(forKey: id)
         guard let context,
-              doc.title.hasPrefix("Sketch — "),
+              CanvasPreferences.discardEmptyCanvases,
               SceneCodec.decode(doc.sceneData).elements.isEmpty else { return }
         context.delete(doc)
         try? context.save()

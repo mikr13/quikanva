@@ -13,6 +13,7 @@
 		25DCB333FC91AAE10860A7B9 /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41D19E8B460A873EB2214D9B /* GlobalHotkeys.swift */; };
 		3259D59A1D2C1EC26B77A49E /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D53A45820051F51DC9E30E0A /* CanvasToolbar.swift */; };
 		38E035DB7238537F53E8886D /* CanvasWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D546CA5B1CB96E94DDBB939 /* CanvasWindowManager.swift */; };
+		400FC0181A3BA67BD578769A /* CanvasPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FD393DF410095E3F17F13BA /* CanvasPreferences.swift */; };
 		402DF97997EEFBB5DF2D2C25 /* CanvasScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8054C9B254B83E0984E7368C /* CanvasScene.swift */; };
 		4CE8A209DF27C5FED0175B0F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3EAF65A0D720789D48FA1 /* AppDelegate.swift */; };
 		4E969E496A0444DDD9D0ECA6 /* ColorBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91B22B39ED2671F7E4701722 /* ColorBridging.swift */; };
@@ -45,6 +46,7 @@
 		41D19E8B460A873EB2214D9B /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		5DACC3A77B2CF8CF4C7F2CEA /* CanvasDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDocument.swift; sourceTree = "<group>"; };
 		5F93DA0BE37D118F57B324DF /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5FD393DF410095E3F17F13BA /* CanvasPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPreferences.swift; sourceTree = "<group>"; };
 		622DCA1212B96CC3BE46311A /* CanvasRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasRepresentable.swift; sourceTree = "<group>"; };
 		6EFB6B7CE6E7EBA3BD5D41D9 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		7683F2A71F1BEC6356A5F1D6 /* Thumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnailer.swift; sourceTree = "<group>"; };
@@ -146,6 +148,7 @@
 			isa = PBXGroup;
 			children = (
 				94A3EAF65A0D720789D48FA1 /* AppDelegate.swift */,
+				5FD393DF410095E3F17F13BA /* CanvasPreferences.swift */,
 				3D546CA5B1CB96E94DDBB939 /* CanvasWindowManager.swift */,
 				41D19E8B460A873EB2214D9B /* GlobalHotkeys.swift */,
 				095DA6215F94083E26B485AE /* QuikkanvaApp.swift */,
@@ -254,6 +257,7 @@
 				02C373B2A683704D308A37D1 /* CanvasDocument.swift in Sources */,
 				A68840245995AB24F17029C9 /* CanvasNSView.swift in Sources */,
 				ED1476F1DF43EB651989630D /* CanvasPanelView.swift in Sources */,
+				400FC0181A3BA67BD578769A /* CanvasPreferences.swift in Sources */,
 				20A871B14CE03F58F922DDF0 /* CanvasRepresentable.swift in Sources */,
 				402DF97997EEFBB5DF2D2C25 /* CanvasScene.swift in Sources */,
 				3259D59A1D2C1EC26B77A49E /* CanvasToolbar.swift in Sources */,
