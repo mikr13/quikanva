@@ -205,7 +205,7 @@ struct CanvasToolbar: View {
                     .overlay {
                         if tool == item {
                             RoundedRectangle(cornerRadius: 7)
-                                .strokeBorder(Color(nsColor: .selectedTextColor).opacity(0.24))
+                                .strokeBorder(Color(nsColor: .selectedTextColor), lineWidth: 1)
                         }
                     }
                     .contentShape(Rectangle())
