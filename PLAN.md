@@ -11,7 +11,7 @@ gallery grid, and export to images.
 
 ## Resolved decisions
 
-- **Name:** Quikkanva · URL scheme `quikkanva://` · bundle id `com.mihirpandey.quikkanva`
+- **Name:** Quikanva · URL scheme `quikanva://` · bundle id `com.mihirpandey.quikanva`
 - **UI:** SwiftUI shell + native AppKit `NSView` canvas (`NSViewRepresentable`)
 - **Canvas engine:** custom vector engine (Excalidraw parity). **Not** PencilKit
   (its editable canvas is UIKit/Catalyst-only; can't be native + parity).
@@ -30,11 +30,11 @@ gallery grid, and export to images.
 
 - [x] Create Xcode project (XcodeGen `project.yml`, SwiftUI app, macOS 14+ target)
 - [x] Configure signing (local dev: ad-hoc "Sign to Run Locally"; Developer ID for release later)
-- [x] `Info.plist`: `LSUIElement = YES`, `CFBundleURLTypes` = `quikkanva`
+- [x] `Info.plist`: `LSUIElement = YES`, `CFBundleURLTypes` = `quikanva`
 - [x] Add SPM dependency `sindresorhus/KeyboardShortcuts`
 - [x] App scenes wired: `MenuBarExtra` + gallery `Window` + canvas `WindowGroup(for:)`
 - [x] `.accessory` activation policy + `NSApp.activate` so windows take focus
-- [x] **Verify:** `xcodebuild` BUILD SUCCEEDED; bundle signs + registers `quikkanva://`
+- [x] **Verify:** `xcodebuild` BUILD SUCCEEDED; bundle signs + registers `quikanva://`
 
 ## Phase 1 — Data model + canvas surface
 
@@ -91,7 +91,7 @@ gallery grid, and export to images.
 - [x] `KeyboardShortcuts.Name` (+ default ⌘⇧K) → global hotkey opens instant canvas
 - [x] Instant open via `openWindow` (no custom anim) with a hidden-window prewarm
 - [x] Settings screen with `KeyboardShortcuts.Recorder`
-- [x] URL scheme handler: `quikkanva://new | gallery | open?id=UUID`
+- [x] URL scheme handler: `quikanva://new | gallery | open?id=UUID`
 - [x] Menu bar menu actions (New Canvas / Open Gallery / Settings / Quit)
 - [x] Raycast `silent` script commands (`new` + `gallery`) + setup README
 - [~] **Verify:** build + launch + URL open OK; hotkey latency pending manual check
@@ -132,7 +132,7 @@ gallery grid, and export to images.
 
 ## Verification checklist
 
-- [x] `xcodebuild -scheme Quikkanva build` succeeds
+- [x] `xcodebuild -scheme Quikanva build` succeeds
 - [x] Unit tests: scene Codable round-trip · hit-testing · `RoughGenerator` determinism ·
       command undo/redo · exporter output · auto-title generation
 - [ ] Instruments: no dropped frames at 500+ sketchy elements during draw + pan/zoom
