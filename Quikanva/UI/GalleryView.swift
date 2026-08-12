@@ -11,6 +11,7 @@ struct GalleryView: View {
     @State private var pendingDeletion = Set<UUID>()
     @State private var selectedIDs = Set<UUID>()
     @State private var isSelecting = false
+    @State private var includeExportBackground = true
 
     var body: some View {
         ScrollView {
@@ -42,6 +43,34 @@ struct GalleryView: View {
                                 Button("Rename…") {
                                     renaming = doc
                                     renameText = doc.title
+                                }
+                                .disabled(isSelecting)
+                                Menu("Export") {
+                                    CanvasExportMenuItems(
+                                        includeBackground: $includeExportBackground,
+                                        onCopyImage: {
+                                            Exporter.copyToClipboard(
+                                                SceneCodec.decode(doc.sceneData),
+                                                background: includeExportBackground
+                                            )
+                                        },
+                                        onExportPNG: {
+                                            Exporter.exportWithPanel(
+                                                SceneCodec.decode(doc.sceneData),
+                                                format: .png,
+                                                suggestedName: doc.title,
+                                                background: includeExportBackground
+                                            )
+                                        },
+                                        onExportJPEG: {
+                                            Exporter.exportWithPanel(
+                                                SceneCodec.decode(doc.sceneData),
+                                                format: .jpeg,
+                                                suggestedName: doc.title,
+                                                background: includeExportBackground
+                                            )
+                                        }
+                                    )
                                 }
                                 .disabled(isSelecting)
                                 Divider()

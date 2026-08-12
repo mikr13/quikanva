@@ -192,14 +192,12 @@ struct CanvasToolbar: View {
             .accessibilityLabel("Save sketch")
 
             Menu {
-                Button("Copy as Image") { onCopyImage() }
-                    .keyboardShortcut("c", modifiers: [.command, .shift])
-                Divider()
-                Toggle("Include canvas background", isOn: $includeExportBackground)
-                Divider()
-                Button("Export PNG…") { onExportPNG() }
-                    .keyboardShortcut("e", modifiers: .command)
-                Button("Export JPEG…") { onExportJPEG() }
+                CanvasExportMenuItems(
+                    includeBackground: $includeExportBackground,
+                    onCopyImage: onCopyImage,
+                    onExportPNG: onExportPNG,
+                    onExportJPEG: onExportJPEG
+                )
             } label: {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 14, weight: .medium))
@@ -396,6 +394,24 @@ struct CanvasToolbar: View {
             get: { selectedCurve ?? 0 },
             set: { onApplySelectedCurve($0) }
         )
+    }
+}
+
+struct CanvasExportMenuItems: View {
+    @Binding var includeBackground: Bool
+    let onCopyImage: () -> Void
+    let onExportPNG: () -> Void
+    let onExportJPEG: () -> Void
+
+    var body: some View {
+        Button("Copy as Image", action: onCopyImage)
+            .keyboardShortcut("c", modifiers: [.command, .shift])
+        Divider()
+        Toggle("Include canvas background", isOn: $includeBackground)
+        Divider()
+        Button("Export PNG…", action: onExportPNG)
+            .keyboardShortcut("e", modifiers: .command)
+        Button("Export JPEG…", action: onExportJPEG)
     }
 }
 
