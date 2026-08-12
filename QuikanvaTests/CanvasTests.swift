@@ -416,6 +416,26 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch — "))
     }
 
+    func testDocumentStoresItsCanvasAspectRatio() {
+        let doc = CanvasDocument(title: "Wide",
+                                 sceneData: SceneCodec.encode(CanvasScene()),
+                                 aspectRatio: .widescreen)
+
+        XCTAssertEqual(doc.aspectRatio, .widescreen)
+    }
+
+    func testThumbnailMatchesTheCanvasAspectRatio() {
+        let portrait = Thumbnailer.png(for: CanvasScene(), aspectRatio: .portrait)
+            .flatMap(NSImage.init(data:))
+        let widescreen = Thumbnailer.png(for: CanvasScene(), aspectRatio: .widescreen)
+            .flatMap(NSImage.init(data:))
+
+        XCTAssertEqual(portrait?.size.width ?? 0, 270, accuracy: 0.5)
+        XCTAssertEqual(portrait?.size.height ?? 0, 480, accuracy: 0.5)
+        XCTAssertEqual(widescreen?.size.width ?? 0, 480, accuracy: 0.5)
+        XCTAssertEqual(widescreen?.size.height ?? 0, 270, accuracy: 0.5)
+    }
+
     func testCanvasPreferencesUsePortraitAndDiscardEmptyDefaults() {
         let defaults = UserDefaults.standard
         let oldAspectRatio = defaults.object(forKey: CanvasPreferences.defaultAspectRatioKey)

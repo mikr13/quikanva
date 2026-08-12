@@ -44,8 +44,10 @@ final class CanvasWindowManager {
             return
         }
         guard let context else { return }
+        let aspectRatio = CanvasPreferences.defaultAspectRatio
         let doc = CanvasDocument(title: CanvasTitle.dated(),
-                                 sceneData: SceneCodec.encode(CanvasScene(background: CanvasPreferences.defaultBackground)))
+                                 sceneData: SceneCodec.encode(CanvasScene(background: CanvasPreferences.defaultBackground)),
+                                 aspectRatio: aspectRatio)
         context.insert(doc)
         try? context.save()
         present(doc)
@@ -116,7 +118,7 @@ final class CanvasWindowManager {
             return
         }
 
-        let aspectRatio = CanvasPreferences.defaultAspectRatio
+        let aspectRatio = doc.aspectRatio
         let window: FloatingCanvasWindow
         if let prewarmedWindow, prewarmedAspectRatio == aspectRatio {
             window = prewarmedWindow

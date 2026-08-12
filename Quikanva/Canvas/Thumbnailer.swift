@@ -2,6 +2,15 @@ import AppKit
 import CoreGraphics
 
 enum Thumbnailer {
+    static func png(for scene: CanvasScene, aspectRatio: CanvasAspectRatio) -> Data? {
+        let maximumDimension: CGFloat = 480
+        let widthToHeight = aspectRatio.widthToHeight
+        let size = widthToHeight >= 1
+            ? CGSize(width: maximumDimension, height: maximumDimension / widthToHeight)
+            : CGSize(width: maximumDimension * widthToHeight, height: maximumDimension)
+        return png(for: scene, size: size)
+    }
+
     static func png(for scene: CanvasScene, size: CGSize = CGSize(width: 480, height: 320)) -> Data? {
         guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
                                          pixelsWide: Int(size.width),

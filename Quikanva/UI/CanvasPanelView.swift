@@ -224,7 +224,7 @@ struct CanvasPanelView: View {
 
         if sceneChanged {
             doc.sceneData = encoded
-            doc.thumbnail = Thumbnailer.png(for: scene)
+            doc.thumbnail = Thumbnailer.png(for: scene, aspectRatio: doc.aspectRatio)
         }
         if let title, titleChanged {
             doc.title = title
