@@ -48,6 +48,12 @@ enum CanvasTitle {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
-        return "Sketch — \(formatter.string(from: date))"
+        return "Sketch - \(formatter.string(from: date))"
+    }
+
+    static func normalized(_ title: String) -> String {
+        let legacyPrefix = "Sketch — "
+        guard title.hasPrefix(legacyPrefix) else { return title }
+        return "Sketch - " + title.dropFirst(legacyPrefix.count)
     }
 }

@@ -26,6 +26,15 @@ enum CanvasAspectRatio: String, CaseIterable, Identifiable {
         case .widescreen: 16.0 / 9.0
         }
     }
+
+    var galleryPreviewSize: CGSize {
+        switch self {
+        case .portrait: CGSize(width: 150, height: 150 / widthToHeight)
+        case .square: CGSize(width: 190, height: 190)
+        case .standard: CGSize(width: 220, height: 220 / widthToHeight)
+        case .widescreen: CGSize(width: 240, height: 240 / widthToHeight)
+        }
+    }
 }
 
 enum CanvasPreferences {

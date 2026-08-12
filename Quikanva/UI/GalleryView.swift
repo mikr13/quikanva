@@ -19,7 +19,7 @@ struct GalleryView: View {
             if docs.isEmpty {
                 emptyState
             } else {
-                MasonryLayout(minimumColumnWidth: 210, spacing: 28) {
+                MasonryLayout(minimumColumnWidth: 252, spacing: 28) {
                     ForEach(docs) { doc in
                         GalleryCard(
                             doc: doc,
@@ -61,6 +61,7 @@ struct GalleryView: View {
                     }
                 }
                 .padding(28)
+                .accessibilityElement(children: .contain)
             }
         }
         .frame(minWidth: 640, minHeight: 460)
@@ -68,7 +69,7 @@ struct GalleryView: View {
         .navigationTitle("Quikanva")
         .onAppear {
             hasAppeared = true
-            migrateLegacyPreviews()
+            migrateLegacyDocuments()
         }
         .onChange(of: docs.map(\.id)) { _, ids in
             selectedIDs.formIntersection(ids)
@@ -78,23 +79,14 @@ struct GalleryView: View {
         }
         .toolbar {
             if isSelecting {
-                ToolbarItem(placement: .automatic) {
-                    Label("\(selectedIDs.count) selected", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(selectedIDs.isEmpty ? .secondary : .primary)
-                }
-
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button("Select All", systemImage: "checkmark.circle") {
-                        selectedIDs = Set(docs.map(\.id))
-                    }
-                    .disabled(selectedIDs.count == docs.count)
-
-                    Button("Delete Selected", systemImage: "trash", role: .destructive) {
-                        pendingDeletion = selectedIDs
-                    }
-                    .disabled(selectedIDs.isEmpty)
-
-                    Button("Done", action: finishSelection)
+                ToolbarItem(placement: .primaryAction) {
+                    GallerySelectionToolbar(
+                        selectedCount: selectedIDs.count,
+                        allSelected: allDocumentsSelected,
+                        onToggleAll: toggleAllSelection,
+                        onDelete: { pendingDeletion = selectedIDs },
+                        onDone: finishSelection
+                    )
                 }
             } else {
                 ToolbarItemGroup(placement: .primaryAction) {
@@ -180,6 +172,10 @@ struct GalleryView: View {
             : "These sketches will be permanently removed from Quikanva."
     }
 
+    private var allDocumentsSelected: Bool {
+        !docs.isEmpty && selectedIDs == Set(docs.map(\.id))
+    }
+
     private func beginOrToggleSelection(_ id: UUID) {
         if isSelecting {
             toggleSelection(id)
@@ -197,6 +193,10 @@ struct GalleryView: View {
         }
     }
 
+    private func toggleAllSelection() {
+        selectedIDs = GallerySelection.togglingAll(selectedIDs, within: docs.map(\.id))
+    }
+
     private func finishSelection() {
         isSelecting = false
         selectedIDs.removeAll()
@@ -212,17 +212,86 @@ struct GalleryView: View {
         finishSelection()
     }
 
-    private func migrateLegacyPreviews() {
-        let legacyDocuments = docs.filter { $0.aspectRatioRawValue == nil }
-        guard !legacyDocuments.isEmpty else { return }
-        for doc in legacyDocuments {
-            doc.aspectRatio = .portrait
-            doc.thumbnail = Thumbnailer.png(
-                for: SceneCodec.decode(doc.sceneData),
-                aspectRatio: doc.aspectRatio
-            )
+    private func migrateLegacyDocuments() {
+        var changed = false
+        for doc in docs {
+            if doc.aspectRatioRawValue == nil {
+                doc.aspectRatio = .portrait
+                doc.thumbnail = Thumbnailer.png(
+                    for: SceneCodec.decode(doc.sceneData),
+                    aspectRatio: doc.aspectRatio
+                )
+                changed = true
+            }
+
+            let normalizedTitle = CanvasTitle.normalized(doc.title)
+            if normalizedTitle != doc.title {
+                doc.title = normalizedTitle
+                changed = true
+            }
         }
-        try? context.save()
+        if changed { try? context.save() }
+    }
+}
+
+enum GallerySelection {
+    static func togglingAll(_ selected: Set<UUID>, within ids: [UUID]) -> Set<UUID> {
+        let all = Set(ids)
+        return !all.isEmpty && selected == all ? [] : all
+    }
+}
+
+private struct GallerySelectionToolbar: View {
+    let selectedCount: Int
+    let allSelected: Bool
+    let onToggleAll: () -> Void
+    let onDelete: () -> Void
+    let onDone: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(selectedCount) selected")
+                .font(.subheadline.weight(.medium))
+                .monospacedDigit()
+                .foregroundStyle(selectedCount == 0 ? .secondary : .primary)
+                .fixedSize()
+
+            separator
+
+            Button(action: onToggleAll) {
+                Label(
+                    allSelected ? "Deselect All" : "Select All",
+                    systemImage: allSelected ? "circle" : "checkmark.circle"
+                )
+                .labelStyle(.titleAndIcon)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(allSelected ? "Deselect All" : "Select All")
+
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete Selected", systemImage: "trash")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .disabled(selectedCount == 0)
+            .help("Delete selected sketches")
+            .accessibilityLabel("Delete selected sketches")
+
+            separator
+
+            Button("Done", action: onDone)
+                .buttonStyle(.borderless)
+                .fontWeight(.medium)
+                .accessibilityLabel("Done selecting")
+        }
+        .controlSize(.small)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+    }
+
+    private var separator: some View {
+        Color.primary.opacity(0.14)
+            .frame(width: 1, height: 16)
     }
 }
 
@@ -237,6 +306,7 @@ private struct GalleryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             stickyNote
+                .frame(maxWidth: .infinity)
             Text(doc.title)
                 .font(.subheadline.weight(.medium))
                 .lineLimit(1)
@@ -244,11 +314,13 @@ private struct GalleryCard: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+        .frame(width: 240, alignment: .leading)
         .padding(6)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .animation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 1), value: isHovered)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
         .accessibilityLabel(doc.title)
         .accessibilityValue(accessibilityValue)
         .accessibilityHint(isSelecting ? "Click to toggle selection" : "Double-click to open")
@@ -268,7 +340,7 @@ private struct GalleryCard: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .aspectRatio(doc.aspectRatio.widthToHeight, contentMode: .fit)
+        .frame(width: previewSize.width, height: previewSize.height)
         .overlay(alignment: .top) {
             RoundedRectangle(cornerRadius: 2)
                 .fill(.white.opacity(0.55))
@@ -304,6 +376,10 @@ private struct GalleryCard: View {
     private var selectionBorder: Color {
         if isSelected { return .accentColor }
         return .primary.opacity(isHovered ? 0.2 : 0.08)
+    }
+
+    private var previewSize: CGSize {
+        doc.aspectRatio.galleryPreviewSize
     }
 
     private var noteRotation: Double {
@@ -358,10 +434,11 @@ private struct MasonryLayout: Layout {
         for subview in subviews {
             let column = columnHeights.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
             let size = subview.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil))
+            let columnOrigin = CGFloat(column) * (columnWidth + spacing)
             let frame = CGRect(
-                x: CGFloat(column) * (columnWidth + spacing),
+                x: columnOrigin + max(0, (columnWidth - size.width) / 2),
                 y: columnHeights[column],
-                width: columnWidth,
+                width: size.width,
                 height: size.height
             )
             frames.append(frame)

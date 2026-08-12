@@ -413,7 +413,28 @@ final class CanvasTests: XCTestCase {
     }
 
     func testCanvasTitleUsesSketchPrefix() {
-        XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch — "))
+        XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch - "))
+    }
+
+    func testLegacyCanvasTitleUsesNormalDash() {
+        XCTAssertEqual(CanvasTitle.normalized("Sketch — Aug 12, 2026 at 18:58"),
+                       "Sketch - Aug 12, 2026 at 18:58")
+        XCTAssertEqual(CanvasTitle.normalized("Named sketch"), "Named sketch")
+    }
+
+    func testGalleryPreviewSizesAreCappedPerAspectRatio() {
+        XCTAssertEqual(CanvasAspectRatio.portrait.galleryPreviewSize, CGSize(width: 150, height: 800.0 / 3.0))
+        XCTAssertEqual(CanvasAspectRatio.square.galleryPreviewSize, CGSize(width: 190, height: 190))
+        XCTAssertEqual(CanvasAspectRatio.standard.galleryPreviewSize, CGSize(width: 220, height: 165))
+        XCTAssertEqual(CanvasAspectRatio.widescreen.galleryPreviewSize, CGSize(width: 240, height: 135))
+    }
+
+    func testGallerySelectAllButtonTogglesBackToNoSelection() {
+        let ids = [UUID(), UUID(), UUID()]
+        let selected = GallerySelection.togglingAll([], within: ids)
+
+        XCTAssertEqual(selected, Set(ids))
+        XCTAssertTrue(GallerySelection.togglingAll(selected, within: ids).isEmpty)
     }
 
     func testDocumentStoresItsCanvasAspectRatio() {
