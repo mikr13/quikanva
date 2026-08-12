@@ -16,11 +16,8 @@ struct SettingsView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             GeneralSettingsView(
-                defaultAspectRatio: $defaultAspectRatio,
                 discardEmptyCanvases: $discardEmptyCanvases,
-                maxOpenCanvasPanels: $maxOpenCanvasPanels,
-                defaultBackground: $defaultBackground,
-                defaultStyle: $defaultStyle
+                maxOpenCanvasPanels: $maxOpenCanvasPanels
             )
             .tabItem {
                 Label("General", systemImage: "gearshape")
@@ -28,12 +25,16 @@ struct SettingsView: View {
             .tag(SettingsTab.general)
             .accessibilityLabel("General settings")
 
-            ShortcutsSettingsView()
-                .tabItem {
-                    Label("Shortcuts", systemImage: "keyboard")
-                }
-                .tag(SettingsTab.shortcuts)
-                .accessibilityLabel("Keyboard shortcuts settings")
+            CanvasSettingsView(
+                defaultAspectRatio: $defaultAspectRatio,
+                defaultBackground: $defaultBackground,
+                defaultStyle: $defaultStyle
+            )
+            .tabItem {
+                Label("Canvas", systemImage: "rectangle.and.pencil.and.ellipsis")
+            }
+            .tag(SettingsTab.canvas)
+            .accessibilityLabel("Canvas settings")
         }
         .frame(width: 620, height: 500)
         .onAppear {
@@ -52,13 +53,47 @@ struct SettingsView: View {
 
 private enum SettingsTab: Hashable {
     case general
-    case shortcuts
+    case canvas
 }
 
 private struct GeneralSettingsView: View {
-    @Binding var defaultAspectRatio: String
     @Binding var discardEmptyCanvases: Bool
     @Binding var maxOpenCanvasPanels: Int
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Discard empty canvases on close", isOn: $discardEmptyCanvases)
+                    .accessibilityHint("Automatically discards canvases with no content when they close.")
+
+                Picker("Maximum open canvases", selection: $maxOpenCanvasPanels) {
+                    Text("Unlimited").tag(0)
+                    ForEach(1 ... 4, id: \.self) { count in
+                        Text("\(count)").tag(count)
+                    }
+                }
+            } header: {
+                Text("Behavior")
+            } footer: {
+                Text("Unlimited allows any number of canvas windows to remain open.")
+            }
+
+            Section {
+                KeyboardShortcuts.Recorder("Quick new canvas:", name: .newCanvas)
+                    .accessibilityLabel("Quick new canvas keyboard shortcut")
+            } header: {
+                Text("Keyboard Shortcut")
+            } footer: {
+                Text("Create a new canvas from anywhere in Quikanva.")
+            }
+        }
+        .formStyle(.grouped)
+        .settingsContentInsets()
+    }
+}
+
+private struct CanvasSettingsView: View {
+    @Binding var defaultAspectRatio: String
     @Binding var defaultBackground: Color
     @Binding var defaultStyle: ElementStyle
 
@@ -72,32 +107,37 @@ private struct GeneralSettingsView: View {
                 }
                 .accessibilityLabel("Default canvas aspect ratio")
 
-                Toggle("Discard empty canvases on close", isOn: $discardEmptyCanvases)
-                    .accessibilityHint("Automatically discards canvases with no content when they close.")
-
-                Picker("Maximum open canvases", selection: $maxOpenCanvasPanels) {
-                    Text("Unlimited").tag(0)
-                    ForEach(1 ... 4, id: \.self) { count in
-                        Text("\(count)").tag(count)
-                    }
-                }
-
                 ColorPicker("Default canvas background", selection: $defaultBackground, supportsOpacity: false)
+            } header: {
+                Text("Canvas")
+            } footer: {
+                Text("Background color changes do not count as canvas content.")
+            }
+
+            Section {
                 ColorPicker("Default stroke", selection: strokeBinding, supportsOpacity: true)
                 ColorPicker("Default fill", selection: fillBinding, supportsOpacity: true)
 
-                Picker("Default fill style", selection: $defaultStyle.fillStyle) {
+                Picker("Default fill style", selection: fillStyleBinding) {
                     Text("No fill").tag(FillStyle.none)
                     Text("Solid").tag(FillStyle.solid)
                     Text("Hachure").tag(FillStyle.hachure)
                 }
 
-                Slider(value: $defaultStyle.roughness, in: 0 ... 2.5, step: 0.1) {
-                    Text("Default roughness")
-                } minimumValueLabel: {
-                    Text("Clean")
-                } maximumValueLabel: {
-                    Text("Loose")
+                Picker("Default drawing style", selection: $defaultStyle.drawingStyle) {
+                    ForEach(DrawingStyle.allCases) { drawingStyle in
+                        Text(drawingStyle.label).tag(drawingStyle)
+                    }
+                }
+
+                if defaultStyle.drawingStyle == .handDrawn {
+                    Slider(value: $defaultStyle.roughness, in: 0 ... 2.5, step: 0.1) {
+                        Text("Default roughness")
+                    } minimumValueLabel: {
+                        Text("Clean")
+                    } maximumValueLabel: {
+                        Text("Loose")
+                    }
                 }
 
                 Picker("Default stroke style", selection: $defaultStyle.strokeStyle) {
@@ -112,6 +152,16 @@ private struct GeneralSettingsView: View {
                     }
                 }
 
+                Picker("Default arrow ends", selection: $defaultStyle.arrowheadPlacement) {
+                    ForEach(ArrowheadPlacement.allCases) { placement in
+                        Text(placement.label).tag(placement)
+                    }
+                }
+            } header: {
+                Text("Drawing")
+            }
+
+            Section {
                 Picker("Default font", selection: $defaultStyle.fontFamily) {
                     ForEach(["Helvetica Neue", "Avenir Next", "Comic Sans MS", "Georgia", "Menlo"], id: \.self) { family in
                         Text(family).tag(family)
@@ -130,9 +180,7 @@ private struct GeneralSettingsView: View {
                     }
                 }
             } header: {
-                Text("Canvas")
-            } footer: {
-                Text("Background color changes do not count as canvas content. Unlimited allows any number of canvas panels.")
+                Text("Text")
             }
         }
         .formStyle(.grouped)
@@ -158,22 +206,12 @@ private struct GeneralSettingsView: View {
             set: { defaultStyle.fill = RGBAColor($0) }
         )
     }
-}
 
-private struct ShortcutsSettingsView: View {
-    var body: some View {
-        Form {
-            Section {
-                KeyboardShortcuts.Recorder("Quick new canvas:", name: .newCanvas)
-                    .accessibilityLabel("Quick new canvas keyboard shortcut")
-            } header: {
-                Text("Canvas")
-            } footer: {
-                Text("Choose the shortcut used to create a new canvas from anywhere in Quikanva.")
-            }
-        }
-        .formStyle(.grouped)
-        .settingsContentInsets()
+    private var fillStyleBinding: Binding<FillStyle> {
+        Binding(
+            get: { defaultStyle.fillStyle },
+            set: { defaultStyle.setFillStyle($0) }
+        )
     }
 }
 

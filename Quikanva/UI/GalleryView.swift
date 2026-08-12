@@ -46,7 +46,11 @@ struct GalleryView: View {
         .navigationTitle("Quikanva")
         .onAppear { hasAppeared = true }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItemGroup(placement: .primaryAction) {
+                SettingsLink {
+                    Label("Settings", systemImage: "gearshape")
+                }
+
                 Button(action: newCanvas) { Label("New Sketch", systemImage: "plus") }
             }
         }

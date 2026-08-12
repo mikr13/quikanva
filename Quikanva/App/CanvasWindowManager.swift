@@ -5,6 +5,10 @@ import SwiftData
 final class FloatingCanvasWindow: NSWindow {
     var onClose: (() -> Void)?
 
+    var activeUndoManager: UndoManager? {
+        firstResponder?.undoManager ?? contentView?.canvasUndoManager
+    }
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
 
@@ -74,11 +78,13 @@ final class CanvasWindowManager {
     }
 
     func undo() {
-        activeWindow?.undoManager?.undo()
+        guard let undoManager = activeWindow?.activeUndoManager, undoManager.canUndo else { return }
+        undoManager.undo()
     }
 
     func redo() {
-        activeWindow?.undoManager?.redo()
+        guard let undoManager = activeWindow?.activeUndoManager, undoManager.canRedo else { return }
+        undoManager.redo()
     }
 
     func route(_ url: URL) {
@@ -203,5 +209,14 @@ final class CanvasWindowManager {
 
     private var activeWindow: FloatingCanvasWindow? {
         windows.values.first(where: \.isKeyWindow)
+    }
+}
+
+private extension NSView {
+    var canvasUndoManager: UndoManager? {
+        if let canvas = self as? CanvasNSView {
+            return canvas.undoManager
+        }
+        return subviews.lazy.compactMap(\.canvasUndoManager).first
     }
 }

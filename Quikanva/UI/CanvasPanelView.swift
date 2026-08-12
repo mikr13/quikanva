@@ -156,6 +156,9 @@ struct CanvasPanelView: View {
         }
         .frame(minWidth: 360, minHeight: 640)
         .ignoresSafeArea()
+        .onChange(of: style) { _, updated in
+            CanvasPreferences.defaultStyle = updated
+        }
         .onDisappear { autosave.flush() }
         .alert("Save Sketch", isPresented: $showNamePrompt) {
             TextField("Name", text: $draftName)

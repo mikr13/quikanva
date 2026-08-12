@@ -18,8 +18,10 @@ final class CanvasTests: XCTestCase {
 
     func testElementStyleRoundTripKeepsPresentationSettings() throws {
         var style = ElementStyle()
+        style.drawingStyle = .handDrawn
         style.strokeStyle = .dotted
-        style.arrowheadStyle = .filled
+        style.arrowheadStyle = .bar
+        style.arrowheadPlacement = .both
         style.fontFamily = "Menlo"
         style.fontWeight = .semibold
         style.textAlignment = .center
@@ -29,6 +31,110 @@ final class CanvasTests: XCTestCase {
                                                 from: JSONEncoder().encode(style))
 
         XCTAssertEqual(decoded, style)
+    }
+
+    func testLegacyElementStyleDefaultsToAnEndOnlyArrowhead() throws {
+        let legacyStyle = """
+        {
+          "stroke": { "r": 0, "g": 0, "b": 0, "a": 1 },
+          "fill": { "r": 0, "g": 0, "b": 0, "a": 0 },
+          "arrowheadStyle": "open"
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(ElementStyle.self, from: legacyStyle)
+
+        XCTAssertEqual(decoded.arrowheadPlacement, .end)
+    }
+
+    func testBarArrowheadPlacementDrawsTheRequestedEnds() {
+        var style = ElementStyle()
+        style.arrowheadStyle = .bar
+        style.arrowheadPlacement = .end
+        let endOnly = Element(kind: .arrow,
+                              points: [Point(x: 30, y: 40), Point(x: 130, y: 40)],
+                              style: style)
+
+        let endOnlyPixels = renderedPixels(for: endOnly, width: 160, height: 80)
+        XCTAssertFalse(containsInk(endOnlyPixels, width: 160, x: 30, y: 31))
+        XCTAssertTrue(containsInk(endOnlyPixels, width: 160, x: 130, y: 31))
+
+        style.arrowheadPlacement = .both
+        let bothEnds = Element(kind: .arrow,
+                               points: [Point(x: 30, y: 40), Point(x: 130, y: 40)],
+                               style: style)
+        let bothEndsPixels = renderedPixels(for: bothEnds, width: 160, height: 80)
+
+        XCTAssertTrue(containsInk(bothEndsPixels, width: 160, x: 30, y: 31))
+        XCTAssertTrue(containsInk(bothEndsPixels, width: 160, x: 130, y: 31))
+    }
+
+    func testDefaultElementStyleUsesPreciseGeometry() {
+        XCTAssertEqual(ElementStyle().drawingStyle, .precise)
+    }
+
+    func testVisibleFillStylesMaterializeAVisibleFillColor() {
+        for fillStyle in [FillStyle.solid, .hachure] {
+            var style = ElementStyle()
+
+            style.setFillStyle(fillStyle)
+
+            XCTAssertEqual(style.fillStyle, fillStyle)
+            XCTAssertGreaterThan(style.fill.a, 0)
+        }
+    }
+
+    func testVisibleFillStylesRenderEvenFromAnInconsistentInMemoryStyle() {
+        for fillStyle in [FillStyle.solid, .hachure] {
+            var style = ElementStyle()
+            style.fillStyle = fillStyle
+            let rectangle = Element(kind: .rectangle,
+                                    points: [Point(x: 20, y: 20), Point(x: 140, y: 70)],
+                                    style: style)
+
+            let pixels = renderedPixels(for: rectangle, width: 160, height: 90)
+            let interiorAlpha = (30 ..< 60).flatMap { y in
+                (30 ..< 130).map { x in pixels[(y * 160 + x) * 4 + 3] }
+            }
+
+            XCTAssertTrue(interiorAlpha.contains { $0 > 0 }, "\(fillStyle) should paint inside the shape")
+        }
+    }
+
+    func testDecodingRepairsAVisibleFillStyleWithTransparentColor() throws {
+        let brokenStyle = """
+        {
+          "stroke": { "r": 0.8, "g": 0.1, "b": 0.2, "a": 1 },
+          "fill": { "r": 0, "g": 0, "b": 0, "a": 0 },
+          "fillStyle": "solid"
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(ElementStyle.self, from: brokenStyle)
+
+        XCTAssertEqual(decoded.fillStyle, .solid)
+        XCTAssertEqual(decoded.fill, decoded.stroke)
+    }
+
+    func testSelectionStyleChangesRemainActiveForTheNextElement() {
+        var active = ElementStyle()
+        var selected: ElementStyle? = ElementStyle()
+
+        CanvasStyleState.update(active: &active, selected: &selected) {
+            $0.strokeStyle = .dashed
+        }
+        CanvasStyleState.update(active: &active, selected: &selected) {
+            $0.arrowheadStyle = .filled
+        }
+
+        XCTAssertEqual(selected?.strokeStyle, .dashed)
+        XCTAssertEqual(selected?.arrowheadStyle, .filled)
+        XCTAssertEqual(active.strokeStyle, .dashed)
+        XCTAssertEqual(active.arrowheadStyle, .filled)
+        XCTAssertEqual(Element(kind: .arrow,
+                               points: [Point(x: 0, y: 0), Point(x: 100, y: 100)],
+                               style: active).style,
+                       selected)
     }
 
     func testHitTestingUsesElementGeometry() {
@@ -124,6 +230,33 @@ final class CanvasTests: XCTestCase {
         view.undoManager?.undo()
         XCTAssertEqual(view.scene, initial)
         view.undoManager?.redo()
+        XCTAssertNotEqual(view.scene, initial)
+        window.orderOut(nil)
+    }
+
+    func testFloatingWindowRoutesUndoAndRedoToTheCanvasResponder() {
+        let element = Element(kind: .rectangle,
+                              points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let initial = CanvasScene(elements: [element])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = FloatingCanvasWindow(contentRect: view.frame,
+                                          styleMask: [.titled],
+                                          backing: .buffered,
+                                          defer: false)
+        window.contentView = view
+        window.makeFirstResponder(view)
+        view.scene = initial
+        view.tool = .select
+
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: 90, y: 80),
+                      to: CGPoint(x: 120, y: 100))
+
+        XCTAssertNotEqual(view.scene, initial)
+        window.activeUndoManager?.undo()
+        XCTAssertEqual(view.scene, initial)
+        window.activeUndoManager?.redo()
         XCTAssertNotEqual(view.scene, initial)
         window.orderOut(nil)
     }
@@ -466,5 +599,31 @@ final class CanvasTests: XCTestCase {
         context.cgContext.setFillColor(RGBAColor(r: 0.2, g: 0.8, b: 0.4, a: 1).cgColor)
         context.cgContext.fill(CGRect(x: 0, y: 0, width: 40, height: 40))
         return rep.representation(using: .png, properties: [:])!
+    }
+
+    private func renderedPixels(for element: Element, width: Int, height: Int) -> [UInt8] {
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        pixels.withUnsafeMutableBytes { storage in
+            let context = CGContext(data: storage.baseAddress,
+                                    width: width,
+                                    height: height,
+                                    bitsPerComponent: 8,
+                                    bytesPerRow: width * 4,
+                                    space: CGColorSpaceCreateDeviceRGB(),
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            Renderer.draw(element, in: context)
+        }
+        return pixels
+    }
+
+    private func containsInk(_ pixels: [UInt8], width: Int, x: Int, y: Int) -> Bool {
+        let radius = 3
+        for sampleY in (y - radius) ... (y + radius) {
+            for sampleX in (x - radius) ... (x + radius) {
+                let alphaIndex = (sampleY * width + sampleX) * 4 + 3
+                if pixels[alphaIndex] > 0 { return true }
+            }
+        }
+        return false
     }
 }

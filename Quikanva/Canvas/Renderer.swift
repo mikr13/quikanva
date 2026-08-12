@@ -154,42 +154,34 @@ enum Renderer {
             ctx.strokePath()
 
         case .line:
-            let path = roughLinePath(for: el, points: pts, roughness: rough, rng: &rng)
+            let path = linePath(for: el, points: pts, roughness: rough, rng: &rng)
             ctx.addPath(path)
             ctx.strokePath()
 
         case .arrow:
             let a = pts[0], b = pts[pts.count - 1]
-            let shaft = roughLinePath(for: el, points: pts, roughness: rough, rng: &rng)
+            let shaft = linePath(for: el, points: pts, roughness: rough, rng: &rng)
             ctx.addPath(shaft)
             ctx.strokePath()
 
             let dist = hypot(b.x - a.x, b.y - a.y)
             guard dist > 1 else { break }
-            let tangentStart = pts.count >= 3 ? pts[pts.count - 2] : a
-            let ang = atan2(b.y - tangentStart.y, b.x - tangentStart.x)
-            let hl = max(14, min(dist * 0.28, 30))
-            let spread = CGFloat.pi / 7
-            let left = CGPoint(x: b.x - hl * cos(ang - spread), y: b.y - hl * sin(ang - spread))
-            let right = CGPoint(x: b.x - hl * cos(ang + spread), y: b.y - hl * sin(ang + spread))
-            let head = CGMutablePath()
-            head.move(to: left)
-            head.addLine(to: b)
-            head.addLine(to: right)
-            switch el.style.arrowheadStyle {
-            case .open:
-                ctx.addPath(head)
-                ctx.strokePath()
-            case .closed:
-                head.closeSubpath()
-                ctx.addPath(head)
-                ctx.strokePath()
-            case .filled:
-                head.closeSubpath()
-                ctx.addPath(head)
-                ctx.setFillColor(el.style.stroke.cgColor)
-                ctx.fillPath()
+            if el.style.arrowheadPlacement == .both {
+                let startTangent = pts.count >= 3 ? pts[1] : b
+                drawArrowMarker(el.style.arrowheadStyle,
+                                tip: a,
+                                tangent: startTangent,
+                                shaftLength: dist,
+                                color: el.style.stroke.cgColor,
+                                in: ctx)
             }
+            let endTangent = pts.count >= 3 ? pts[pts.count - 2] : a
+            drawArrowMarker(el.style.arrowheadStyle,
+                            tip: b,
+                            tangent: endTangent,
+                            shaftLength: dist,
+                            color: el.style.stroke.cgColor,
+                            in: ctx)
 
         case .rectangle, .ellipse, .diamond:
             let rect = CGRect(corner: pts[0], pts[pts.count - 1])
@@ -203,20 +195,20 @@ enum Renderer {
             default:
                 corners = Sketch.ellipsePoints(in: rect)
             }
-            let fill = CGMutablePath()
-            fill.addLines(between: corners)
-            fill.closeSubpath()
+            let shape = shapePath(for: el.kind, in: rect)
             switch el.style.fillStyle {
             case .none:
                 break
             case .solid:
-                ctx.addPath(fill)
-                ctx.setFillColor(el.style.fill.cgColor)
+                ctx.addPath(shape)
+                ctx.setFillColor(el.style.visibleFillColor.cgColor)
                 ctx.fillPath()
             case .hachure:
-                drawHachure(fill, in: rect, color: el.style.fill.cgColor, ctx: ctx)
+                drawHachure(shape, in: rect, color: el.style.visibleFillColor.cgColor, ctx: ctx)
             }
-            let path = roughPolygonPath(for: el, corners: corners, roughness: rough, rng: &rng)
+            let path = el.style.drawingStyle == .precise
+                ? shape
+                : roughPolygonPath(for: el, corners: corners, roughness: rough, rng: &rng)
             ctx.addPath(path)
             ctx.setStrokeColor(el.style.stroke.cgColor)
             ctx.strokePath()
@@ -228,6 +220,59 @@ enum Renderer {
             drawImage(el, in: ctx)
         }
 
+        ctx.restoreGState()
+    }
+
+    private static func drawArrowMarker(_ style: ArrowheadStyle,
+                                        tip: CGPoint,
+                                        tangent: CGPoint,
+                                        shaftLength: CGFloat,
+                                        color: CGColor,
+                                        in ctx: CGContext) {
+        let angle = atan2(tip.y - tangent.y, tip.x - tangent.x)
+        let markerLength = max(14, min(shaftLength * 0.28, 30))
+
+        ctx.saveGState()
+        ctx.setLineDash(phase: 0, lengths: [])
+
+        if style == .bar {
+            let halfHeight = max(7, min(markerLength * 0.5, 12))
+            let perpendicular = angle + .pi / 2
+            let dx = halfHeight * cos(perpendicular)
+            let dy = halfHeight * sin(perpendicular)
+            ctx.move(to: CGPoint(x: tip.x - dx, y: tip.y - dy))
+            ctx.addLine(to: CGPoint(x: tip.x + dx, y: tip.y + dy))
+            ctx.strokePath()
+            ctx.restoreGState()
+            return
+        }
+
+        let spread = CGFloat.pi / 7
+        let left = CGPoint(x: tip.x - markerLength * cos(angle - spread),
+                           y: tip.y - markerLength * sin(angle - spread))
+        let right = CGPoint(x: tip.x - markerLength * cos(angle + spread),
+                            y: tip.y - markerLength * sin(angle + spread))
+        let path = CGMutablePath()
+        path.move(to: left)
+        path.addLine(to: tip)
+        path.addLine(to: right)
+
+        switch style {
+        case .open:
+            ctx.addPath(path)
+            ctx.strokePath()
+        case .closed:
+            path.closeSubpath()
+            ctx.addPath(path)
+            ctx.strokePath()
+        case .filled:
+            path.closeSubpath()
+            ctx.addPath(path)
+            ctx.setFillColor(color)
+            ctx.fillPath()
+        case .bar:
+            break
+        }
         ctx.restoreGState()
     }
 
@@ -263,6 +308,43 @@ enum Renderer {
             Sketch.roughLine(points[0], points[1], roughness: roughness, rng: &rng, into: path)
         }
         roughPathCache.insert(path, forKey: key)
+        return path
+    }
+
+    private static func linePath(for element: Element,
+                                 points: [CGPoint],
+                                 roughness: Double,
+                                 rng: inout SketchRNG) -> CGPath {
+        guard element.style.drawingStyle == .precise else {
+            return roughLinePath(for: element, points: points, roughness: roughness, rng: &rng)
+        }
+        let path = CGMutablePath()
+        guard let start = points.first else { return path }
+        path.move(to: start)
+        if points.count >= 3 {
+            path.addQuadCurve(to: points[2], control: points[1])
+        } else if points.count >= 2 {
+            path.addLine(to: points[1])
+        }
+        return path
+    }
+
+    private static func shapePath(for kind: ElementKind, in rect: CGRect) -> CGPath {
+        let path = CGMutablePath()
+        switch kind {
+        case .rectangle:
+            path.addRect(rect)
+        case .ellipse:
+            path.addEllipse(in: rect)
+        case .diamond:
+            path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.minX, y: rect.midY))
+            path.closeSubpath()
+        default:
+            break
+        }
         return path
     }
 

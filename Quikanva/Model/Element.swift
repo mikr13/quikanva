@@ -47,6 +47,20 @@ enum ElementKind: String, Codable, Hashable {
     case rectangle, ellipse, diamond, line, arrow, freedraw, text, image
 }
 
+enum DrawingStyle: String, Codable, CaseIterable, Identifiable, Hashable {
+    case precise
+    case handDrawn
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .precise: "Precise"
+        case .handDrawn: "Hand-drawn"
+        }
+    }
+}
+
 enum FillStyle: String, Codable, Hashable {
     case none, solid, hachure
 }
@@ -62,12 +76,26 @@ enum StrokeStyle: String, Codable, CaseIterable, Identifiable, Hashable {
 }
 
 enum ArrowheadStyle: String, Codable, CaseIterable, Identifiable, Hashable {
-    case open, closed, filled
+    case open, closed, filled, bar
 
     var id: String { rawValue }
 
     var label: String {
         rawValue.capitalized
+    }
+}
+
+enum ArrowheadPlacement: String, Codable, CaseIterable, Identifiable, Hashable {
+    case end
+    case both
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .end: "End only"
+        case .both: "Both ends"
+        }
     }
 }
 
@@ -129,9 +157,11 @@ struct RGBAColor: Codable, Hashable {
 struct ElementStyle: Codable, Hashable {
     var stroke: RGBAColor = .black
     var fill: RGBAColor = .clear
+    var drawingStyle: DrawingStyle = .precise
     var fillStyle: FillStyle = .none
     var strokeStyle: StrokeStyle = .solid
     var arrowheadStyle: ArrowheadStyle = .open
+    var arrowheadPlacement: ArrowheadPlacement = .end
     var strokeWidth: Double = 2.5
     var opacity: Double = 1
     var roughness: Double = 1.2
@@ -142,16 +172,23 @@ struct ElementStyle: Codable, Hashable {
     var textDecoration: TextDecoration = .none
     var textWidth: Double = 260
 
+    var visibleFillColor: RGBAColor {
+        guard fillStyle != .none, fill.a == 0 else { return fill }
+        return stroke.a > 0 ? stroke : .black
+    }
+
     private enum CodingKeys: String, CodingKey {
-        case stroke, fill, fillStyle, strokeStyle, arrowheadStyle, strokeWidth, opacity
+        case stroke, fill, drawingStyle, fillStyle, strokeStyle, arrowheadStyle, arrowheadPlacement, strokeWidth, opacity
         case roughness, fontSize, fontFamily, fontWeight, textAlignment, textDecoration, textWidth
     }
 
     init(stroke: RGBAColor = .black,
          fill: RGBAColor = .clear,
+         drawingStyle: DrawingStyle = .precise,
          fillStyle: FillStyle = .none,
          strokeStyle: StrokeStyle = .solid,
          arrowheadStyle: ArrowheadStyle = .open,
+         arrowheadPlacement: ArrowheadPlacement = .end,
          strokeWidth: Double = 2.5,
          opacity: Double = 1,
          roughness: Double = 1.2,
@@ -163,9 +200,11 @@ struct ElementStyle: Codable, Hashable {
          textWidth: Double = 260) {
         self.stroke = stroke
         self.fill = fill
+        self.drawingStyle = drawingStyle
         self.fillStyle = fillStyle
         self.strokeStyle = strokeStyle
         self.arrowheadStyle = arrowheadStyle
+        self.arrowheadPlacement = arrowheadPlacement
         self.strokeWidth = strokeWidth
         self.opacity = opacity
         self.roughness = roughness
@@ -175,15 +214,18 @@ struct ElementStyle: Codable, Hashable {
         self.textAlignment = textAlignment
         self.textDecoration = textDecoration
         self.textWidth = textWidth
+        materializeVisibleFillIfNeeded()
     }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         stroke = try values.decodeIfPresent(RGBAColor.self, forKey: .stroke) ?? .black
         fill = try values.decodeIfPresent(RGBAColor.self, forKey: .fill) ?? .clear
+        drawingStyle = try values.decodeIfPresent(DrawingStyle.self, forKey: .drawingStyle) ?? .handDrawn
         fillStyle = try values.decodeIfPresent(FillStyle.self, forKey: .fillStyle) ?? .none
         strokeStyle = try values.decodeIfPresent(StrokeStyle.self, forKey: .strokeStyle) ?? .solid
         arrowheadStyle = try values.decodeIfPresent(ArrowheadStyle.self, forKey: .arrowheadStyle) ?? .open
+        arrowheadPlacement = try values.decodeIfPresent(ArrowheadPlacement.self, forKey: .arrowheadPlacement) ?? .end
         strokeWidth = try values.decodeIfPresent(Double.self, forKey: .strokeWidth) ?? 2.5
         opacity = try values.decodeIfPresent(Double.self, forKey: .opacity) ?? 1
         roughness = try values.decodeIfPresent(Double.self, forKey: .roughness) ?? 1.2
@@ -193,6 +235,17 @@ struct ElementStyle: Codable, Hashable {
         textAlignment = try values.decodeIfPresent(TextAlignment.self, forKey: .textAlignment) ?? .leading
         textDecoration = try values.decodeIfPresent(TextDecoration.self, forKey: .textDecoration) ?? .none
         textWidth = try values.decodeIfPresent(Double.self, forKey: .textWidth) ?? 260
+        materializeVisibleFillIfNeeded()
+    }
+
+    mutating func setFillStyle(_ fillStyle: FillStyle) {
+        self.fillStyle = fillStyle
+        materializeVisibleFillIfNeeded()
+    }
+
+    private mutating func materializeVisibleFillIfNeeded() {
+        guard fillStyle != .none, fill.a == 0 else { return }
+        fill = visibleFillColor
     }
 }
 

@@ -72,7 +72,7 @@ gallery grid, and export to images.
 - [x] Delete (⌫), z-order, duplicate (⌘D), and copy-paste
 - [x] Inspector panel: stroke/fill/opacity/width/font-size + roughness/fill-style
 - [x] Command-based mutations use the view's native `UndoManager` and app-level Edit commands
-- [ ] **Verify:** full manipulation + undo/redo correctness
+- [~] **Verify:** full manipulation + undo/redo correctness
 
 ## Phase 4 — Persistence, autosave, gallery
 
@@ -114,7 +114,7 @@ gallery grid, and export to images.
 - [x] Allow bending / curving of lines and arrows with default draggable endpoints/midpoint; bent paths retain resize/rotate selection handles
 - [x] Choose text font + weight + alignment + style (comic sans, serif, monospace, etc.)
 - [x] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
-- [ ] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel
+- [x] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel
 
 ## Phase 8 — Future ideas
 
