@@ -8,7 +8,7 @@ final class CanvasDocument {
     var createdAt: Date
     var updatedAt: Date
     var sceneData: Data
-    var aspectRatioRawValue: String?
+    var aspectRatioRawValue: String
     @Attribute(.externalStorage) var thumbnail: Data?
 
     init(id: UUID = UUID(),
@@ -28,7 +28,7 @@ final class CanvasDocument {
     }
 
     var aspectRatio: CanvasAspectRatio {
-        get { aspectRatioRawValue.flatMap { CanvasAspectRatio(rawValue: $0) } ?? .portrait }
+        get { CanvasAspectRatio(rawValue: aspectRatioRawValue) ?? .portrait }
         set { aspectRatioRawValue = newValue.rawValue }
     }
 }
@@ -49,11 +49,5 @@ enum CanvasTitle {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return "Sketch - \(formatter.string(from: date))"
-    }
-
-    static func normalized(_ title: String) -> String {
-        let legacyPrefix = "Sketch — "
-        guard title.hasPrefix(legacyPrefix) else { return title }
-        return "Sketch - " + title.dropFirst(legacyPrefix.count)
     }
 }

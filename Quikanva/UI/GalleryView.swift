@@ -4,7 +4,6 @@ import AppKit
 
 struct GalleryView: View {
     @Environment(\.modelContext) private var context
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \CanvasDocument.updatedAt, order: .reverse) private var docs: [CanvasDocument]
 
     @State private var renaming: CanvasDocument?
@@ -12,26 +11,19 @@ struct GalleryView: View {
     @State private var pendingDeletion = Set<UUID>()
     @State private var selectedIDs = Set<UUID>()
     @State private var isSelecting = false
-    @State private var hasAppeared = false
 
     var body: some View {
         ScrollView {
             if docs.isEmpty {
                 emptyState
             } else {
-                MasonryLayout(minimumColumnWidth: 252, spacing: 28) {
+                GalleryGrid {
                     ForEach(docs) { doc in
                         GalleryCard(
                             doc: doc,
                             isSelecting: isSelecting,
                             isSelected: selectedIDs.contains(doc.id)
                         )
-                            .opacity(hasAppeared ? 1 : 0)
-                            .offset(y: hasAppeared ? 0 : 8)
-                            .animation(
-                                reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.92),
-                                value: hasAppeared
-                            )
                             .onTapGesture {
                                 guard isSelecting else { return }
                                 toggleSelection(doc.id)
@@ -67,10 +59,6 @@ struct GalleryView: View {
         .frame(minWidth: 640, minHeight: 460)
         .background(.background)
         .navigationTitle("Quikanva")
-        .onAppear {
-            hasAppeared = true
-            migrateLegacyDocuments()
-        }
         .onChange(of: docs.map(\.id)) { _, ids in
             selectedIDs.formIntersection(ids)
             if selectedIDs.isEmpty, docs.isEmpty {
@@ -212,32 +200,30 @@ struct GalleryView: View {
         finishSelection()
     }
 
-    private func migrateLegacyDocuments() {
-        var changed = false
-        for doc in docs {
-            if doc.aspectRatioRawValue == nil {
-                doc.aspectRatio = .portrait
-                doc.thumbnail = Thumbnailer.png(
-                    for: SceneCodec.decode(doc.sceneData),
-                    aspectRatio: doc.aspectRatio
-                )
-                changed = true
-            }
-
-            let normalizedTitle = CanvasTitle.normalized(doc.title)
-            if normalizedTitle != doc.title {
-                doc.title = normalizedTitle
-                changed = true
-            }
-        }
-        if changed { try? context.save() }
-    }
 }
 
 enum GallerySelection {
     static func togglingAll(_ selected: Set<UUID>, within ids: [UUID]) -> Set<UUID> {
         let all = Set(ids)
         return !all.isEmpty && selected == all ? [] : all
+    }
+}
+
+struct GalleryGrid<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 252, maximum: 280), spacing: 28, alignment: .top)],
+            alignment: .center,
+            spacing: 28
+        ) {
+            content
+        }
     }
 }
 
@@ -300,8 +286,17 @@ private struct GalleryCard: View {
     let isSelecting: Bool
     let isSelected: Bool
 
+    private let thumbnail: GalleryThumbnail
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
+
+    init(doc: CanvasDocument, isSelecting: Bool, isSelected: Bool) {
+        self.doc = doc
+        self.isSelecting = isSelecting
+        self.isSelected = isSelected
+        thumbnail = GalleryThumbnail(data: doc.thumbnail)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -318,7 +313,6 @@ private struct GalleryCard: View {
         .padding(6)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .animation(reduceMotion ? nil : .spring(response: 0.24, dampingFraction: 1), value: isHovered)
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(doc.title)
@@ -329,16 +323,7 @@ private struct GalleryCard: View {
     private var stickyNote: some View {
         ZStack {
             Color(nsColor: .textBackgroundColor)
-
-            if let data = doc.thumbnail, let image = NSImage(data: data) {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                Image(systemName: "scribble.variable")
-                    .font(.system(size: 30, weight: .light))
-                    .foregroundStyle(.secondary)
-            }
+            thumbnail
         }
         .frame(width: previewSize.width, height: previewSize.height)
         .overlay(alignment: .top) {
@@ -365,17 +350,25 @@ private struct GalleryCard: View {
         .compositingGroup()
         .clipShape(.rect(cornerRadius: 5))
         .shadow(
-            color: .black.opacity(isHovered ? 0.24 : 0.16),
-            radius: isHovered ? 12 : 7,
-            y: isHovered ? 7 : 4
+            color: .black.opacity(0.16),
+            radius: 7,
+            y: 4
         )
-        .rotationEffect(.degrees(isHovered ? 0 : noteRotation))
-        .scaleEffect(isHovered ? 1.015 : 1)
+        .rotationEffect(.degrees(noteRotation))
+        .scaleEffect(isHoverLifted ? 1.015 : 1)
+        .animation(
+            reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 1),
+            value: isHoverLifted
+        )
+    }
+
+    private var isHoverLifted: Bool {
+        isHovered && !isSelecting && !reduceMotion
     }
 
     private var selectionBorder: Color {
         if isSelected { return .accentColor }
-        return .primary.opacity(isHovered ? 0.2 : 0.08)
+        return .primary.opacity(0.08)
     }
 
     private var previewSize: CGSize {
@@ -394,58 +387,23 @@ private struct GalleryCard: View {
     }
 }
 
-private struct MasonryLayout: Layout {
-    let minimumColumnWidth: CGFloat
-    let spacing: CGFloat
+struct GalleryThumbnail: View {
+    private let image: NSImage?
 
-    func sizeThatFits(
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout ()
-    ) -> CGSize {
-        let width = proposal.width ?? minimumColumnWidth
-        return layout(width: width, subviews: subviews).size
+    init(data: Data?, decoder: (Data) -> NSImage? = { NSImage(data: $0) }) {
+        image = data.flatMap(decoder)
     }
 
-    func placeSubviews(
-        in bounds: CGRect,
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache: inout ()
-    ) {
-        let result = layout(width: bounds.width, subviews: subviews)
-        for (index, frame) in result.frames.enumerated() {
-            subviews[index].place(
-                at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
-                anchor: .topLeading,
-                proposal: ProposedViewSize(frame.size)
-            )
+    @ViewBuilder
+    var body: some View {
+        if let image {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFill()
+        } else {
+            Image(systemName: "scribble.variable")
+                .font(.system(size: 30, weight: .light))
+                .foregroundStyle(.secondary)
         }
-    }
-
-    private func layout(width: CGFloat, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
-        guard !subviews.isEmpty else { return (.zero, []) }
-        let columnCount = max(1, Int((width + spacing) / (minimumColumnWidth + spacing)))
-        let columnWidth = (width - CGFloat(columnCount - 1) * spacing) / CGFloat(columnCount)
-        var columnHeights = [CGFloat](repeating: 0, count: columnCount)
-        var frames = [CGRect]()
-        frames.reserveCapacity(subviews.count)
-
-        for subview in subviews {
-            let column = columnHeights.enumerated().min(by: { $0.element < $1.element })?.offset ?? 0
-            let size = subview.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil))
-            let columnOrigin = CGFloat(column) * (columnWidth + spacing)
-            let frame = CGRect(
-                x: columnOrigin + max(0, (columnWidth - size.width) / 2),
-                y: columnHeights[column],
-                width: size.width,
-                height: size.height
-            )
-            frames.append(frame)
-            columnHeights[column] += size.height + spacing
-        }
-
-        let height = max(0, (columnHeights.max() ?? 0) - spacing)
-        return (CGSize(width: width, height: height), frames)
     }
 }

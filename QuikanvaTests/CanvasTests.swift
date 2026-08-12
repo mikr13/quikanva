@@ -1,6 +1,7 @@
 import XCTest
 import AppKit
 import CoreGraphics
+import SwiftUI
 @testable import Quikanva
 
 @MainActor
@@ -416,12 +417,6 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch - "))
     }
 
-    func testLegacyCanvasTitleUsesNormalDash() {
-        XCTAssertEqual(CanvasTitle.normalized("Sketch — Aug 12, 2026 at 18:58"),
-                       "Sketch - Aug 12, 2026 at 18:58")
-        XCTAssertEqual(CanvasTitle.normalized("Named sketch"), "Named sketch")
-    }
-
     func testGalleryPreviewSizesAreCappedPerAspectRatio() {
         XCTAssertEqual(CanvasAspectRatio.portrait.galleryPreviewSize, CGSize(width: 150, height: 800.0 / 3.0))
         XCTAssertEqual(CanvasAspectRatio.square.galleryPreviewSize, CGSize(width: 190, height: 190))
@@ -435,6 +430,45 @@ final class CanvasTests: XCTestCase {
 
         XCTAssertEqual(selected, Set(ids))
         XCTAssertTrue(GallerySelection.togglingAll(selected, within: ids).isEmpty)
+    }
+
+    func testGalleryGridCreatesOnlyVisibleCards() {
+        let counter = AppearanceCounter()
+        let host = NSHostingController(rootView:
+            ScrollView {
+                GalleryGrid {
+                    ForEach(0 ..< 1_000, id: \.self) { _ in
+                        CountingGalleryCard(counter: counter)
+                    }
+                }
+            }
+        )
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 640),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentViewController = host
+        window.makeKeyAndOrderFront(nil)
+        host.view.frame = window.contentView?.bounds ?? .zero
+        host.view.layoutSubtreeIfNeeded()
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.5))
+        defer { window.orderOut(nil) }
+
+        XCTAssertGreaterThan(counter.count, 0)
+        XCTAssertLessThan(counter.count, 1_000, "The gallery must not instantiate every card at once")
+    }
+
+    func testGalleryThumbnailDoesNotDecodeAgainWhenItsBodyUpdates() {
+        var decodeCount = 0
+        let thumbnail = GalleryThumbnail(data: Data([1])) { _ in
+            decodeCount += 1
+            return NSImage(size: NSSize(width: 1, height: 1))
+        }
+
+        _ = thumbnail.body
+        _ = thumbnail.body
+
+        XCTAssertEqual(decodeCount, 1, "Hover updates must reuse the already-decoded gallery thumbnail")
     }
 
     func testDocumentStoresItsCanvasAspectRatio() {
@@ -666,5 +700,23 @@ final class CanvasTests: XCTestCase {
             }
         }
         return false
+    }
+}
+
+@MainActor
+private final class AppearanceCounter {
+    var count = 0
+
+    func record() {
+        count += 1
+    }
+}
+
+private struct CountingGalleryCard: View {
+    let counter: AppearanceCounter
+
+    var body: some View {
+        let _ = counter.record()
+        Color.clear.frame(width: 240, height: 300)
     }
 }
