@@ -1,11 +1,13 @@
 import SwiftUI
 import SwiftData
 import AppKit
+import KeyboardShortcuts
 
 @main
 struct QuikanvaApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     private let container: ModelContainer
+    @AppStorage(CanvasPreferences.alwaysOnTopKey) private var alwaysOnTop = false
 
     init() {
         do {
@@ -51,6 +53,11 @@ struct QuikanvaApp: App {
                     CanvasWindowManager.shared.openGallery?()
                 }
                 .keyboardShortcut("g", modifiers: .command)
+
+                Divider()
+
+                Toggle("Keep Canvas Windows on Top", isOn: alwaysOnTopBinding)
+                    .globalKeyboardShortcut(.toggleAlwaysOnTop)
             }
         }
 
@@ -66,6 +73,16 @@ struct QuikanvaApp: App {
         Settings {
             SettingsView()
         }
+    }
+
+    private var alwaysOnTopBinding: Binding<Bool> {
+        Binding(
+            get: { alwaysOnTop },
+            set: { enabled in
+                alwaysOnTop = enabled
+                CanvasWindowManager.shared.updateAlwaysOnTop(enabled)
+            }
+        )
     }
 }
 

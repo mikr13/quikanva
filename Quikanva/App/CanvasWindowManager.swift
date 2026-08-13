@@ -101,6 +101,11 @@ final class CanvasWindowManager {
         prewarmedWindow?.level = level
     }
 
+    func toggleAlwaysOnTop() {
+        CanvasPreferences.alwaysOnTop.toggle()
+        updateAlwaysOnTop(CanvasPreferences.alwaysOnTop)
+    }
+
     func route(_ url: URL) {
         guard url.scheme == "quikanva" else { return }
         switch url.host {

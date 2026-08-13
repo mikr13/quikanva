@@ -36,6 +36,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeyboardShortcuts.onKeyUp(for: .newCanvas) {
             CanvasWindowManager.shared.newCanvas()
         }
+        KeyboardShortcuts.onKeyUp(for: .toggleAlwaysOnTop) {
+            CanvasWindowManager.shared.toggleAlwaysOnTop()
+        }
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {

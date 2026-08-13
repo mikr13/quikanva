@@ -105,10 +105,13 @@ private struct GeneralSettingsView: View {
             Section {
                 KeyboardShortcuts.Recorder("Quick new canvas:", name: .newCanvas)
                     .accessibilityLabel("Quick new canvas keyboard shortcut")
+
+                KeyboardShortcuts.Recorder("Toggle canvases on top:", name: .toggleAlwaysOnTop)
+                    .accessibilityLabel("Toggle canvas windows on top keyboard shortcut")
             } header: {
-                Text("Keyboard Shortcut")
+                Text("Keyboard Shortcuts")
             } footer: {
-                Text("Create a new canvas from anywhere in Quikanva.")
+                Text("Use these shortcuts from anywhere while Quikanva is running.")
             }
         }
         .formStyle(.grouped)
