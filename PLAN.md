@@ -104,7 +104,7 @@ gallery grid, and export to images.
 - [x] Slow-motion animation review
 - [x] Setup changeset for Changelog / Release Notes
 - [x] Setup GitHub Actions for CI / build / release
-- [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
+- [x] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 
 ## Phase 7 — More polish
 
