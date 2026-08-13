@@ -11,6 +11,8 @@ struct SettingsView: View {
     private var maxOpenCanvasPanels = 0
     @AppStorage(CanvasPreferences.autoTitleDateFormatKey)
     private var autoTitleDateFormat = CanvasTitleDateFormat.system.rawValue
+    @AppStorage(CanvasPreferences.alwaysOnTopKey)
+    private var alwaysOnTop = false
     @State private var defaultBackground = CanvasPreferences.defaultBackground.swiftUIColor
     @State private var defaultStyle = CanvasPreferences.defaultStyle
     @State private var selectedTab: SettingsTab = .general
@@ -20,7 +22,8 @@ struct SettingsView: View {
             GeneralSettingsView(
                 discardEmptyCanvases: $discardEmptyCanvases,
                 maxOpenCanvasPanels: $maxOpenCanvasPanels,
-                autoTitleDateFormat: $autoTitleDateFormat
+                autoTitleDateFormat: $autoTitleDateFormat,
+                alwaysOnTop: $alwaysOnTop
             )
             .tabItem {
                 Label("General", systemImage: "gearshape")
@@ -63,12 +66,16 @@ private struct GeneralSettingsView: View {
     @Binding var discardEmptyCanvases: Bool
     @Binding var maxOpenCanvasPanels: Int
     @Binding var autoTitleDateFormat: String
+    @Binding var alwaysOnTop: Bool
 
     var body: some View {
         Form {
             Section {
                 Toggle("Discard empty canvases on close", isOn: $discardEmptyCanvases)
                     .accessibilityHint("Automatically discards canvases with no content when they close.")
+
+                Toggle("Keep canvas windows on top", isOn: $alwaysOnTop)
+                    .accessibilityHint("Keeps canvas windows visible above other apps for presentations and laser mode.")
 
                 Picker("Maximum open canvases", selection: $maxOpenCanvasPanels) {
                     Text("Unlimited").tag(0)
@@ -106,6 +113,9 @@ private struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .settingsContentInsets()
+        .onChange(of: alwaysOnTop, initial: true) { _, enabled in
+            CanvasWindowManager.shared.updateAlwaysOnTop(enabled)
+        }
     }
 
     private var selectedDateFormat: CanvasTitleDateFormat {

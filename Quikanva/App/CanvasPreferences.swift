@@ -75,6 +75,7 @@ enum CanvasPreferences {
     static let defaultStyleKey = "defaultElementStyle"
     static let maxOpenCanvasPanelsKey = "maxOpenCanvasPanels"
     static let autoTitleDateFormatKey = "autoTitleDateFormat"
+    static let alwaysOnTopKey = "alwaysOnTop"
 
     static var defaultAspectRatio: CanvasAspectRatio {
         get {
@@ -140,5 +141,10 @@ enum CanvasPreferences {
         set {
             UserDefaults.standard.set(newValue.rawValue, forKey: autoTitleDateFormatKey)
         }
+    }
+
+    static var alwaysOnTop: Bool {
+        get { UserDefaults.standard.bool(forKey: alwaysOnTopKey) }
+        set { UserDefaults.standard.set(newValue, forKey: alwaysOnTopKey) }
     }
 }

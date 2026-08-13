@@ -23,6 +23,12 @@ final class FloatingCanvasWindow: NSWindow {
     }
 }
 
+enum CanvasWindowLevel {
+    static func value(alwaysOnTop: Bool) -> NSWindow.Level {
+        alwaysOnTop ? .floating : .normal
+    }
+}
+
 @MainActor
 final class CanvasWindowManager {
     static let shared = CanvasWindowManager()
@@ -87,6 +93,12 @@ final class CanvasWindowManager {
     func redo() {
         guard let undoManager = activeWindow?.activeUndoManager, undoManager.canRedo else { return }
         undoManager.redo()
+    }
+
+    func updateAlwaysOnTop(_ enabled: Bool) {
+        let level = CanvasWindowLevel.value(alwaysOnTop: enabled)
+        windows.values.forEach { $0.level = level }
+        prewarmedWindow?.level = level
     }
 
     func route(_ url: URL) {
@@ -165,6 +177,7 @@ final class CanvasWindowManager {
         window.titlebarAppearsTransparent = true
         window.isMovableByWindowBackground = false
         window.hidesOnDeactivate = false
+        window.level = CanvasWindowLevel.value(alwaysOnTop: CanvasPreferences.alwaysOnTop)
         window.isReleasedWhenClosed = false
         window.animationBehavior = .none
         window.tabbingMode = .disallowed

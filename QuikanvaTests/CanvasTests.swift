@@ -262,6 +262,29 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testAlwaysOnTopPreferenceMapsToFloatingWindowLevel() {
+        XCTAssertEqual(CanvasWindowLevel.value(alwaysOnTop: false), .normal)
+        XCTAssertEqual(CanvasWindowLevel.value(alwaysOnTop: true), .floating)
+    }
+
+    func testAlwaysOnTopPreferenceDefaultsOffAndPersists() {
+        let defaults = UserDefaults.standard
+        let oldValue = defaults.object(forKey: CanvasPreferences.alwaysOnTopKey)
+        defer {
+            if let oldValue {
+                defaults.set(oldValue, forKey: CanvasPreferences.alwaysOnTopKey)
+            } else {
+                defaults.removeObject(forKey: CanvasPreferences.alwaysOnTopKey)
+            }
+        }
+
+        defaults.removeObject(forKey: CanvasPreferences.alwaysOnTopKey)
+        XCTAssertFalse(CanvasPreferences.alwaysOnTop)
+
+        CanvasPreferences.alwaysOnTop = true
+        XCTAssertTrue(CanvasPreferences.alwaysOnTop)
+    }
+
     func testCommandReturnEntersPointEditingAndDraggingMidpointBendsArrow() {
         let arrow = Element(kind: .arrow,
                              points: [Point(x: 40, y: 80), Point(x: 160, y: 80)])
