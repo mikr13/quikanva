@@ -285,6 +285,25 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasPreferences.alwaysOnTop)
     }
 
+    func testRepresentableDoesNotOverwriteSceneChangedByACommand() {
+        var back = Element(kind: .rectangle,
+                           points: [Point(x: 20, y: 20), Point(x: 120, y: 120)])
+        back.zIndex = 0
+        var front = Element(kind: .ellipse,
+                            points: [Point(x: 20, y: 20), Point(x: 120, y: 120)])
+        front.zIndex = 1
+        let incoming = CanvasScene(elements: [back, front])
+
+        back.zIndex = 2
+        let reordered = CanvasScene(elements: [back, front])
+
+        XCTAssertNil(CanvasRepresentable.sceneToApply(
+            viewScene: reordered,
+            incomingScene: incoming,
+            commandApplied: true
+        ), "A command's newer local scene must not be replaced by the stale incoming scene from the same update pass")
+    }
+
     func testCommandReturnEntersPointEditingAndDraggingMidpointBendsArrow() {
         let arrow = Element(kind: .arrow,
                              points: [Point(x: 40, y: 80), Point(x: 160, y: 80)])

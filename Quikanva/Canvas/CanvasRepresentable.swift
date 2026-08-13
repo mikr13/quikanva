@@ -50,15 +50,32 @@ struct CanvasRepresentable: NSViewRepresentable {
         view.onImageShadowChange = onImageShadowChange
         view.onCurveChange = onCurveChange
         view.onCommandHandled = onCommandHandled
-        if view.command != command {
+        let commandChanged = view.command != command
+        let commandApplied = commandChanged && command != nil
+        if commandChanged {
             view.command = command
         }
 
         guard !view.isInteracting else { return }
-        if view.scene.elements != scene.elements || view.scene.background != scene.background {
-            var next = scene
-            next.camera = view.scene.camera
+        if let next = Self.sceneToApply(
+            viewScene: view.scene,
+            incomingScene: scene,
+            commandApplied: commandApplied
+        ) {
             view.scene = next
         }
+    }
+
+    static func sceneToApply(
+        viewScene: CanvasScene,
+        incomingScene: CanvasScene,
+        commandApplied: Bool
+    ) -> CanvasScene? {
+        guard !commandApplied else { return nil }
+        guard viewScene.elements != incomingScene.elements ||
+                viewScene.background != incomingScene.background else { return nil }
+        var next = incomingScene
+        next.camera = viewScene.camera
+        return next
     }
 }
