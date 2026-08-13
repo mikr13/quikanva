@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum QuikanvaMotion {
+    static let toolSelection = Animation.spring(response: 0.28, dampingFraction: 0.86)
+    static let inspectorReveal = Animation.spring(response: 0.3, dampingFraction: 0.9)
+    static let galleryHover = Animation.spring(response: 0.24, dampingFraction: 0.86)
+}
+
 enum CanvasStyleState {
     @discardableResult
     static func update(active: inout ElementStyle,
@@ -55,6 +61,8 @@ struct CanvasToolbar: View {
 
     @State private var showingInspector = false
     @State private var colorTarget: ColorTarget?
+    @Namespace private var toolSelectionAnimation
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
@@ -165,10 +173,13 @@ struct CanvasToolbar: View {
                         .keyboardShortcut("]", modifiers: .command)
                 }
             } label: {
-                Image(systemName: "ellipsis")
+                Image(systemName: showingInspector ? "slider.horizontal.3" : "ellipsis")
                     .font(.system(size: 14, weight: .medium))
                     .frame(width: 30, height: 28)
                     .contentShape(Rectangle())
+                    .contentTransition(.symbolEffect(.replace))
+                    .animation(reduceMotion ? nil : QuikanvaMotion.toolSelection,
+                               value: showingInspector)
             }
             .menuStyle(.button)
             .buttonStyle(PressableStyle())
@@ -243,13 +254,18 @@ struct CanvasToolbar: View {
     @ViewBuilder
     private func toolButtons(_ items: ArraySlice<ToolKind>) -> some View {
         ForEach(items) { item in
-            Button { tool = item } label: {
+            Button { selectTool(item) } label: {
                 Label(item.rawValue.capitalized, systemImage: item.symbol)
                     .labelStyle(.iconOnly)
                     .font(.system(size: 14, weight: .medium))
                     .frame(width: 30, height: 28)
-                    .background(tool == item ? Color(nsColor: .selectedContentBackgroundColor) : Color.clear,
-                                in: RoundedRectangle(cornerRadius: 7))
+                    .background {
+                        if tool == item {
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(Color(nsColor: .selectedContentBackgroundColor))
+                                .matchedGeometryEffect(id: "selected-tool", in: toolSelectionAnimation)
+                        }
+                    }
                     .foregroundStyle(tool == item ? Color(nsColor: .selectedTextColor) : Color.primary)
                     .overlay {
                         if tool == item {
@@ -265,12 +281,23 @@ struct CanvasToolbar: View {
             .accessibilityHint("Select drawing tool")
             .accessibilityAddTraits(tool == item ? .isSelected : [])
         }
+        .animation(reduceMotion ? nil : QuikanvaMotion.toolSelection, value: tool)
     }
 
     @ViewBuilder
     private func toolMenuItems(_ items: ArraySlice<ToolKind>) -> some View {
         ForEach(items) { item in
-            Button(item.rawValue.capitalized) { tool = item }
+            Button(item.rawValue.capitalized) { selectTool(item) }
+        }
+    }
+
+    private func selectTool(_ item: ToolKind) {
+        if reduceMotion {
+            tool = item
+        } else {
+            withAnimation(QuikanvaMotion.toolSelection) {
+                tool = item
+            }
         }
     }
 
@@ -416,6 +443,8 @@ private struct CanvasStyleInspector: View {
     let showsImageShadow: Bool
     @Binding var curve: Double
     let showsCurve: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -533,6 +562,18 @@ private struct CanvasStyleInspector: View {
         }
         .padding(16)
         .frame(width: 280)
+        .opacity(isVisible ? 1 : 0)
+        .scaleEffect(isVisible ? 1 : 0.98, anchor: .bottom)
+        .offset(y: isVisible ? 0 : 6)
+        .onAppear {
+            if reduceMotion {
+                isVisible = true
+            } else {
+                withAnimation(QuikanvaMotion.inspectorReveal) {
+                    isVisible = true
+                }
+            }
+        }
     }
 
     private var strokeBinding: Binding<Color> {

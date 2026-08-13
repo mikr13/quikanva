@@ -124,7 +124,7 @@ gallery grid, and export to images.
 - [x] Configure date-time format for auto-titles in settings (e.g., "Aug 5th, 2026 at 14:30" vs "2026-08-05 14:30")
 - [x] Always-on-top canvas window (for presentations / laser mode), with Canvas menu toggle and configurable global shortcut
 - [x] Apple liquid glass treatment of the toolbar, settings and gallery windows
-- [ ] Apple liquid glass fluid animations for tool selection, inspector panel, morphing toolbar buttons and gallery item hover
+- [x] Apple liquid glass fluid animations for tool selection, inspector panel, morphing toolbar buttons and gallery item hover
 - [ ] Snapping / alignment guides
 
 ## Phase 9 — Production Readiness

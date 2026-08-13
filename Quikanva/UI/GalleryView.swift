@@ -353,6 +353,12 @@ private struct GalleryCard: View {
         .frame(width: 240, alignment: .leading)
         .padding(6)
         .contentShape(Rectangle())
+        .scaleEffect(isHoverLifted ? 1.02 : 1)
+        .offset(y: isHoverLifted ? -5 : 0)
+        .animation(
+            reduceMotion ? nil : QuikanvaMotion.galleryHover,
+            value: isHoverLifted
+        )
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .ignore)
         .accessibilityAddTraits(.isButton)
@@ -394,16 +400,11 @@ private struct GalleryCard: View {
         .compositingGroup()
         .clipShape(.rect(cornerRadius: 5))
         .shadow(
-            color: .black.opacity(0.16),
-            radius: 7,
-            y: 4
+            color: .black.opacity(isHoverLifted ? 0.24 : 0.16),
+            radius: isHoverLifted ? 12 : 7,
+            y: isHoverLifted ? 9 : 4
         )
         .rotationEffect(.degrees(noteRotation))
-        .scaleEffect(isHoverLifted ? 1.015 : 1)
-        .animation(
-            reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 1),
-            value: isHoverLifted
-        )
     }
 
     private var isHoverLifted: Bool {
@@ -412,6 +413,7 @@ private struct GalleryCard: View {
 
     private var selectionBorder: Color {
         if isSelected { return .accentColor }
+        if isHoverLifted { return .accentColor.opacity(0.45) }
         return .primary.opacity(0.08)
     }
 
