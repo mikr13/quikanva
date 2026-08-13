@@ -425,6 +425,37 @@ final class CanvasTests: XCTestCase {
         XCTAssertFalse(title.dropFirst(separator.count).isEmpty)
     }
 
+    func testCanvasTitleUsesSortableDateFormat() throws {
+        let utc = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let title = CanvasTitle.dated(
+            Date(timeIntervalSince1970: 0),
+            adjective: "Cosmic",
+            noun: "Ladle",
+            dateFormat: .sortable,
+            timeZone: utc
+        )
+
+        XCTAssertEqual(title, "Cosmic Ladle - 1970-01-01 00:00")
+    }
+
+    func testAutoTitleDateFormatPreferenceDefaultsToSystem() {
+        let defaults = UserDefaults.standard
+        let oldValue = defaults.object(forKey: CanvasPreferences.autoTitleDateFormatKey)
+        defer {
+            if let oldValue {
+                defaults.set(oldValue, forKey: CanvasPreferences.autoTitleDateFormatKey)
+            } else {
+                defaults.removeObject(forKey: CanvasPreferences.autoTitleDateFormatKey)
+            }
+        }
+
+        defaults.removeObject(forKey: CanvasPreferences.autoTitleDateFormatKey)
+        XCTAssertEqual(CanvasPreferences.autoTitleDateFormat, .system)
+
+        CanvasPreferences.autoTitleDateFormat = .sortable
+        XCTAssertEqual(CanvasPreferences.autoTitleDateFormat, .sortable)
+    }
+
     func testGalleryPreviewSizesAreCappedPerAspectRatio() {
         XCTAssertEqual(CanvasAspectRatio.portrait.galleryPreviewSize, CGSize(width: 150, height: 800.0 / 3.0))
         XCTAssertEqual(CanvasAspectRatio.square.galleryPreviewSize, CGSize(width: 190, height: 190))

@@ -62,9 +62,21 @@ enum CanvasTitle {
     }
 
     static func dated(_ date: Date, adjective: String, noun: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return "\(adjective) \(noun) - \(formatter.string(from: date))"
+        dated(
+            date,
+            adjective: adjective,
+            noun: noun,
+            dateFormat: CanvasPreferences.autoTitleDateFormat
+        )
+    }
+
+    static func dated(
+        _ date: Date,
+        adjective: String,
+        noun: String,
+        dateFormat: CanvasTitleDateFormat,
+        timeZone: TimeZone = .autoupdatingCurrent
+    ) -> String {
+        "\(adjective) \(noun) - \(dateFormat.string(from: date, timeZone: timeZone))"
     }
 }

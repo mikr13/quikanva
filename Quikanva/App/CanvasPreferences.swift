@@ -37,12 +37,44 @@ enum CanvasAspectRatio: String, CaseIterable, Identifiable {
     }
 }
 
+enum CanvasTitleDateFormat: String, CaseIterable, Identifiable {
+    case system
+    case sortable
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: "System"
+        case .sortable: "Sortable"
+        }
+    }
+
+    func string(from date: Date, timeZone: TimeZone = .autoupdatingCurrent) -> String {
+        let formatter = DateFormatter()
+        formatter.timeZone = timeZone
+
+        switch self {
+        case .system:
+            formatter.locale = .autoupdatingCurrent
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+        case .sortable:
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        }
+
+        return formatter.string(from: date)
+    }
+}
+
 enum CanvasPreferences {
     static let defaultAspectRatioKey = "defaultCanvasAspectRatio"
     static let discardEmptyCanvasesKey = "discardEmptyCanvases"
     static let defaultBackgroundKey = "defaultCanvasBackground"
     static let defaultStyleKey = "defaultElementStyle"
     static let maxOpenCanvasPanelsKey = "maxOpenCanvasPanels"
+    static let autoTitleDateFormatKey = "autoTitleDateFormat"
 
     static var defaultAspectRatio: CanvasAspectRatio {
         get {
@@ -96,5 +128,17 @@ enum CanvasPreferences {
     static var maxOpenCanvasPanels: Int {
         get { UserDefaults.standard.integer(forKey: maxOpenCanvasPanelsKey) }
         set { UserDefaults.standard.set(max(0, newValue), forKey: maxOpenCanvasPanelsKey) }
+    }
+
+    static var autoTitleDateFormat: CanvasTitleDateFormat {
+        get {
+            guard let rawValue = UserDefaults.standard.string(forKey: autoTitleDateFormatKey) else {
+                return .system
+            }
+            return CanvasTitleDateFormat(rawValue: rawValue) ?? .system
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: autoTitleDateFormatKey)
+        }
     }
 }

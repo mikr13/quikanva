@@ -9,6 +9,8 @@ struct SettingsView: View {
     private var discardEmptyCanvases = true
     @AppStorage(CanvasPreferences.maxOpenCanvasPanelsKey)
     private var maxOpenCanvasPanels = 0
+    @AppStorage(CanvasPreferences.autoTitleDateFormatKey)
+    private var autoTitleDateFormat = CanvasTitleDateFormat.system.rawValue
     @State private var defaultBackground = CanvasPreferences.defaultBackground.swiftUIColor
     @State private var defaultStyle = CanvasPreferences.defaultStyle
     @State private var selectedTab: SettingsTab = .general
@@ -17,7 +19,8 @@ struct SettingsView: View {
         TabView(selection: $selectedTab) {
             GeneralSettingsView(
                 discardEmptyCanvases: $discardEmptyCanvases,
-                maxOpenCanvasPanels: $maxOpenCanvasPanels
+                maxOpenCanvasPanels: $maxOpenCanvasPanels,
+                autoTitleDateFormat: $autoTitleDateFormat
             )
             .tabItem {
                 Label("General", systemImage: "gearshape")
@@ -59,6 +62,7 @@ private enum SettingsTab: Hashable {
 private struct GeneralSettingsView: View {
     @Binding var discardEmptyCanvases: Bool
     @Binding var maxOpenCanvasPanels: Int
+    @Binding var autoTitleDateFormat: String
 
     var body: some View {
         Form {
@@ -79,6 +83,19 @@ private struct GeneralSettingsView: View {
             }
 
             Section {
+                Picker("Auto-title date format", selection: $autoTitleDateFormat) {
+                    ForEach(CanvasTitleDateFormat.allCases) { format in
+                        Text(format.label).tag(format.rawValue)
+                    }
+                }
+                .accessibilityHint("Choose how creation dates appear in new sketch names.")
+            } header: {
+                Text("Naming")
+            } footer: {
+                Text("Example: \(selectedDateFormat.string(from: .now))")
+            }
+
+            Section {
                 KeyboardShortcuts.Recorder("Quick new canvas:", name: .newCanvas)
                     .accessibilityLabel("Quick new canvas keyboard shortcut")
             } header: {
@@ -89,6 +106,10 @@ private struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .settingsContentInsets()
+    }
+
+    private var selectedDateFormat: CanvasTitleDateFormat {
+        CanvasTitleDateFormat(rawValue: autoTitleDateFormat) ?? .system
     }
 }
 
