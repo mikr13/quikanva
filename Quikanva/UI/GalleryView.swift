@@ -23,7 +23,14 @@ struct GalleryView: View {
                         GalleryCard(
                             doc: doc,
                             isSelecting: isSelecting,
-                            isSelected: selectedIDs.contains(doc.id)
+                            isSelected: selectedIDs.contains(doc.id),
+                            onActivate: {
+                                if isSelecting {
+                                    toggleSelection(doc.id)
+                                } else {
+                                    open(doc)
+                                }
+                            }
                         )
                             .onTapGesture {
                                 guard isSelecting else { return }
@@ -314,16 +321,18 @@ private struct GalleryCard: View {
     let doc: CanvasDocument
     let isSelecting: Bool
     let isSelected: Bool
+    let onActivate: () -> Void
 
     private let thumbnail: GalleryThumbnail
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
-    init(doc: CanvasDocument, isSelecting: Bool, isSelected: Bool) {
+    init(doc: CanvasDocument, isSelecting: Bool, isSelected: Bool, onActivate: @escaping () -> Void) {
         self.doc = doc
         self.isSelecting = isSelecting
         self.isSelected = isSelected
+        self.onActivate = onActivate
         thumbnail = GalleryThumbnail(data: doc.thumbnail)
     }
 
@@ -346,7 +355,10 @@ private struct GalleryCard: View {
         .accessibilityAddTraits(.isButton)
         .accessibilityLabel(doc.title)
         .accessibilityValue(accessibilityValue)
-        .accessibilityHint(isSelecting ? "Click to toggle selection" : "Double-click to open")
+        .accessibilityHint(isSelecting ? "Activate to toggle selection" : "Activate to open")
+        .accessibilityAction {
+            onActivate()
+        }
     }
 
     private var stickyNote: some View {
