@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install release tooling
+        run: npm ci
+
+      - name: Validate release tag
+        run: |
+          release_version="$(node -p "require('./package.json').version")"
+          if [[ "$GITHUB_REF_NAME" != "v$release_version" ]]; then
+            printf 'Tag %s does not match package version %s\n' "$GITHUB_REF_NAME" "$release_version" >&2
+            exit 1
+          fi
+
+      - name: Build and test
+        run: >-
+          xcodebuild test
+          -project Quikanva.xcodeproj
+          -scheme Quikanva
+          -destination 'platform=macOS'
+
+      - name: Package unsigned app
+        run: ./scripts/package-unsigned.sh
+
+      - name: Extract release notes
+        run: |
+          release_version="$(node -p "require('./package.json').version")"
+          awk -v heading="## $release_version" '
+            $0 == heading { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          if [[ ! -s release-notes.md ]]; then
+            printf 'No CHANGELOG.md entry found for %s\n' "$release_version" >&2
+            exit 1
+          fi
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          release_version="$(node -p "require('./package.json').version")"
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --verify-tag \
+            --title "Quikanva $release_version" \
+            --notes-file release-notes.md

@@ -103,7 +103,7 @@ gallery grid, and export to images.
 - [x] Design pass: spring press feedback + translucent toolbar + native extra-tools menu
 - [x] Slow-motion animation review
 - [x] Setup changeset for Changelog / Release Notes
-- [ ] Setup GitHub Actions for CI / build / release
+- [x] Setup GitHub Actions for CI / build / release
 - [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 
 ## Phase 7 — More polish
