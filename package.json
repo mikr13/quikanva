@@ -1,0 +1,13 @@
+{
+  "name": "quikanva",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "release:version": "changeset version && ./scripts/sync-release-version.sh"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^3.0.0"
+  }
+}

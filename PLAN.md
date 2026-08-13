@@ -102,7 +102,7 @@ gallery grid, and export to images.
 - [x] Copy-to-clipboard export; `NSSavePanel` save flow (toolbar menu + ⌘E / ⌘⇧C)
 - [x] Design pass: spring press feedback + translucent toolbar + native extra-tools menu
 - [x] Slow-motion animation review
-- [ ] Setup changeset for Changelog / Release Notes
+- [x] Setup changeset for Changelog / Release Notes
 - [ ] Setup GitHub Actions for CI / build / release
 - [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 

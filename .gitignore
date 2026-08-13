@@ -5,6 +5,7 @@ DerivedData/
 *.xcuserstate
 xcuserdata/
 .swiftpm/
+node_modules/
 .agents/
 skills-lock.json
 .omo
