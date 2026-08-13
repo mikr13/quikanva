@@ -125,7 +125,7 @@ gallery grid, and export to images.
 - [x] Always-on-top canvas window (for presentations / laser mode), with Canvas menu toggle and configurable global shortcut
 - [x] Apple liquid glass treatment of the toolbar, settings and gallery windows
 - [x] Apple liquid glass fluid animations for tool selection, inspector panel, morphing toolbar buttons and gallery item hover
-- [ ] Snapping / alignment guides
+- [x] Snapping / alignment guides for elements (e.g., center, edge, grid, smart guides) just like Excalidraw
 
 ## Phase 9 — Production Readiness
 

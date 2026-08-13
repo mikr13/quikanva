@@ -153,6 +153,87 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasNSView.hits(curvedLine, CGPoint(x: 70, y: 65)))
     }
 
+    func testAlignmentSnapperAlignsElementCenters() {
+        let result = AlignmentSnapper.snap(
+            bounds: CGRect(x: 10, y: 20, width: 40, height: 40),
+            translation: CGPoint(x: 78, y: 0),
+            targets: [CGRect(x: 100, y: 80, width: 20, height: 20)],
+            viewport: CGRect(x: 0, y: 0, width: 400, height: 300)
+        )
+
+        XCTAssertEqual(result.translation.x, 80)
+        XCTAssertTrue(result.guides.contains { $0.axis == .vertical && $0.position == 110 })
+    }
+
+    func testAlignmentSnapperAlignsElementEdges() {
+        let result = AlignmentSnapper.snap(
+            bounds: CGRect(x: 10, y: 10, width: 40, height: 40),
+            translation: CGPoint(x: 47, y: 46),
+            targets: [CGRect(x: 60, y: 60, width: 80, height: 50)],
+            viewport: CGRect(x: 0, y: 0, width: 400, height: 300)
+        )
+
+        XCTAssertEqual(result.translation, CGPoint(x: 50, y: 50))
+        XCTAssertEqual(Set(result.guides.map(\.axis)), Set([.vertical, .horizontal]))
+    }
+
+    func testAlignmentSnapperFallsBackToTheGrid() {
+        let result = AlignmentSnapper.snap(
+            bounds: CGRect(x: 3, y: 3, width: 30, height: 30),
+            translation: CGPoint(x: 14, y: 14),
+            targets: [],
+            viewport: CGRect(x: 0, y: 0, width: 403, height: 303)
+        )
+
+        XCTAssertEqual(result.translation, CGPoint(x: 17, y: 17))
+        XCTAssertEqual(result.guides.count, 2)
+    }
+
+    func testAlignmentSnapperLeavesDistantAnchorsUnchanged() {
+        let result = AlignmentSnapper.snap(
+            bounds: CGRect(x: 7, y: 7, width: 30, height: 30),
+            translation: CGPoint(x: 0, y: 0),
+            targets: [CGRect(x: 100, y: 100, width: 20, height: 20)],
+            viewport: CGRect(x: 1, y: 1, width: 398, height: 298),
+            threshold: 1
+        )
+
+        XCTAssertEqual(result.translation, .zero)
+        XCTAssertTrue(result.guides.isEmpty)
+    }
+
+    func testCanvasDragShowsAndClearsAlignmentGuides() {
+        var moving = Element(kind: .rectangle,
+                             points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        moving.zIndex = 1
+        let target = Element(kind: .rectangle,
+                             points: [Point(x: 200, y: 40), Point(x: 300, y: 120)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = NSWindow(contentRect: view.frame,
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = view
+        view.scene = CanvasScene(elements: [moving, target])
+        view.tool = .select
+
+        view.mouseDown(with: mouseEvent(.leftMouseDown,
+                                        at: windowPoint(for: CGPoint(x: 90, y: 80), in: view),
+                                        window: window))
+        view.mouseDragged(with: mouseEvent(.leftMouseDragged,
+                                           at: windowPoint(for: CGPoint(x: 247, y: 80), in: view),
+                                           window: window))
+
+        XCTAssertTrue(view.alignmentGuides.contains { $0.axis == .vertical })
+        XCTAssertEqual(CanvasNSView.bounds(of: view.scene.elements[0])?.midX, 250)
+
+        view.mouseUp(with: mouseEvent(.leftMouseUp,
+                                      at: windowPoint(for: CGPoint(x: 247, y: 80), in: view),
+                                      window: window))
+        XCTAssertTrue(view.alignmentGuides.isEmpty)
+        window.orderOut(nil)
+    }
+
     func testSketchGenerationIsDeterministic() {
         var firstRNG = SketchRNG(seed: 42)
         let firstPath = CGMutablePath()
@@ -446,12 +527,12 @@ final class CanvasTests: XCTestCase {
                       from: CGPoint(x: 90, y: 80),
                       to: CGPoint(x: 110, y: 95))
 
-        XCTAssertEqual(view.scene.elements[0].points[0], Point(x: 60, y: 55))
-        XCTAssertEqual(view.scene.elements[1].points[0], Point(x: 220, y: 55))
+        XCTAssertEqual(view.scene.elements[0].points[0], Point(x: 60, y: 60))
+        XCTAssertEqual(view.scene.elements[1].points[0], Point(x: 220, y: 60))
         view.undoManager?.undo()
         XCTAssertEqual(view.scene, initial)
         view.undoManager?.redo()
-        XCTAssertEqual(view.scene.elements[1].points[1], Point(x: 320, y: 135))
+        XCTAssertEqual(view.scene.elements[1].points[1], Point(x: 320, y: 140))
         window.orderOut(nil)
     }
 

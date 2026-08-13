@@ -1,6 +1,118 @@
 import AppKit
 import UniformTypeIdentifiers
 
+enum AlignmentGuideAxis: Equatable {
+    case horizontal, vertical
+}
+
+struct AlignmentGuide: Equatable {
+    let axis: AlignmentGuideAxis
+    let position: CGFloat
+    let start: CGFloat
+    let end: CGFloat
+}
+
+struct AlignmentSnapResult: Equatable {
+    let translation: CGPoint
+    let guides: [AlignmentGuide]
+}
+
+enum AlignmentSnapper {
+    private struct Candidate {
+        let delta: CGFloat
+        let position: CGFloat
+        let start: CGFloat
+        let end: CGFloat
+    }
+
+    static func snap(bounds: CGRect,
+                     translation: CGPoint,
+                     targets: [CGRect],
+                     viewport: CGRect,
+                     gridSpacing: CGFloat = 20,
+                     threshold: CGFloat = 6) -> AlignmentSnapResult {
+        let proposed = bounds.offsetBy(dx: translation.x, dy: translation.y)
+        let references = targets + [viewport]
+        let vertical = candidate(movingAnchors: [proposed.minX, proposed.midX, proposed.maxX],
+                                 references: references,
+                                 referenceAnchors: { [$0.minX, $0.midX, $0.maxX] },
+                                 referenceRange: { ($0.minY, $0.maxY) },
+                                 movingRange: (proposed.minY, proposed.maxY),
+                                 gridSpacing: gridSpacing,
+                                 gridRange: (viewport.minY, viewport.maxY),
+                                 threshold: threshold)
+        let horizontal = candidate(movingAnchors: [proposed.minY, proposed.midY, proposed.maxY],
+                                   references: references,
+                                   referenceAnchors: { [$0.minY, $0.midY, $0.maxY] },
+                                   referenceRange: { ($0.minX, $0.maxX) },
+                                   movingRange: (proposed.minX, proposed.maxX),
+                                   gridSpacing: gridSpacing,
+                                   gridRange: (viewport.minX, viewport.maxX),
+                                   threshold: threshold)
+
+        var guides = [AlignmentGuide]()
+        if let vertical {
+            guides.append(AlignmentGuide(axis: .vertical,
+                                         position: vertical.position,
+                                         start: vertical.start,
+                                         end: vertical.end))
+        }
+        if let horizontal {
+            guides.append(AlignmentGuide(axis: .horizontal,
+                                         position: horizontal.position,
+                                         start: horizontal.start,
+                                         end: horizontal.end))
+        }
+        return AlignmentSnapResult(
+            translation: CGPoint(x: translation.x + (vertical?.delta ?? 0),
+                                 y: translation.y + (horizontal?.delta ?? 0)),
+            guides: guides
+        )
+    }
+
+    private static func candidate(movingAnchors: [CGFloat],
+                                  references: [CGRect],
+                                  referenceAnchors: (CGRect) -> [CGFloat],
+                                  referenceRange: (CGRect) -> (CGFloat, CGFloat),
+                                  movingRange: (CGFloat, CGFloat),
+                                  gridSpacing: CGFloat,
+                                  gridRange: (CGFloat, CGFloat),
+                                  threshold: CGFloat) -> Candidate? {
+        var best: Candidate?
+        for reference in references {
+            let range = referenceRange(reference)
+            for movingAnchor in movingAnchors {
+                for referenceAnchor in referenceAnchors(reference) {
+                    let delta = referenceAnchor - movingAnchor
+                    guard abs(delta) <= threshold else { continue }
+                    let candidate = Candidate(delta: delta,
+                                              position: referenceAnchor,
+                                              start: min(movingRange.0, range.0),
+                                              end: max(movingRange.1, range.1))
+                    if best.map({ abs(delta) < abs($0.delta) }) ?? true {
+                        best = candidate
+                    }
+                }
+            }
+        }
+        if let best { return best }
+        guard gridSpacing > 0 else { return nil }
+        for movingAnchor in movingAnchors {
+            let gridAnchor = (movingAnchor / gridSpacing).rounded() * gridSpacing
+            let delta = gridAnchor - movingAnchor
+            guard abs(delta) <= threshold else { continue }
+            let candidate = Candidate(delta: delta,
+                                      position: gridAnchor,
+                                      start: gridRange.0,
+                                      end: gridRange.1)
+            if best.map({ abs(delta) < abs($0.delta) }) ?? true {
+                best = candidate
+            }
+        }
+        return best
+    }
+}
+
 final class CanvasNSView: NSView {
     var scene = CanvasScene() { didSet { redraw() } }
     var tool: ToolKind = .freedraw {
@@ -36,6 +148,7 @@ final class CanvasNSView: NSView {
     private var cameraAnimation: CameraAnimation?
     private let committedSceneView = CanvasCommittedSceneView()
     private let liveOverlayView = CanvasLiveOverlayView()
+    private(set) var alignmentGuides = [AlignmentGuide]()
 
     private struct CameraAnimation {
         let from: Camera
@@ -131,6 +244,7 @@ final class CanvasNSView: NSView {
         if let live {
             Renderer.draw(CanvasScene(elements: [live], camera: scene.camera, background: nil), in: ctx, live: nil)
         }
+        drawAlignmentGuides(in: ctx)
         drawSelection(in: ctx)
         if case .selecting(let start, let current, _, _) = drag {
             let box = CGRect(corner: start, current)
@@ -140,6 +254,27 @@ final class CanvasNSView: NSView {
             ctx.setLineWidth(1 / CGFloat(scene.camera.zoom))
             ctx.setLineDash(phase: 0, lengths: [5 / CGFloat(scene.camera.zoom), 4 / CGFloat(scene.camera.zoom)])
             ctx.stroke(box)
+        }
+        ctx.restoreGState()
+    }
+
+    private func drawAlignmentGuides(in ctx: CGContext) {
+        guard !alignmentGuides.isEmpty else { return }
+        let zoom = CGFloat(scene.camera.zoom)
+        ctx.saveGState()
+        ctx.setStrokeColor(NSColor.systemPink.withAlphaComponent(0.9).cgColor)
+        ctx.setLineWidth(1 / zoom)
+        ctx.setLineDash(phase: 0, lengths: [4 / zoom, 3 / zoom])
+        for guide in alignmentGuides {
+            switch guide.axis {
+            case .horizontal:
+                ctx.move(to: CGPoint(x: guide.start, y: guide.position))
+                ctx.addLine(to: CGPoint(x: guide.end, y: guide.position))
+            case .vertical:
+                ctx.move(to: CGPoint(x: guide.position, y: guide.start))
+                ctx.addLine(to: CGPoint(x: guide.position, y: guide.end))
+            }
+            ctx.strokePath()
         }
         ctx.restoreGState()
     }
@@ -283,6 +418,7 @@ final class CanvasNSView: NSView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        alignmentGuides.removeAll()
         let wasTextEditing = textEditor != nil
         endTextEditing()
         if wasTextEditing { tool = .select }
@@ -382,12 +518,36 @@ final class CanvasNSView: NSView {
             live = element
         case .erasing:
             eraseAt(p)
-        case .moving(_, let origin, let starts):
-            let dx = p.x - origin.x
-            let dy = p.y - origin.y
+        case .moving(let original, let origin, let starts):
+            let translation = CGPoint(x: p.x - origin.x, y: p.y - origin.y)
+            let selectedBounds = selectedIDs.compactMap { id in
+                original.elements.first(where: { $0.id == id }).flatMap(Self.bounds(of:))
+            }.reduce(into: nil) { result, box in
+                result = result?.union(box) ?? box
+            }
+            let targetBounds = original.elements.compactMap { element in
+                selectedIDs.contains(element.id) ? nil : Self.bounds(of: element)
+            }
+            let viewport = CGRect(corner: scenePoint(bounds.origin),
+                                  scenePoint(CGPoint(x: bounds.maxX, y: bounds.maxY)))
+            let snapped: AlignmentSnapResult
+            if event.modifierFlags.contains(.option) {
+                snapped = AlignmentSnapResult(translation: translation, guides: [])
+            } else if let selectedBounds {
+                snapped = AlignmentSnapper.snap(bounds: selectedBounds,
+                                                translation: translation,
+                                                targets: targetBounds,
+                                                viewport: viewport,
+                                                threshold: 6 / CGFloat(scene.camera.zoom))
+            } else {
+                snapped = AlignmentSnapResult(translation: translation, guides: [])
+            }
+            alignmentGuides = snapped.guides
             for (id, points) in starts {
                 guard let index = scene.elements.firstIndex(where: { $0.id == id }) else { continue }
-                scene.elements[index].points = points.map { Point(x: $0.x + dx, y: $0.y + dy) }
+                scene.elements[index].points = points.map {
+                    Point(x: $0.x + snapped.translation.x, y: $0.y + snapped.translation.y)
+                }
             }
         case .resizing(_, let handle, let originalBounds, let points):
             guard let id = selectedIDs.first,
@@ -454,6 +614,7 @@ final class CanvasNSView: NSView {
             break
         }
         drag = .none
+        alignmentGuides.removeAll()
         redraw()
     }
 
