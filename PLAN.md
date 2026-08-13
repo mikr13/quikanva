@@ -120,7 +120,7 @@ gallery grid, and export to images.
 
 ## Phase 8 — More ideas
 
-- [ ] Dual random word paired naming for auto-titles (e.g., "Cosmic Ladle - Aug 5th, 2026 at 14:30")
+- [x] Dual random word paired naming for auto-titles (e.g., "Cosmic Ladle - Aug 5th, 2026 at 14:30")
 - [ ] Configure date-time format for auto-titles in settings (e.g., "Aug 5th, 2026 at 14:30" vs "2026-08-05 14:30")
 - [ ] Always-on-top canvas window (for presentations / laser mode)
 - [ ] Apple liquid glass treatment of the toolbar, settings and gallery windows

@@ -44,10 +44,27 @@ enum SceneCodec {
 }
 
 enum CanvasTitle {
+    private static let adjectives = [
+        "Amber", "Brisk", "Cosmic", "Daring", "Electric", "Gentle", "Hidden", "Lunar",
+        "Merry", "Nimble", "Quiet", "Radiant", "Silver", "Tiny", "Velvet", "Witty"
+    ]
+    private static let nouns = [
+        "Badger", "Beacon", "Comet", "Fern", "Finch", "Harbor", "Kettle", "Ladle",
+        "Lantern", "Meadow", "Otter", "Pebble", "Rocket", "Sparrow", "Teacup", "Willow"
+    ]
+
     static func dated(_ date: Date = .now) -> String {
+        dated(
+            date,
+            adjective: adjectives.randomElement() ?? "Cosmic",
+            noun: nouns.randomElement() ?? "Ladle"
+        )
+    }
+
+    static func dated(_ date: Date, adjective: String, noun: String) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
-        return "Sketch - \(formatter.string(from: date))"
+        return "\(adjective) \(noun) - \(formatter.string(from: date))"
     }
 }

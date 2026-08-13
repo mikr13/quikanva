@@ -413,8 +413,16 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
-    func testCanvasTitleUsesSketchPrefix() {
-        XCTAssertTrue(CanvasTitle.dated(Date(timeIntervalSince1970: 0)).hasPrefix("Sketch - "))
+    func testCanvasTitleUsesRandomWordPairPrefix() {
+        let title = CanvasTitle.dated(
+            Date(timeIntervalSince1970: 0),
+            adjective: "Cosmic",
+            noun: "Ladle"
+        )
+
+        let separator = "Cosmic Ladle - "
+        XCTAssertTrue(title.hasPrefix(separator))
+        XCTAssertFalse(title.dropFirst(separator.count).isEmpty)
     }
 
     func testGalleryPreviewSizesAreCappedPerAspectRatio() {
