@@ -93,7 +93,10 @@ struct GalleryView: View {
             }
         }
         .frame(minWidth: 640, minHeight: 460)
-        .background(.background)
+        .background {
+            QuikanvaWindowGlass()
+                .ignoresSafeArea()
+        }
         .navigationTitle("Quikanva")
         .onChange(of: docs.map(\.id)) { _, ids in
             selectedIDs.formIntersection(ids)

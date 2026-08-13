@@ -212,15 +212,10 @@ struct CanvasToolbar: View {
             .accessibilityLabel("Export or copy sketch")
         }
         .padding(6)
-        .background(
-            reduceTransparency
-                ? AnyShapeStyle(Color(nsColor: .controlBackgroundColor))
-                : AnyShapeStyle(.regularMaterial),
-            in: RoundedRectangle(cornerRadius: 12)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.primary.opacity(contrast == .increased ? 0.3 : 0.12))
+        .quikanvaGlassSurface(
+            in: RoundedRectangle(cornerRadius: 12),
+            interactive: true,
+            borderOpacity: contrast == .increased ? 0.3 : 0.12
         )
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .popover(isPresented: $showingInspector, arrowEdge: .bottom) {
@@ -586,5 +581,61 @@ struct PressableStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1)
             .animation(reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 1), value: configuration.isPressed)
+    }
+}
+
+private struct QuikanvaGlassSurfaceModifier<S: InsettableShape>: ViewModifier {
+    let shape: S
+    let interactive: Bool
+    let borderOpacity: Double
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(Color(nsColor: .controlBackgroundColor), in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(borderOpacity), lineWidth: 1))
+        } else if #available(macOS 26.0, *) {
+            content
+                .glassEffect(interactive ? .regular.interactive() : .regular, in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(borderOpacity), lineWidth: 1))
+        } else {
+            content
+                .background(.regularMaterial, in: shape)
+                .overlay(shape.stroke(Color.primary.opacity(borderOpacity), lineWidth: 1))
+        }
+    }
+}
+
+extension View {
+    func quikanvaGlassSurface<S: InsettableShape>(
+        in shape: S,
+        interactive: Bool = false,
+        borderOpacity: Double = 0.12
+    ) -> some View {
+        modifier(QuikanvaGlassSurfaceModifier(
+            shape: shape,
+            interactive: interactive,
+            borderOpacity: borderOpacity
+        ))
+    }
+}
+
+struct QuikanvaWindowGlass: View {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    var body: some View {
+        if reduceTransparency {
+            Color(nsColor: .windowBackgroundColor)
+        } else if #available(macOS 26.0, *) {
+            Color.clear
+                .glassEffect(.regular, in: .rect)
+        } else {
+            Rectangle()
+                .fill(.regularMaterial)
+        }
     }
 }

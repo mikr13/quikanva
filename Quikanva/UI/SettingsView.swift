@@ -43,6 +43,10 @@ struct SettingsView: View {
             .accessibilityLabel("Canvas settings")
         }
         .frame(width: 620, height: 500)
+        .background {
+            QuikanvaWindowGlass()
+                .ignoresSafeArea()
+        }
         .onAppear {
             Task { @MainActor in
                 await Task.yield()
@@ -115,6 +119,7 @@ private struct GeneralSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
         .settingsContentInsets()
         .onChange(of: alwaysOnTop, initial: true) { _, enabled in
             CanvasWindowManager.shared.updateAlwaysOnTop(enabled)
@@ -218,6 +223,7 @@ private struct CanvasSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
         .settingsContentInsets()
         .onChange(of: defaultBackground) { _, value in
             CanvasPreferences.defaultBackground = RGBAColor(value)
