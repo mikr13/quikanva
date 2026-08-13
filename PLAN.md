@@ -101,7 +101,7 @@ gallery grid, and export to images.
 - [x] `Exporter`: PNG/JPEG at 2x, background toggle, tight-crop to content
 - [x] Copy-to-clipboard export; `NSSavePanel` save flow (toolbar menu + ⌘E / ⌘⇧C)
 - [x] Design pass: spring press feedback + translucent toolbar + native extra-tools menu
-- [ ] Slow-motion animation review
+- [x] Slow-motion animation review
 - [ ] **Verify:** exports open correctly in Preview; a11y (VoiceOver, contrast, dark mode)
 
 ## Phase 7 — More polish
@@ -116,14 +116,20 @@ gallery grid, and export to images.
 - [x] Setting: Default canvas background color, default stroke/fill color, default roughness/fill style, default text font/weight/size, default arrowhead style, default stroke style, max canvas window panel number that can be open at once (e.g., 1, 2, 3, 4, unlimited)
 - [x] **Verify:** full manual pass of element z-order, stroke/fill/arrowhead/text/font, bending and settings panel
 
-## Phase 8 — Future ideas
+## Phase 8 — More ideas
 
-- [ ] PDF / SVG export
 - [ ] Dual random word paired naming for auto-titles (e.g., "Cosmic Ladle - Aug 5th, 2026 at 14:30")
 - [ ] Configure date-time format for auto-titles in settings (e.g., "Aug 5th, 2026 at 14:30" vs "2026-08-05 14:30")
 - [ ] Always-on-top canvas window (for presentations / laser mode)
 - [ ] Apple liquid glass treatment of the toolbar, settings and gallery windows
+- [ ] Apple liquid glass fluid animations for tool selection, inspector panel, morphing toolbar buttons and gallery item hover
 - [ ] Snapping / alignment guides
+- [ ] Setup changeset for Changelog / Release Notes
+- [ ] Setup GitHub Actions for CI / build / release
+
+## Phase 9 — Production Readiness
+
+- [ ] PDF / SVG export
 - [ ] Support importing Excalidraw plugin files
 - [ ] Launch at login
 - [ ] iCloud sync
