@@ -43,6 +43,15 @@ final class LaunchAtLoginController: ObservableObject {
         status == .enabled
     }
 
+    var canChangeRegistration: Bool {
+        switch status {
+        case .notFound, .notRegistered, .enabled, .requiresApproval:
+            true
+        @unknown default:
+            false
+        }
+    }
+
     var statusMessage: String {
         switch status {
         case .notRegistered:
@@ -52,7 +61,7 @@ final class LaunchAtLoginController: ObservableObject {
         case .requiresApproval:
             "Allow Quikanva in System Settings to finish enabling launch at login."
         case .notFound:
-            "Launch at login is unavailable for this copy of Quikanva."
+            "Quikanva is not registered yet. Turn this on to try again."
         @unknown default:
             "Launch at login status is unavailable."
         }

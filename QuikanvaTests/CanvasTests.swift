@@ -529,6 +529,14 @@ final class CanvasTests: XCTestCase {
         XCTAssertEqual(controller.status, .requiresApproval)
     }
 
+    func testLaunchAtLoginControllerAllowsRetryWhenServiceIsNotFound() {
+        let service = FakeLaunchAtLoginService(status: .notFound)
+        let controller = LaunchAtLoginController(service: service)
+
+        XCTAssertTrue(controller.canChangeRegistration)
+        XCTAssertTrue(controller.statusMessage.contains("try again"))
+    }
+
     func testCameraAnimationCommitsOnlyItsFinalState() {
         let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
         let window = testWindow(for: view)

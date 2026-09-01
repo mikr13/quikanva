@@ -84,7 +84,7 @@ private struct GeneralSettingsView: View {
 
                 Toggle("Launch Quikanva at login", isOn: launchAtLoginBinding)
                     .accessibilityHint("Controls whether Quikanva opens automatically when you log in.")
-                    .disabled(launchAtLogin.status == .notFound)
+                    .disabled(!launchAtLogin.canChangeRegistration)
 
                 if launchAtLogin.status == .requiresApproval {
                     Button("Open Login Items Settings") {
