@@ -42,6 +42,7 @@ struct CanvasToolbar: View {
     @Binding var selectedCurve: Double?
     @Binding var background: Color
     @Binding var includeExportBackground: Bool
+    let toolShortcuts: ToolShortcutConfiguration
     var onSave: () -> Void = {}
     var onCopyImage: () -> Void = {}
     var onExportPNG: () -> Void = {}
@@ -276,7 +277,7 @@ struct CanvasToolbar: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())
-            .help("\(item.rawValue.capitalized) (\(item.shortcut))")
+            .help("\(item.rawValue.capitalized) (\(toolShortcuts.shortcut(for: item)))")
             .accessibilityLabel(item.rawValue.capitalized)
             .accessibilityHint("Select drawing tool")
             .accessibilityAddTraits(tool == item ? .isSelected : [])
@@ -287,7 +288,7 @@ struct CanvasToolbar: View {
     @ViewBuilder
     private func toolMenuItems(_ items: ArraySlice<ToolKind>) -> some View {
         ForEach(items) { item in
-            Button(item.rawValue.capitalized) { selectTool(item) }
+            Button("\(item.rawValue.capitalized) (\(toolShortcuts.shortcut(for: item)))") { selectTool(item) }
         }
     }
 
@@ -595,23 +596,6 @@ private struct CanvasStyleInspector: View {
             get: { style.fillStyle },
             set: { style.setFillStyle($0) }
         )
-    }
-}
-
-private extension ToolKind {
-    var shortcut: String {
-        switch self {
-        case .select: "V"
-        case .hand: "H"
-        case .freedraw: "P"
-        case .rectangle: "R"
-        case .ellipse: "O"
-        case .diamond: "D"
-        case .line: "L"
-        case .arrow: "A"
-        case .text: "T"
-        case .eraser: "E"
-        }
     }
 }
 

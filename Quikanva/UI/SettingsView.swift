@@ -15,6 +15,7 @@ struct SettingsView: View {
     private var alwaysOnTop = false
     @State private var defaultBackground = CanvasPreferences.defaultBackground.swiftUIColor
     @State private var defaultStyle = CanvasPreferences.defaultStyle
+    @State private var toolShortcuts = CanvasPreferences.toolShortcuts
     @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
@@ -34,7 +35,8 @@ struct SettingsView: View {
             CanvasSettingsView(
                 defaultAspectRatio: $defaultAspectRatio,
                 defaultBackground: $defaultBackground,
-                defaultStyle: $defaultStyle
+                defaultStyle: $defaultStyle,
+                toolShortcuts: $toolShortcuts
             )
             .tabItem {
                 Label("Canvas", systemImage: "rectangle.and.pencil.and.ellipsis")
@@ -130,6 +132,7 @@ private struct CanvasSettingsView: View {
     @Binding var defaultAspectRatio: String
     @Binding var defaultBackground: Color
     @Binding var defaultStyle: ElementStyle
+    @Binding var toolShortcuts: ToolShortcutConfiguration
 
     var body: some View {
         Form {
@@ -146,6 +149,26 @@ private struct CanvasSettingsView: View {
                 Text("Canvas")
             } footer: {
                 Text("Background color changes do not count as canvas content.")
+            }
+
+            Section {
+                ForEach(ToolKind.allCases) { tool in
+                    Picker(tool.rawValue.capitalized, selection: shortcutBinding(for: tool)) {
+                        ForEach(ToolShortcutConfiguration.availableKeys, id: \.self) { key in
+                            Text(key).tag(key)
+                        }
+                    }
+                    .accessibilityLabel("\(tool.rawValue.capitalized) tool shortcut")
+                }
+
+                Button("Restore Default Tool Shortcuts") {
+                    toolShortcuts = .defaultValue
+                }
+                .disabled(toolShortcuts == .defaultValue)
+            } header: {
+                Text("Tool Shortcuts")
+            } footer: {
+                Text("These single-letter shortcuts work while a canvas is focused. Choosing an assigned key swaps the two tools.")
             }
 
             Section {
@@ -225,6 +248,9 @@ private struct CanvasSettingsView: View {
         .onChange(of: defaultStyle) { _, value in
             CanvasPreferences.defaultStyle = value
         }
+        .onChange(of: toolShortcuts) { _, value in
+            CanvasPreferences.toolShortcuts = value
+        }
     }
 
     private var strokeBinding: Binding<Color> {
@@ -245,6 +271,13 @@ private struct CanvasSettingsView: View {
         Binding(
             get: { defaultStyle.fillStyle },
             set: { defaultStyle.setFillStyle($0) }
+        )
+    }
+
+    private func shortcutBinding(for tool: ToolKind) -> Binding<String> {
+        Binding(
+            get: { toolShortcuts.shortcut(for: tool) },
+            set: { toolShortcuts.assign($0, to: tool) }
         )
     }
 }

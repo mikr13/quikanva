@@ -55,6 +55,7 @@ struct CanvasPanelView: View {
     @State private var selectedStyle: ElementStyle?
     @State private var selectedImageShadow: Bool?
     @State private var selectedCurve: Double?
+    @AppStorage(CanvasPreferences.toolShortcutsKey) private var toolShortcutsData = Data()
     @StateObject private var autosave: CanvasAutosaveCoordinator
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -78,7 +79,13 @@ struct CanvasPanelView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            CanvasRepresentable(scene: scene, tool: tool, style: style, command: canvasCommand) { updated in
+            CanvasRepresentable(
+                scene: scene,
+                tool: tool,
+                style: style,
+                toolShortcuts: toolShortcuts,
+                command: canvasCommand
+            ) { updated in
                 scene = updated
                 autosave.schedule(updated)
             } onToolChange: { updated in
@@ -115,6 +122,7 @@ struct CanvasPanelView: View {
                         selectedCurve: $selectedCurve,
                         background: backgroundBinding,
                         includeExportBackground: $includeExportBackground,
+                        toolShortcuts: toolShortcuts,
                         onSave: {
                             draftName = doc.title
                             showNamePrompt = true
@@ -181,6 +189,10 @@ struct CanvasPanelView: View {
                 autosave.schedule(scene)
             }
         )
+    }
+
+    private var toolShortcuts: ToolShortcutConfiguration {
+        CanvasPreferences.toolShortcuts(from: toolShortcutsData)
     }
 
     private var closeButton: some View {

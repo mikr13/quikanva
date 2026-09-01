@@ -68,6 +68,76 @@ enum CanvasTitleDateFormat: String, CaseIterable, Identifiable {
     }
 }
 
+struct ToolShortcutConfiguration: Codable, Equatable {
+    static let availableKeys = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ").map(String.init)
+
+    static let defaultValue = ToolShortcutConfiguration(assignments: [
+        ToolKind.select.rawValue: "V",
+        ToolKind.hand.rawValue: "H",
+        ToolKind.freedraw.rawValue: "P",
+        ToolKind.rectangle.rawValue: "R",
+        ToolKind.ellipse.rawValue: "O",
+        ToolKind.diamond.rawValue: "D",
+        ToolKind.line.rawValue: "L",
+        ToolKind.arrow.rawValue: "A",
+        ToolKind.text.rawValue: "T",
+        ToolKind.eraser.rawValue: "E",
+    ])
+
+    private var assignments: [String: String]
+
+    private enum CodingKeys: String, CodingKey {
+        case assignments
+    }
+
+    private init(assignments: [String: String]) {
+        self.assignments = assignments
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let decoded = try container.decode([String: String].self, forKey: .assignments)
+        assignments = Self.validated(decoded) ?? Self.defaultValue.assignments
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(assignments, forKey: .assignments)
+    }
+
+    func shortcut(for tool: ToolKind) -> String {
+        assignments[tool.rawValue] ?? Self.defaultValue.assignments[tool.rawValue] ?? ""
+    }
+
+    func tool(for key: String) -> ToolKind? {
+        let normalizedKey = key.uppercased()
+        return ToolKind.allCases.first { shortcut(for: $0) == normalizedKey }
+    }
+
+    mutating func assign(_ key: String, to tool: ToolKind) {
+        let normalizedKey = key.uppercased()
+        guard Self.availableKeys.contains(normalizedKey) else { return }
+
+        let previousKey = shortcut(for: tool)
+        if let conflictingTool = self.tool(for: normalizedKey), conflictingTool != tool {
+            assignments[conflictingTool.rawValue] = previousKey
+        }
+        assignments[tool.rawValue] = normalizedKey
+    }
+
+    private static func validated(_ candidate: [String: String]) -> [String: String]? {
+        var result: [String: String] = [:]
+        var usedKeys = Set<String>()
+        for tool in ToolKind.allCases {
+            guard let rawKey = candidate[tool.rawValue] else { return nil }
+            let key = rawKey.uppercased()
+            guard availableKeys.contains(key), usedKeys.insert(key).inserted else { return nil }
+            result[tool.rawValue] = key
+        }
+        return result
+    }
+}
+
 enum CanvasPreferences {
     static let defaultAspectRatioKey = "defaultCanvasAspectRatio"
     static let discardEmptyCanvasesKey = "discardEmptyCanvases"
@@ -76,6 +146,7 @@ enum CanvasPreferences {
     static let maxOpenCanvasPanelsKey = "maxOpenCanvasPanels"
     static let autoTitleDateFormatKey = "autoTitleDateFormat"
     static let alwaysOnTopKey = "alwaysOnTop"
+    static let toolShortcutsKey = "canvasToolShortcuts"
 
     static var defaultAspectRatio: CanvasAspectRatio {
         get {
@@ -146,5 +217,22 @@ enum CanvasPreferences {
     static var alwaysOnTop: Bool {
         get { UserDefaults.standard.bool(forKey: alwaysOnTopKey) }
         set { UserDefaults.standard.set(newValue, forKey: alwaysOnTopKey) }
+    }
+
+    static var toolShortcuts: ToolShortcutConfiguration {
+        get { toolShortcuts(from: UserDefaults.standard.data(forKey: toolShortcutsKey) ?? Data()) }
+        set { UserDefaults.standard.set(encodedToolShortcuts(newValue), forKey: toolShortcutsKey) }
+    }
+
+    static func toolShortcuts(from data: Data) -> ToolShortcutConfiguration {
+        guard !data.isEmpty,
+              let decoded = try? JSONDecoder().decode(ToolShortcutConfiguration.self, from: data) else {
+            return .defaultValue
+        }
+        return decoded
+    }
+
+    static func encodedToolShortcuts(_ shortcuts: ToolShortcutConfiguration) -> Data {
+        (try? JSONEncoder().encode(shortcuts)) ?? Data()
     }
 }

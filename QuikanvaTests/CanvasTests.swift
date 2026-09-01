@@ -441,6 +441,66 @@ final class CanvasTests: XCTestCase {
         window.orderOut(nil)
     }
 
+    func testDefaultToolShortcutsSelectEveryCanvasTool() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.toolShortcuts = .defaultValue
+
+        for tool in ToolKind.allCases {
+            view.tool = tool == .select ? .hand : .select
+            let key = view.toolShortcuts.shortcut(for: tool).lowercased()
+            view.keyDown(with: keyEvent(for: window, modifiers: [], characters: key, keyCode: 0))
+            XCTAssertEqual(view.tool, tool)
+        }
+        window.orderOut(nil)
+    }
+
+    func testConfiguredToolShortcutUpdatesDispatchAndRejectsModifiers() {
+        var shortcuts = ToolShortcutConfiguration.defaultValue
+        shortcuts.assign("X", to: .rectangle)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.toolShortcuts = shortcuts
+        view.tool = .select
+
+        view.keyDown(with: keyEvent(for: window, modifiers: [], characters: "x", keyCode: 0))
+        XCTAssertEqual(view.tool, .rectangle)
+
+        view.tool = .select
+        view.keyDown(with: keyEvent(for: window, modifiers: [.shift], characters: "x", keyCode: 0))
+        XCTAssertEqual(view.tool, .select)
+
+        view.keyDown(with: keyEvent(for: window, modifiers: [], characters: "r", keyCode: 0))
+        XCTAssertEqual(view.tool, .select)
+        window.orderOut(nil)
+    }
+
+    func testToolShortcutPreferencesPersistAndSwapConflicts() {
+        let defaults = UserDefaults.standard
+        let previousData = defaults.data(forKey: CanvasPreferences.toolShortcutsKey)
+        defer {
+            if let previousData {
+                defaults.set(previousData, forKey: CanvasPreferences.toolShortcutsKey)
+            } else {
+                defaults.removeObject(forKey: CanvasPreferences.toolShortcutsKey)
+            }
+        }
+
+        defaults.removeObject(forKey: CanvasPreferences.toolShortcutsKey)
+        var shortcuts = CanvasPreferences.toolShortcuts
+        XCTAssertEqual(shortcuts, .defaultValue)
+
+        shortcuts.assign("H", to: .select)
+        XCTAssertEqual(shortcuts.shortcut(for: .select), "H")
+        XCTAssertEqual(shortcuts.shortcut(for: .hand), "V")
+
+        CanvasPreferences.toolShortcuts = shortcuts
+        XCTAssertEqual(CanvasPreferences.toolShortcuts, shortcuts)
+
+        defaults.set(Data([0xFF]), forKey: CanvasPreferences.toolShortcutsKey)
+        XCTAssertEqual(CanvasPreferences.toolShortcuts, .defaultValue)
+    }
+
     func testSelectedStyleCommandUpdatesShape() {
         let element = Element(kind: .rectangle,
                                points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])

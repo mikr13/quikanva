@@ -126,6 +126,7 @@ final class CanvasNSView: NSView {
         }
     }
     var style = ElementStyle()
+    var toolShortcuts = ToolShortcutConfiguration.defaultValue
     var onCommit: ((CanvasScene) -> Void)?
     var onToolChange: ((ToolKind) -> Void)?
     var onSelectionChange: ((ElementStyle?) -> Void)?
@@ -734,11 +735,7 @@ final class CanvasNSView: NSView {
             super.keyDown(with: event)
             return
         }
-        let shortcuts: [String: ToolKind] = [
-            "v": .select, "h": .hand, "p": .freedraw, "r": .rectangle, "o": .ellipse,
-            "d": .diamond, "l": .line, "a": .arrow, "t": .text, "e": .eraser,
-        ]
-        if let nextTool = shortcuts[key] {
+        if let nextTool = toolShortcuts.tool(for: key) {
             tool = nextTool
         } else {
             super.keyDown(with: event)
