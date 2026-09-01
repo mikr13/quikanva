@@ -129,10 +129,14 @@ gallery grid, and export to images.
 
 ## Phase 9 — Production Readiness
 
-- [ ] Make every canvas tool shortcut configurable in Settings
-- [ ] PDF / SVG export
+- [x] Make every canvas tool shortcut configurable in Settings
+- [x] Launch at login
+- [x] Code cleanup & optimizations
+
+## Phase 10 — Future Ideas
+
 - [ ] Support importing Excalidraw plugin files
-- [ ] Launch at login
+- [ ] PDF / SVG export
 - [ ] iCloud sync
 
 ---
