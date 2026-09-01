@@ -1,6 +1,7 @@
 import XCTest
 import AppKit
 import CoreGraphics
+import ServiceManagement
 import SwiftUI
 @testable import Quikanva
 
@@ -501,6 +502,33 @@ final class CanvasTests: XCTestCase {
         XCTAssertEqual(CanvasPreferences.toolShortcuts, .defaultValue)
     }
 
+    func testLaunchAtLoginControllerRegistersAndUnregisters() {
+        let service = FakeLaunchAtLoginService(status: .notRegistered)
+        let controller = LaunchAtLoginController(service: service)
+
+        controller.setEnabled(true)
+        XCTAssertTrue(controller.isEnabled)
+        XCTAssertEqual(service.registerCallCount, 1)
+
+        controller.setEnabled(false)
+        XCTAssertFalse(controller.isEnabled)
+        XCTAssertEqual(service.unregisterCallCount, 1)
+    }
+
+    func testLaunchAtLoginControllerReportsApprovalAndErrors() {
+        let service = FakeLaunchAtLoginService(status: .requiresApproval)
+        let controller = LaunchAtLoginController(service: service)
+
+        XCTAssertTrue(controller.statusMessage.contains("System Settings"))
+
+        service.registerError = NSError(domain: "LaunchAtLoginTests", code: 1,
+                                        userInfo: [NSLocalizedDescriptionKey: "Registration failed"])
+        controller.setEnabled(true)
+
+        XCTAssertEqual(controller.errorMessage, "Registration failed")
+        XCTAssertEqual(controller.status, .requiresApproval)
+    }
+
     func testSelectedStyleCommandUpdatesShape() {
         let element = Element(kind: .rectangle,
                                points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
@@ -941,4 +969,30 @@ private struct CountingGalleryCard: View {
         let _ = counter.record()
         Color.clear.frame(width: 240, height: 300)
     }
+}
+
+private final class FakeLaunchAtLoginService: LaunchAtLoginService {
+    var status: SMAppService.Status
+    var registerError: Error?
+    var unregisterError: Error?
+    private(set) var registerCallCount = 0
+    private(set) var unregisterCallCount = 0
+
+    init(status: SMAppService.Status) {
+        self.status = status
+    }
+
+    func register() throws {
+        registerCallCount += 1
+        if let registerError { throw registerError }
+        status = .enabled
+    }
+
+    func unregister() throws {
+        unregisterCallCount += 1
+        if let unregisterError { throw unregisterError }
+        status = .notRegistered
+    }
+
+    func openSystemSettingsLoginItems() {}
 }

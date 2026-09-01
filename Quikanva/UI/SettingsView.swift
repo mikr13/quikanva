@@ -17,6 +17,7 @@ struct SettingsView: View {
     @State private var defaultStyle = CanvasPreferences.defaultStyle
     @State private var toolShortcuts = CanvasPreferences.toolShortcuts
     @State private var selectedTab: SettingsTab = .general
+    @StateObject private var launchAtLogin = LaunchAtLoginController()
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -24,7 +25,8 @@ struct SettingsView: View {
                 discardEmptyCanvases: $discardEmptyCanvases,
                 maxOpenCanvasPanels: $maxOpenCanvasPanels,
                 autoTitleDateFormat: $autoTitleDateFormat,
-                alwaysOnTop: $alwaysOnTop
+                alwaysOnTop: $alwaysOnTop,
+                launchAtLogin: launchAtLogin
             )
             .tabItem {
                 Label("General", systemImage: "gearshape")
@@ -69,6 +71,7 @@ private struct GeneralSettingsView: View {
     @Binding var maxOpenCanvasPanels: Int
     @Binding var autoTitleDateFormat: String
     @Binding var alwaysOnTop: Bool
+    @ObservedObject var launchAtLogin: LaunchAtLoginController
 
     var body: some View {
         Form {
@@ -79,6 +82,16 @@ private struct GeneralSettingsView: View {
                 Toggle("Keep canvas windows on top", isOn: $alwaysOnTop)
                     .accessibilityHint("Keeps canvas windows visible above other apps for presentations and laser mode.")
 
+                Toggle("Launch Quikanva at login", isOn: launchAtLoginBinding)
+                    .accessibilityHint("Controls whether Quikanva opens automatically when you log in.")
+                    .disabled(launchAtLogin.status == .notFound)
+
+                if launchAtLogin.status == .requiresApproval {
+                    Button("Open Login Items Settings") {
+                        launchAtLogin.openSystemSettings()
+                    }
+                }
+
                 Picker("Maximum open canvases", selection: $maxOpenCanvasPanels) {
                     Text("Unlimited").tag(0)
                     ForEach(1 ... 4, id: \.self) { count in
@@ -88,7 +101,15 @@ private struct GeneralSettingsView: View {
             } header: {
                 Text("Behavior")
             } footer: {
-                Text("Unlimited allows any number of canvas windows to remain open.")
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Unlimited allows any number of canvas windows to remain open.")
+                    Text(launchAtLogin.statusMessage)
+
+                    if let errorMessage = launchAtLogin.errorMessage {
+                        Text(errorMessage)
+                            .foregroundStyle(.red)
+                    }
+                }
             }
 
             Section {
@@ -121,10 +142,20 @@ private struct GeneralSettingsView: View {
         .onChange(of: alwaysOnTop, initial: true) { _, enabled in
             CanvasWindowManager.shared.updateAlwaysOnTop(enabled)
         }
+        .onAppear {
+            launchAtLogin.refresh()
+        }
     }
 
     private var selectedDateFormat: CanvasTitleDateFormat {
         CanvasTitleDateFormat(rawValue: autoTitleDateFormat) ?? .system
+    }
+
+    private var launchAtLoginBinding: Binding<Bool> {
+        Binding(
+            get: { launchAtLogin.isEnabled },
+            set: { launchAtLogin.setEnabled($0) }
+        )
     }
 }
 
