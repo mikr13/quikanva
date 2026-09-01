@@ -39,7 +39,7 @@ enum Thumbnailer {
             ctx.translateBy(x: size.width / 2, y: size.height / 2)
             ctx.scaleBy(x: scale, y: scale)
             ctx.translateBy(x: -box.midX, y: -box.midY)
-            Renderer.draw(scene, in: ctx, live: nil)
+            Renderer.draw(scene, in: ctx)
         }
 
         return rep.representation(using: .png, properties: [:])

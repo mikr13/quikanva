@@ -24,7 +24,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ) {
                 if let existingApplication = NSWorkspace.shared.runningApplications
                     .first(where: { $0.processIdentifier == processIdentifier }) {
-                    existingApplication.activate(options: [.activateIgnoringOtherApps])
+                    existingApplication.activate(options: [])
                 }
                 NSApp.terminate(nil)
                 return

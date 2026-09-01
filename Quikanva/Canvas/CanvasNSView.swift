@@ -234,7 +234,7 @@ final class CanvasNSView: NSView {
         ctx.saveGState()
         ctx.translateBy(x: CGFloat(scene.camera.panX), y: CGFloat(scene.camera.panY))
         ctx.scaleBy(x: CGFloat(scene.camera.zoom), y: CGFloat(scene.camera.zoom))
-        Renderer.draw(scene, in: ctx, live: nil)
+        Renderer.draw(scene, in: ctx)
         ctx.restoreGState()
     }
 
@@ -243,7 +243,7 @@ final class CanvasNSView: NSView {
         ctx.translateBy(x: CGFloat(scene.camera.panX), y: CGFloat(scene.camera.panY))
         ctx.scaleBy(x: CGFloat(scene.camera.zoom), y: CGFloat(scene.camera.zoom))
         if let live {
-            Renderer.draw(CanvasScene(elements: [live], camera: scene.camera, background: nil), in: ctx, live: nil)
+            Renderer.draw(CanvasScene(elements: [live], camera: scene.camera, background: nil), in: ctx)
         }
         drawAlignmentGuides(in: ctx)
         drawSelection(in: ctx)
@@ -346,11 +346,12 @@ final class CanvasNSView: NSView {
     }
 
     private var selectionBounds: CGRect? {
-        selectedIDs.compactMap { id in
-            scene.elements.first(where: { $0.id == id }).flatMap(Self.bounds(of:))
-        }.reduce(into: nil) { result, box in
-            result = result?.union(box) ?? box
-        }?.insetBy(dx: -6, dy: -6)
+        scene.elements.lazy
+            .filter { self.selectedIDs.contains($0.id) }
+            .compactMap(Self.bounds(of:))
+            .reduce(into: nil) { result, box in
+                result = result?.union(box) ?? box
+            }?.insetBy(dx: -6, dy: -6)
     }
 
     private var selectedStyle: ElementStyle? {
@@ -521,11 +522,12 @@ final class CanvasNSView: NSView {
             eraseAt(p)
         case .moving(let original, let origin, let starts):
             let translation = CGPoint(x: p.x - origin.x, y: p.y - origin.y)
-            let selectedBounds = selectedIDs.compactMap { id in
-                original.elements.first(where: { $0.id == id }).flatMap(Self.bounds(of:))
-            }.reduce(into: nil) { result, box in
-                result = result?.union(box) ?? box
-            }
+            let selectedBounds = original.elements.lazy
+                .filter { self.selectedIDs.contains($0.id) }
+                .compactMap(Self.bounds(of:))
+                .reduce(into: nil) { result, box in
+                    result = result?.union(box) ?? box
+                }
             let targetBounds = original.elements.compactMap { element in
                 selectedIDs.contains(element.id) ? nil : Self.bounds(of: element)
             }
@@ -1017,13 +1019,6 @@ final class CanvasNSView: NSView {
         case .sendSelectionToBack:
             reorderSelection(toFront: false)
         }
-        switch command {
-        case .updateSelectionStyle, .updateSelectedImageShadow, .updateSelectedCurve, .togglePointEditing,
-             .bringSelectionToFront, .sendSelectionToBack:
-            break
-        default:
-            onCommit?(scene)
-        }
         onCommandHandled?()
     }
 
@@ -1085,7 +1080,6 @@ final class CanvasNSView: NSView {
             zoom: animation.from.zoom + (animation.to.zoom - animation.from.zoom) * progress
         )
         redraw()
-        onCommit?(scene)
         if time >= 1 {
             scene.camera = animation.to
             stopCameraAnimation()

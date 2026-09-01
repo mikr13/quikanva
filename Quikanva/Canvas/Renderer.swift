@@ -123,10 +123,8 @@ enum Renderer {
     private static let roughPathCache = RoughPathCache()
     private static let imageCache = ImageCache()
 
-    static func draw(_ scene: CanvasScene, in ctx: CGContext, live: Element?) {
-        var all = scene.elements
-        if let live { all.append(live) }
-        for el in all.sorted(by: { $0.zIndex < $1.zIndex }) {
+    static func draw(_ scene: CanvasScene, in ctx: CGContext) {
+        for el in scene.elements.sorted(by: { $0.zIndex < $1.zIndex }) {
             draw(el, in: ctx)
         }
     }

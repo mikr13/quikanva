@@ -40,7 +40,7 @@ enum Exporter {
         ctx.scaleBy(x: 1, y: -1)
         ctx.scaleBy(x: scale, y: scale)
         ctx.translateBy(x: padding - box.minX, y: padding - box.minY)
-        Renderer.draw(scene, in: ctx, live: nil)
+        Renderer.draw(scene, in: ctx)
 
         return rep
     }

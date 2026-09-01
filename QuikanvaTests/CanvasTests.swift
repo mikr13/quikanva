@@ -529,6 +529,21 @@ final class CanvasTests: XCTestCase {
         XCTAssertEqual(controller.status, .requiresApproval)
     }
 
+    func testCameraAnimationCommitsOnlyItsFinalState() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene.camera = Camera(panX: 80, panY: -40, zoom: 2)
+        var committedScenes = [CanvasScene]()
+        view.onCommit = { committedScenes.append($0) }
+
+        view.command = .resetZoom
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+
+        XCTAssertEqual(committedScenes.map(\.camera), [Camera()])
+        XCTAssertEqual(view.scene.camera, Camera())
+        window.orderOut(nil)
+    }
+
     func testSelectedStyleCommandUpdatesShape() {
         let element = Element(kind: .rectangle,
                                points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
