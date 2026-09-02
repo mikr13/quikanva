@@ -1,0 +1,16 @@
+# Quikanva
+
+Quikanva is a free, open-source, native macOS 14+ visual scratchpad for quick diagrams and sketches. A configurable global shortcut opens a focused canvas with shapes, arrows, lines, text, images, freehand drawing, selection, styling, snapping, autosave, Gallery management, and PNG/JPEG export.
+
+Quikanva is local-first. It has no account, analytics SDK, advertising SDK, or network service. Sketches are stored under the user's Application Support directory. The current 0.2.x direct-download build is unsigned.
+
+## Canonical resources
+
+- Repository and download: https://github.com/mikr13/quikanva
+- README: https://github.com/mikr13/quikanva/blob/main/README.md
+- User guide: https://github.com/mikr13/quikanva/blob/main/docs/USER_GUIDE.md
+- Shortcut reference: https://github.com/mikr13/quikanva/blob/main/docs/SHORTCUTS.md
+- Privacy note: https://github.com/mikr13/quikanva/blob/main/docs/PRIVACY.md
+- Development guide: https://github.com/mikr13/quikanva/blob/main/docs/DEVELOPMENT.md
+- Changelog: https://github.com/mikr13/quikanva/blob/main/CHANGELOG.md
+- License: https://github.com/mikr13/quikanva/blob/main/LICENSE
