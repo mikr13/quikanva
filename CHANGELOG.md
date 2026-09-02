@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- 3a5032a: Add the open-source README, user documentation, community files, and release guidance.
+
 ## 0.2.0
 
 ### Minor Changes
