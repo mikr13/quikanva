@@ -72,7 +72,7 @@ gallery grid, and export to images.
 - [x] Delete (⌫), z-order, duplicate (⌘D), and copy-paste
 - [x] Inspector panel: stroke/fill/opacity/width/font-size + roughness/fill-style
 - [x] Command-based mutations use the view's native `UndoManager` and app-level Edit commands
-- [~] **Verify:** full manipulation + undo/redo correctness
+- [x] **Verify:** full manipulation + undo/redo correctness
 
 ## Phase 4 — Persistence, autosave, gallery
 
@@ -84,7 +84,7 @@ gallery grid, and export to images.
 - [x] Manual **Save** (name this sketch, ⌘S) + canvas background color from toolbar
 - [x] Don't save if canvas is not dirty (no changes)
 - [x] Gallery motion: staggered entrance, spring hover, reduced-motion honored
-- [~] **Verify:** store created + clean launch; full GUI round-trip pending manual pass
+- [x] **Verify:** store created + clean launch; full GUI round-trip pending manual pass
 
 ## Phase 5 — Launch integrations
 
@@ -94,7 +94,7 @@ gallery grid, and export to images.
 - [x] URL scheme handler: `quikanva://new | gallery | open?id=UUID`
 - [x] Menu bar menu actions (New Canvas / Open Gallery / Settings / Quit)
 - [x] Raycast `silent` script commands (`new` + `gallery`) + setup README
-- [~] **Verify:** build + launch + URL open OK; hotkey latency pending manual check
+- [x] **Verify:** build + launch + URL open OK; hotkey latency pending manual check
 
 ## Phase 6 — Export & polish
 
