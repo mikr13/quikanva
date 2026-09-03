@@ -14,7 +14,7 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
 </p>
 
-![Quikanva: a canvas one shortcut away](docs/assets/social/github-social-preview.png)
+[![Quikanva: a canvas one shortcut away](docs/assets/social/github-social-preview.png)](https://github.com/mikr13/quikanva/releases)
 
 Quikanva is a free, open-source visual scratchpad for Mac. Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd>, sketch an idea with shapes, arrows, text, images, or freehand ink, then copy or export it. There is no account, cloud workspace, or document setup to get between the thought and the canvas.
 
@@ -61,7 +61,7 @@ Sketches autosave locally as you work. Read the [User Guide](docs/USER_GUIDE.md)
 ## Tools
 
 | Tool | Default key | Typical use |
-|---|:---:|---|
+| --- | :---: | --- |
 | Select | <kbd>V</kbd> | Select, marquee, move, resize, rotate, and edit elements |
 | Hand | <kbd>H</kbd> | Pan the canvas |
 | Freehand | <kbd>P</kbd> | Notes, annotations, and loose sketches |
