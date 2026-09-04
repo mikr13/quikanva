@@ -6,7 +6,7 @@ Quikanva is a native macOS 14+ application built with Swift 6, SwiftUI, AppKit, 
 
 - macOS 14 or later
 - Xcode 16 or later
-- Node.js 24 and npm for changesets
+- Node.js 24 and pnpm 11 for changesets
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46 or later when changing `project.yml`
 
 ## Set up the project
@@ -14,7 +14,7 @@ Quikanva is a native macOS 14+ application built with Swift 6, SwiftUI, AppKit, 
 ```sh
 git clone https://github.com/mikr13/quikanva.git
 cd quikanva
-npm ci
+pnpm install --frozen-lockfile
 xcodegen generate
 open Quikanva.xcodeproj
 ```
@@ -62,4 +62,4 @@ For a UI or lifecycle change, run the app and verify the matching surface rather
 
 ## Release notes
 
-Use `npm run changeset` for every user-facing feature or fix. Release preparation and tag automation are documented in [RELEASING.md](../RELEASING.md).
+Use `pnpm run changeset` for every user-facing feature or fix. Release preparation and tag automation are documented in [RELEASING.md](../RELEASING.md).

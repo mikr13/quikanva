@@ -11,7 +11,7 @@ Thanks for helping make quick visual thinking on macOS better. Quikanva is inten
 
 ## Development setup
 
-You need macOS 14 or later, Xcode 16 or later, Node.js 24, pnpm, and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+You need macOS 14 or later, Xcode 16 or later, Node.js 24, pnpm 11, and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```sh
 git clone https://github.com/mikr13/quikanva.git

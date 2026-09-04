@@ -2,6 +2,7 @@
   "name": "quikanva",
   "version": "0.2.1",
   "private": true,
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "changeset": "changeset",
     "changeset:status": "changeset status",

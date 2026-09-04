@@ -4,8 +4,8 @@ Quikanva releases are unsigned direct-download builds until Developer ID signing
 notarization are introduced. Never describe an unsigned build as Gatekeeper-ready.
 Prepare and publish a release from a clean `main` branch:
 
-1. Run `npm ci`.
-2. Run `npm run release:version` to consume pending changesets, update
+1. Run `pnpm install --frozen-lockfile`.
+2. Run `pnpm run release:version` to consume pending changesets, update
    `CHANGELOG.md` and `package.json`, synchronize `project.yml`, and regenerate the
    Xcode project.
 3. Review the version and changelog, then run the test suite and

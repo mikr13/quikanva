@@ -3,7 +3,7 @@
 Add one release-note fragment for every user-facing feature or fix:
 
 ```sh
-npm run changeset
+pnpm run changeset
 ```
 
 Choose `patch`, `minor`, or `major` for the private `quikanva` release metadata and
@@ -13,7 +13,7 @@ the feature it describes.
 To prepare a release, run:
 
 ```sh
-npm run release:version
+pnpm run release:version
 ```
 
 This consumes pending fragments, updates `CHANGELOG.md` and `package.json`, syncs
