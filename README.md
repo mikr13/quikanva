@@ -30,7 +30,7 @@ Quikanva is a free, open-source visual scratchpad for Mac. Press <kbd>⌘</kbd><
 
 | A real launch workflow | A native, local architecture map |
 |---|---|
-| ![A product launch flow drawn in Quikanva, shown in a macOS window](docs/assets/product/macos-product-launch-flow.png) | ![A native app architecture diagram drawn in Quikanva, shown in a macOS window](docs/assets/product/macos-native-app-architecture.png) |
+| ![A product launch flow drawn in Quikanva, shown on its floating canvas](docs/assets/product/macos-product-launch-flow.png) | ![A native app architecture diagram drawn in Quikanva, shown on its floating canvas](docs/assets/product/macos-native-app-architecture.png) |
 
 Both examples were drawn and captured in Quikanva. They use its shipping canvas tools rather than mock UI.
 

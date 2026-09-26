@@ -24,9 +24,9 @@ Start with structure, then annotate:
 
 The examples below were made with that sequence:
 
-![A product launch workflow made in Quikanva, shown in a macOS window](assets/product/macos-product-launch-flow.png)
+![A product launch workflow made in Quikanva, shown on its floating canvas](assets/product/macos-product-launch-flow.png)
 
-![A native app architecture map made in Quikanva, shown in a macOS window](assets/product/macos-native-app-architecture.png)
+![A native app architecture map made in Quikanva, shown on its floating canvas](assets/product/macos-native-app-architecture.png)
 
 ## Draw and navigate
 
