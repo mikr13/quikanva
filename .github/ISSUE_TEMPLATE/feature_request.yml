@@ -40,5 +40,5 @@ body:
       options:
         - label: This strengthens fast, local, native visual capture on macOS.
           required: true
-        - label: I searched existing issues and PLAN.md first.
+        - label: I searched existing issues and the README roadmap first.
           required: true
