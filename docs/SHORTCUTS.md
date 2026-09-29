@@ -22,7 +22,7 @@ Both are configurable in **Settings → General**.
 | Undo | <kbd>⌘</kbd><kbd>Z</kbd> |
 | Redo | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd> or <kbd>⌘</kbd><kbd>Y</kbd> |
 | Copy selection | <kbd>⌘</kbd><kbd>C</kbd> |
-| Paste selection or image | <kbd>⌘</kbd><kbd>V</kbd> |
+| Paste selection, image, or text | <kbd>⌘</kbd><kbd>V</kbd> |
 | Duplicate selection | <kbd>⌘</kbd><kbd>D</kbd> |
 | Delete selection | <kbd>Delete</kbd> or <kbd>Forward Delete</kbd> |
 | Bring selection to front | <kbd>⌘</kbd><kbd>]</kbd> |
@@ -31,6 +31,15 @@ Both are configurable in **Settings → General**.
 | Copy canvas as image | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>C</kbd> |
 | Export PNG | <kbd>⌘</kbd><kbd>E</kbd> |
 | Close canvas | <kbd>Escape</kbd> |
+
+## Text
+
+| Action | Shortcut |
+|---|:---:|
+| Edit text | Double-click it, or select it and press <kbd>Return</kbd> |
+| New text | Double-click empty canvas, or click with the Text tool |
+| New line | <kbd>Return</kbd> |
+| Finish editing | <kbd>Escape</kbd>, <kbd>⌘</kbd><kbd>Return</kbd>, or click the canvas |
 
 ## View commands
 

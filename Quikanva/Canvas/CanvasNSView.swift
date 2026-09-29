@@ -125,7 +125,13 @@ final class CanvasNSView: NSView {
             onToolChange?(tool)
         }
     }
-    var style = ElementStyle()
+    var style = ElementStyle() {
+        didSet {
+            guard style != oldValue, let session = textSession, session.elementID == nil else { return }
+            textSession?.style = style
+            applyTextEditorStyle()
+        }
+    }
     var toolShortcuts = ToolShortcutConfiguration.defaultValue
     var onCommit: ((CanvasScene) -> Void)?
     var onToolChange: ((ToolKind) -> Void)?
@@ -142,14 +148,22 @@ final class CanvasNSView: NSView {
 
     private var live: Element?
     private var selectedIDs = Set<UUID>()
-    private var textEditor: NSTextField?
-    private var textAnchor = CGPoint.zero
+    private var textEditor: CanvasTextView?
+    private var textSession: TextSession?
+    private let textLayer = CanvasTextLayer()
     private let canvasUndoManager = UndoManager()
     private var cameraTimer: Timer?
     private var cameraAnimation: CameraAnimation?
     private let committedSceneView = CanvasCommittedSceneView()
     private let liveOverlayView = CanvasLiveOverlayView()
     private(set) var alignmentGuides = [AlignmentGuide]()
+
+    private struct TextSession {
+        var elementID: UUID?
+        var anchor: CGPoint
+        var box: TextBox
+        var style: ElementStyle
+    }
 
     private struct CameraAnimation {
         let from: Camera
@@ -176,6 +190,7 @@ final class CanvasNSView: NSView {
         case editingPoint(original: CanvasScene, elementID: UUID, handle: PointHandle)
         case selecting(start: CGPoint, current: CGPoint, additive: Bool, initial: Set<UUID>)
         case panning(original: CanvasScene, startPan: CGPoint, startMouse: CGPoint)
+        case placingText(start: CGPoint, current: CGPoint)
     }
     private var drag: Drag = .none
     private var isEditingPoints = false
@@ -189,10 +204,13 @@ final class CanvasNSView: NSView {
 
     var pointEditingEnabled: Bool { isEditingPoints }
 
+    var textEditorView: NSTextView? { textEditor }
+
     private func redraw() {
         needsDisplay = true
         committedSceneView.needsDisplay = true
         liveOverlayView.needsDisplay = true
+        if textEditor != nil { layoutTextEditor() }
     }
 
     override var isFlipped: Bool { true }
@@ -215,9 +233,15 @@ final class CanvasNSView: NSView {
                 subview.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
         }
+        addSubview(textLayer)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func layout() {
+        super.layout()
+        layoutTextEditor()
+    }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         if newWindow == nil { stopCameraAnimation() }
@@ -234,7 +258,13 @@ final class CanvasNSView: NSView {
         ctx.saveGState()
         ctx.translateBy(x: CGFloat(scene.camera.panX), y: CGFloat(scene.camera.panY))
         ctx.scaleBy(x: CGFloat(scene.camera.zoom), y: CGFloat(scene.camera.zoom))
-        Renderer.draw(scene, in: ctx)
+        if let editingID = textSession?.elementID {
+            var visible = scene
+            visible.elements.removeAll { $0.id == editingID }
+            Renderer.draw(visible, in: ctx)
+        } else {
+            Renderer.draw(scene, in: ctx)
+        }
         ctx.restoreGState()
     }
 
@@ -247,6 +277,7 @@ final class CanvasNSView: NSView {
         }
         drawAlignmentGuides(in: ctx)
         drawSelection(in: ctx)
+        drawTextEditingBox(in: ctx)
         if case .selecting(let start, let current, _, _) = drag {
             let box = CGRect(corner: start, current)
             ctx.setFillColor(NSColor.controlAccentColor.withAlphaComponent(0.1).cgColor)
@@ -280,8 +311,27 @@ final class CanvasNSView: NSView {
         ctx.restoreGState()
     }
 
+    private func drawTextEditingBox(in ctx: CGContext) {
+        let box: CGRect
+        if let editor = textEditor {
+            box = editor.frame
+        } else if case .placingText(let start, let current) = drag {
+            let lineHeight = TextLayout.lineHeight(for: style)
+            box = CGRect(corner: start, CGPoint(x: current.x, y: max(current.y, start.y + lineHeight)))
+        } else {
+            return
+        }
+        let zoom = CGFloat(scene.camera.zoom)
+        ctx.saveGState()
+        ctx.setStrokeColor(NSColor.controlAccentColor.withAlphaComponent(0.6).cgColor)
+        ctx.setLineWidth(1 / zoom)
+        ctx.setLineDash(phase: 0, lengths: [4 / zoom, 3 / zoom])
+        ctx.stroke(box.insetBy(dx: -4 / zoom, dy: -3 / zoom))
+        ctx.restoreGState()
+    }
+
     private func drawSelection(in ctx: CGContext) {
-        guard tool == .select, let box = selectionBounds else { return }
+        guard tool == .select, textSession == nil, let box = selectionBounds else { return }
         let zoom = CGFloat(scene.camera.zoom)
         ctx.saveGState()
         let pointEditingElement = isEditingPoints ? editableElement : nil
@@ -292,8 +342,7 @@ final class CanvasNSView: NSView {
             ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
             ctx.stroke(box)
             ctx.setLineDash(phase: 0, lengths: [])
-            let handles = [SelectionHandle.topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
-            for handle in handles {
+            for handle in selectionHandles where handle != .rotate {
                 let point = handlePoint(handle, in: box)
                 let size = 8 / zoom
                 let rect = CGRect(x: point.x - size / 2, y: point.y - size / 2, width: size, height: size)
@@ -302,6 +351,8 @@ final class CanvasNSView: NSView {
                 ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 ctx.strokeEllipse(in: rect)
             }
+        }
+        if showsSelectionBox, selectionHandles.contains(.rotate) {
             let rotatePoint = handlePoint(.rotate, in: box)
             ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
             ctx.setLineWidth(1 / zoom)
@@ -375,6 +426,20 @@ final class CanvasNSView: NSView {
         return Self.curveValue(for: selected)
     }
 
+    private var selectedTextElement: Element? {
+        guard selectedIDs.count == 1,
+              let element = scene.elements.first(where: { selectedIDs.contains($0.id) }),
+              element.kind == .text else { return nil }
+        return element
+    }
+
+    private var selectionHandles: [SelectionHandle] {
+        guard selectedTextElement == nil else {
+            return [.topLeft, .topRight, .right, .bottomRight, .bottomLeft, .left]
+        }
+        return [.rotate, .topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
+    }
+
     private var editableElement: Element? {
         guard selectedIDs.count == 1,
               let element = scene.elements.first(where: { selectedIDs.contains($0.id) }),
@@ -442,6 +507,17 @@ final class CanvasNSView: NSView {
                 redraw()
                 return
             }
+            if event.clickCount >= 2, !event.modifierFlags.contains(.command) {
+                let hit = pickElement(p)
+                if let hit, hit.kind == .text {
+                    beginEditing(hit, caretAt: p)
+                    return
+                }
+                if hit == nil {
+                    beginNewText(at: p)
+                    return
+                }
+            }
             if isEditingPoints, let handle = pointHandle(at: p), let element = editableElement {
                 drag = .editingPoint(original: scene, elementID: element.id, handle: handle)
                 redraw()
@@ -452,7 +528,11 @@ final class CanvasNSView: NSView {
             drag = .erasing(original: scene)
             eraseAt(p)
         case .text:
-            beginTextEditing(at: p)
+            if let hit = pickElement(p), hit.kind == .text {
+                beginEditing(hit, caretAt: p)
+                return
+            }
+            drag = .placingText(start: p, current: p)
         case .freedraw:
             live = Element(kind: .freedraw, points: [Point(p)], style: style)
             drag = .drawing
@@ -552,9 +632,13 @@ final class CanvasNSView: NSView {
                     Point(x: $0.x + snapped.translation.x, y: $0.y + snapped.translation.y)
                 }
             }
-        case .resizing(_, let handle, let originalBounds, let points):
+        case .resizing(let original, let handle, let originalBounds, let points):
             guard let id = selectedIDs.first,
                   let index = scene.elements.firstIndex(where: { $0.id == id }) else { return }
+            if let source = original.elements.first(where: { $0.id == id }), source.kind == .text {
+                scene.elements[index] = resizedText(source, handle: handle, from: originalBounds, pointer: p)
+                break
+            }
             let target = resizeBounds(originalBounds, handle: handle, pointer: p, preserveAspect: event.modifierFlags.contains(.shift))
             scene.elements[index].points = transformed(points, from: originalBounds, to: target)
         case .rotating(_, let center, let startAngle, let points):
@@ -583,6 +667,8 @@ final class CanvasNSView: NSView {
             scene.elements[index].points = points
         case .selecting(let start, _, let additive, let initial):
             drag = .selecting(start: start, current: p, additive: additive, initial: initial)
+        case .placingText(let start, _):
+            drag = .placingText(start: start, current: p)
         case .panning(let original, let startPan, let startMouse):
             let now = convert(event.locationInWindow, from: nil)
             scene.camera.panX = Double(startPan.x + now.x - startMouse.x)
@@ -613,6 +699,15 @@ final class CanvasNSView: NSView {
         case .panning(let original, _, _):
             if tool == .hand { NSCursor.openHand.set() }
             if original.camera != scene.camera { onCommit?(scene) }
+        case .placingText(let start, let current):
+            drag = .none
+            let width = abs(current.x - start.x)
+            if width * CGFloat(scene.camera.zoom) < 8 {
+                beginNewText(at: start)
+            } else {
+                beginNewText(at: CGPoint(x: min(start.x, current.x), y: min(start.y, current.y)),
+                             box: TextBox(sizing: .fixed, width: Double(max(TextLayout.minimumWidth, width))))
+            }
         case .none:
             break
         }
@@ -724,6 +819,10 @@ final class CanvasNSView: NSView {
             return
         }
 
+        if event.keyCode == 36 || event.keyCode == 76, let element = selectedTextElement {
+            beginEditing(element, caretAt: nil)
+            return
+        }
         if event.keyCode == 51 || event.keyCode == 117 {
             deleteSelection()
             return
@@ -745,7 +844,8 @@ final class CanvasNSView: NSView {
     }
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
-        guard event.modifierFlags.contains(.command),
+        guard textEditor == nil,
+              event.modifierFlags.contains(.command),
               event.charactersIgnoringModifiers?.lowercased() == "v" else {
             return super.performKeyEquivalent(with: event)
         }
@@ -813,14 +913,25 @@ final class CanvasNSView: NSView {
         guard let data = try? JSONEncoder().encode(selected) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setData(data, forType: Self.pasteboardType)
+        let texts = selected
+            .filter { $0.kind == .text }
+            .sorted { ($0.points.first?.y ?? 0, $0.points.first?.x ?? 0) < ($1.points.first?.y ?? 0, $1.points.first?.x ?? 0) }
+            .map(\.text)
+        if !texts.isEmpty {
+            NSPasteboard.general.setString(texts.joined(separator: "\n\n"), forType: .string)
+        }
     }
 
     private func pasteSelection() {
         guard let data = NSPasteboard.general.data(forType: Self.pasteboardType),
               var elements = try? JSONDecoder().decode([Element].self, from: data),
               !elements.isEmpty else {
-            guard let data = Self.imageData(from: NSPasteboard.general) else { return }
-            insertImage(data, at: scenePoint(CGPoint(x: bounds.midX, y: bounds.midY)))
+            let center = scenePoint(CGPoint(x: bounds.midX, y: bounds.midY))
+            if let data = Self.imageData(from: NSPasteboard.general) {
+                insertImage(data, at: center)
+            } else if let text = NSPasteboard.general.string(forType: .string) {
+                insertText(text, centeredAt: center)
+            }
             return
         }
         var updated = scene
@@ -848,6 +959,23 @@ final class CanvasNSView: NSView {
                                points: [Point(origin), Point(x: origin.x + size.width, y: origin.y + size.height)],
                                style: style)
         element.imageData = data
+        element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
+        var updated = scene
+        updated.elements.append(element)
+        selectedIDs = [element.id]
+        notifySelectionChange()
+        commit(updated)
+    }
+
+    private func insertText(_ text: String, centeredAt center: CGPoint) {
+        let value = Self.trimmingTrailingWhitespace(text)
+        guard !value.isEmpty else { return }
+        let zoom = CGFloat(scene.camera.zoom)
+        let width = max(160, min(560, bounds.width / zoom - 96 / zoom))
+        var element = Element(kind: .text, points: [Point(center)], style: style, text: value)
+        element.textBox = TextBox(sizing: .auto, width: Double(width))
+        let frame = TextLayout.frame(for: element)
+        element.points = [Point(x: center.x - frame.width / 2, y: center.y - frame.height / 2)]
         element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
         var updated = scene
         updated.elements.append(element)
@@ -975,6 +1103,10 @@ final class CanvasNSView: NSView {
                 updated.elements[index].style = style
             }
             commit(updated)
+            if let editingID = textSession?.elementID, selectedIDs.contains(editingID) {
+                textSession?.style = style
+                applyTextEditorStyle()
+            }
             notifySelectionChange()
         case .updateSelectedImageShadow(let shadow):
             guard !selectedIDs.isEmpty else { break }
@@ -1098,8 +1230,7 @@ final class CanvasNSView: NSView {
         guard !isEditingPoints else { return nil }
         guard let box = selectionBounds, selectedIDs.count == 1 else { return nil }
         let tolerance = 10 / CGFloat(scene.camera.zoom)
-        let handles = [SelectionHandle.rotate, .topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
-        return handles.first { distance(p, to: handlePoint($0, in: box)) <= tolerance }
+        return selectionHandles.first { distance(p, to: handlePoint($0, in: box)) <= tolerance }
     }
 
     private func controlPoint(for element: Element) -> CGPoint {
@@ -1177,39 +1308,176 @@ final class CanvasNSView: NSView {
                        y: center.y + x * sin(angle) + y * cos(angle))
     }
 
-    private func beginTextEditing(at p: CGPoint) {
+    private func beginNewText(at click: CGPoint, box: TextBox? = nil) {
         endTextEditing()
-        let zoom = CGFloat(scene.camera.zoom)
-        let origin = viewPoint(p)
-        let size = max(8, CGFloat(style.fontSize) * zoom)
-        let field = NSTextField(frame: NSRect(x: origin.x, y: origin.y, width: 260, height: size + 10))
-        field.font = NSFont(name: style.fontFamily, size: size) ?? NSFont.systemFont(ofSize: size)
-        field.textColor = NSColor(cgColor: style.stroke.cgColor) ?? .labelColor
-        field.drawsBackground = false
-        field.isBordered = false
-        field.focusRingType = .none
-        field.placeholderString = "Text"
-        field.delegate = self
-        textAnchor = p
-        textEditor = field
-        addSubview(field)
-        window?.makeFirstResponder(field)
+        let anchor = box == nil
+            ? CGPoint(x: click.x, y: click.y - TextLayout.lineHeight(for: style) / 2)
+            : click
+        let resolved = box ?? TextBox(sizing: .auto, width: Double(wrapWidthToVisibleEdge(from: anchor.x)))
+        selectedIDs.removeAll()
+        notifySelectionChange()
+        beginTextEditing(TextSession(elementID: nil, anchor: anchor, box: resolved, style: style),
+                         text: "",
+                         caret: nil)
     }
 
-    private func endTextEditing() {
-        guard let field = textEditor else { return }
-        let returnsToSelect = tool == .text
-        textEditor = nil
-        let value = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        field.removeFromSuperview()
-        if !value.isEmpty {
-            var element = Element(kind: .text, points: [Point(textAnchor)], style: style, text: value)
-            element.zIndex = (scene.elements.map(\.zIndex).max() ?? 0) + 1
-            var updated = scene
-            updated.elements.append(element)
-            commit(updated)
+    private func beginEditing(_ element: Element, caretAt point: CGPoint?) {
+        endTextEditing()
+        guard let anchor = element.points.first?.cg else { return }
+        selectedIDs = [element.id]
+        notifySelectionChange()
+        beginTextEditing(TextSession(elementID: element.id,
+                                     anchor: anchor,
+                                     box: element.textBox ?? upgradedTextBox(for: element),
+                                     style: element.style),
+                         text: element.text,
+                         caret: point)
+    }
+
+    private func upgradedTextBox(for element: Element) -> TextBox {
+        guard element.style.textAlignment == .leading, let anchor = element.points.first else {
+            let width = TextLayout.containerWidth(for: element.text, style: element.style, box: nil)
+            return TextBox(sizing: .fixed, width: Double(width))
         }
-        if returnsToSelect { tool = .select }
+        return TextBox(sizing: .auto, width: Double(wrapWidthToVisibleEdge(from: CGFloat(anchor.x))))
+    }
+
+    private func wrapWidthToVisibleEdge(from x: CGFloat) -> CGFloat {
+        let visibleRight = scenePoint(CGPoint(x: bounds.maxX, y: bounds.minY)).x
+        return max(160, visibleRight - x - 24 / CGFloat(scene.camera.zoom))
+    }
+
+    private func beginTextEditing(_ session: TextSession, text: String, caret: CGPoint?) {
+        let editor = CanvasTextView()
+        editor.string = text
+        editor.onCommit = { [weak self] in self?.endTextEditing() }
+        editor.onTextChange = { [weak self] in self?.layoutTextEditor() }
+        editor.onResign = { [weak self] in self?.endTextEditing(restoringFocus: false) }
+        textSession = session
+        textEditor = editor
+        textLayer.addSubview(editor)
+        applyTextEditorStyle()
+        window?.makeFirstResponder(editor)
+        let length = (editor.string as NSString).length
+        if let caret {
+            let local = CGPoint(x: caret.x - session.anchor.x, y: caret.y - session.anchor.y)
+            let index = min(editor.characterIndexForInsertion(at: local), length)
+            editor.setSelectedRange(NSRange(location: index, length: 0))
+        } else {
+            editor.setSelectedRange(NSRange(location: length, length: 0))
+        }
+        redraw()
+    }
+
+    private func applyTextEditorStyle() {
+        guard let editor = textEditor, let session = textSession else { return }
+        let attributes = TextLayout.attributes(for: session.style)
+        editor.typingAttributes = attributes
+        editor.defaultParagraphStyle = attributes[.paragraphStyle] as? NSParagraphStyle
+        if let storage = editor.textStorage {
+            storage.setAttributes(attributes, range: NSRange(location: 0, length: storage.length))
+        }
+        let ink = attributes[.foregroundColor] as? NSColor
+        editor.insertionPointColor = (ink?.alphaComponent ?? 0) > 0.2 ? ink ?? .controlAccentColor : .controlAccentColor
+        layoutTextEditor()
+    }
+
+    private func layoutTextEditor() {
+        guard let editor = textEditor, let session = textSession,
+              let container = editor.textContainer, let layoutManager = editor.layoutManager else { return }
+        let zoom = CGFloat(scene.camera.zoom)
+        textLayer.frame = bounds
+        textLayer.bounds = CGRect(origin: scenePoint(.zero),
+                                  size: CGSize(width: bounds.width / zoom, height: bounds.height / zoom))
+        let width = TextLayout.containerWidth(for: editor.string, style: session.style, box: session.box)
+        let layoutWidth = session.box.sizing == .auto && session.style.textAlignment == .leading
+            ? max(width, CGFloat(session.box.width))
+            : width
+        if container.size.width != layoutWidth {
+            container.size = NSSize(width: layoutWidth, height: .greatestFiniteMagnitude)
+        }
+        let used = TextLayout.usedSize(of: layoutManager, in: container)
+        editor.frame = CGRect(x: session.anchor.x,
+                              y: session.anchor.y,
+                              width: width + 2 / zoom,
+                              height: max(used.height, TextLayout.lineHeight(for: session.style)))
+        liveOverlayView.needsDisplay = true
+    }
+
+    private func endTextEditing(restoringFocus: Bool = true) {
+        guard let editor = textEditor, let session = textSession else { return }
+        textEditor = nil
+        textSession = nil
+        editor.onCommit = nil
+        editor.onTextChange = nil
+        editor.onResign = nil
+        if restoringFocus {
+            if window?.firstResponder === editor { window?.makeFirstResponder(self) }
+            editor.removeFromSuperview()
+        } else {
+            // Still resigning first responder; removing the view now would re-enter makeFirstResponder.
+            editor.isHidden = true
+            Task { @MainActor in editor.removeFromSuperview() }
+        }
+
+        let text = Self.trimmingTrailingWhitespace(editor.string)
+        var updated = scene
+        var committedID: UUID?
+        if let id = session.elementID, let index = updated.elements.firstIndex(where: { $0.id == id }) {
+            if text.isEmpty {
+                updated.elements.remove(at: index)
+            } else {
+                updated.elements[index].text = text
+                updated.elements[index].textBox = session.box
+                updated.elements[index].style = session.style
+                committedID = id
+            }
+        } else if !text.isEmpty {
+            var element = Element(kind: .text, points: [Point(session.anchor)], style: session.style, text: text)
+            element.textBox = session.box
+            element.zIndex = (updated.elements.map(\.zIndex).max() ?? 0) + 1
+            updated.elements.append(element)
+            committedID = element.id
+        }
+        selectedIDs = committedID.map { [$0] } ?? []
+        commit(updated)
+        notifySelectionChange()
+        if tool == .text { tool = .select }
+        redraw()
+    }
+
+    private static func trimmingTrailingWhitespace(_ text: String) -> String {
+        var value = text
+        while let last = value.last, last.isWhitespace { value.removeLast() }
+        return value
+    }
+
+    private func resizedText(_ source: Element,
+                             handle: SelectionHandle,
+                             from original: CGRect,
+                             pointer: CGPoint) -> Element {
+        var element = source
+        switch handle {
+        case .left, .right:
+            let target = resizeBounds(original, handle: handle, pointer: pointer, preserveAspect: false)
+            let width = max(TextLayout.minimumWidth, target.width)
+            let x = handle == .left ? original.maxX - width : original.minX
+            element.points = [Point(x: x, y: original.minY)]
+            element.textBox = TextBox(sizing: .fixed, width: Double(width))
+        default:
+            let target = resizeBounds(original, handle: handle, pointer: pointer, preserveAspect: true)
+            let requested = CGFloat(source.style.fontSize) * target.width / max(original.width, 1)
+            let fontSize = min(max(requested, 8), 200)
+            let scale = fontSize / CGFloat(source.style.fontSize)
+            let box = source.textBox ?? TextBox(sizing: .fixed, width: Double(original.width))
+            element.style.fontSize = Double(fontSize)
+            element.textBox = TextBox(sizing: box.sizing, width: (box.width * Double(scale)).rounded(.up))
+            let size = CGSize(width: original.width * scale, height: original.height * scale)
+            let x = handle == .topLeft || handle == .bottomLeft ? original.maxX - size.width : original.minX
+            let y = handle == .topLeft || handle == .topRight ? original.maxY - size.height : original.minY
+            element.points = [Point(x: x, y: y)]
+        }
+        return element
     }
 
     override func updateTrackingAreas() {
@@ -1257,8 +1525,7 @@ final class CanvasNSView: NSView {
         let points = element.points.map(\.cg)
         guard let first = points.first else { return nil }
         if element.kind == .text {
-            let width = max(24, CGFloat(element.style.textWidth))
-            return CGRect(x: first.x, y: first.y, width: width, height: CGFloat(element.style.fontSize) * 1.3)
+            return TextLayout.frame(for: element)
         }
         return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { $0.union(CGRect(origin: $1, size: .zero)) }
     }
@@ -1303,13 +1570,6 @@ final class CanvasNSView: NSView {
         let midpoint = CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
         let offset = (control.x - midpoint.x) * (-dy / length) + (control.y - midpoint.y) * (dx / length)
         return max(-1, min(1, offset / (length * 0.5)))
-    }
-}
-
-extension CanvasNSView: NSTextFieldDelegate {
-    func controlTextDidEndEditing(_ obj: Notification) {
-        endTextEditing()
-        if tool == .text { tool = .select }
     }
 }
 

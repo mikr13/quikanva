@@ -17,6 +17,7 @@ final class FloatingCanvasWindow: NSWindow {
     }
 
     override func close() {
+        makeFirstResponder(nil)
         onClose?()
         onClose = nil
         super.close()

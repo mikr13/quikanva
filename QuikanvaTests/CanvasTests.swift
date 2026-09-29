@@ -432,14 +432,256 @@ final class CanvasTests: XCTestCase {
         view.tool = .text
 
         clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
-        let editor = view.subviews.compactMap { $0 as? NSTextField }.first
-        editor?.stringValue = "Hello"
+        view.textEditorView?.string = "Hello"
 
         clickElement(at: CGPoint(x: 240, y: 180), in: view, window: window)
 
         XCTAssertEqual(view.tool, .select)
         XCTAssertEqual(view.scene.elements.last?.text, "Hello")
+        XCTAssertNil(view.textEditorView)
         window.orderOut(nil)
+    }
+
+    func testReturnAddsALineAndEscapeCommitsText() throws {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .text
+
+        clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
+        let editor = try XCTUnwrap(view.textEditorView)
+        type("First", into: editor)
+        let oneLineHeight = editor.frame.height
+        editor.doCommand(by: #selector(NSResponder.insertNewline(_:)))
+        type("Second", into: editor)
+        XCTAssertGreaterThan(editor.frame.height, oneLineHeight * 1.5)
+        editor.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+
+        XCTAssertNil(view.textEditorView)
+        XCTAssertEqual(view.tool, .select)
+        let note = try XCTUnwrap(view.scene.elements.last)
+        XCTAssertEqual(note.text, "First\nSecond")
+        XCTAssertGreaterThan(TextLayout.frame(for: note).height, TextLayout.lineHeight(for: note.style) * 1.5)
+        window.orderOut(nil)
+    }
+
+    func testNewTextWrapsBeforeTheVisibleCanvasEdge() throws {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .text
+
+        clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
+        let editor = try XCTUnwrap(view.textEditorView)
+        type("Something like message_processor_mx, message_processor_us, and message_processor_eu", into: editor)
+        let editingFrame = editor.frame
+        editor.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+
+        let note = try XCTUnwrap(view.scene.elements.last)
+        let frame = try XCTUnwrap(CanvasNSView.bounds(of: note))
+        XCTAssertEqual(note.textBox?.sizing, .auto)
+        XCTAssertLessThanOrEqual(frame.maxX, 400)
+        XCTAssertGreaterThan(frame.height, TextLayout.lineHeight(for: note.style) * 2)
+        XCTAssertEqual(editingFrame.minX, frame.minX, accuracy: 0.5)
+        XCTAssertEqual(editingFrame.minY, frame.minY, accuracy: 0.5)
+        XCTAssertEqual(editingFrame.height, frame.height, accuracy: 0.5)
+        window.orderOut(nil)
+    }
+
+    func testDoubleClickingTextEditsItInPlace() throws {
+        var note = Element(kind: .text, points: [Point(x: 40, y: 40)], text: "Draft")
+        note.textBox = TextBox(sizing: .auto, width: 300)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [note])
+        view.tool = .select
+
+        clickElement(at: CGPoint(x: 50, y: 50), in: view, window: window)
+        clickElement(at: CGPoint(x: 50, y: 50), in: view, window: window, clickCount: 2)
+        let editor = try XCTUnwrap(view.textEditorView)
+        XCTAssertEqual(editor.string, "Draft")
+        editor.string = "Final draft"
+        clickElement(at: CGPoint(x: 300, y: 250), in: view, window: window)
+
+        XCTAssertEqual(view.scene.elements.count, 1)
+        XCTAssertEqual(view.scene.elements.first?.id, note.id)
+        XCTAssertEqual(view.scene.elements.first?.text, "Final draft")
+        view.undoManager?.undo()
+        XCTAssertEqual(view.scene.elements.first?.text, "Draft")
+        window.orderOut(nil)
+    }
+
+    func testDoubleClickingEmptyCanvasStartsNewText() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .select
+
+        clickElement(at: CGPoint(x: 120, y: 120), in: view, window: window)
+        clickElement(at: CGPoint(x: 120, y: 120), in: view, window: window, clickCount: 2)
+
+        XCTAssertEqual(view.textEditorView?.string, "")
+        window.orderOut(nil)
+    }
+
+    func testReturnKeyEditsTheSelectedText() {
+        var note = Element(kind: .text, points: [Point(x: 40, y: 40)], text: "Selected")
+        note.textBox = TextBox(sizing: .auto, width: 300)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [note])
+        view.tool = .select
+
+        selectElement(at: CGPoint(x: 50, y: 50), in: view, window: window)
+        view.keyDown(with: keyEvent(for: window, modifiers: [], characters: "\r", keyCode: 36))
+
+        XCTAssertEqual(view.textEditorView?.string, "Selected")
+        window.orderOut(nil)
+    }
+
+    func testClearingEditedTextRemovesTheElement() throws {
+        var note = Element(kind: .text, points: [Point(x: 40, y: 40)], text: "Remove me")
+        note.textBox = TextBox(sizing: .auto, width: 300)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [note])
+        view.tool = .text
+
+        clickElement(at: CGPoint(x: 50, y: 50), in: view, window: window)
+        let editor = try XCTUnwrap(view.textEditorView)
+        editor.string = "  \n"
+        editor.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+
+        XCTAssertTrue(view.scene.elements.isEmpty)
+        window.orderOut(nil)
+    }
+
+    func testTextToolDragSetsAFixedWrapWidth() throws {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .text
+
+        dragSelection(in: view, window: window, from: CGPoint(x: 40, y: 60), to: CGPoint(x: 220, y: 120))
+        let editor = try XCTUnwrap(view.textEditorView)
+        type("Boxed", into: editor)
+        editor.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+
+        let note = try XCTUnwrap(view.scene.elements.last)
+        XCTAssertEqual(note.textBox, TextBox(sizing: .fixed, width: 180))
+        XCTAssertEqual(note.points.first, Point(x: 40, y: 60))
+        XCTAssertEqual(CanvasNSView.bounds(of: note)?.width, 180)
+        window.orderOut(nil)
+    }
+
+    func testPasteShortcutWhileEditingTextStaysInTheEditor() throws {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .text
+        clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
+        let editor = try XCTUnwrap(view.textEditorView)
+        XCTAssertTrue(window.firstResponder === editor)
+
+        _ = view.performKeyEquivalent(with: keyEvent(for: window, modifiers: [.command], characters: "v", keyCode: 9))
+
+        XCTAssertTrue(view.textEditorView === editor)
+        XCTAssertTrue(view.scene.elements.isEmpty)
+        window.orderOut(nil)
+    }
+
+    func testTextSideHandleSetsTheWrapWidth() throws {
+        var note = Element(kind: .text,
+                           points: [Point(x: 40, y: 40)],
+                           text: "A longer note that has to wrap once the box gets narrow")
+        note.textBox = TextBox(sizing: .fixed, width: 300)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [note])
+        view.tool = .select
+        selectElement(at: CGPoint(x: 60, y: 50), in: view, window: window)
+        let before = try XCTUnwrap(CanvasNSView.bounds(of: note))
+
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: before.maxX + 6, y: before.midY),
+                      to: CGPoint(x: before.maxX - 144, y: before.midY))
+
+        let resized = view.scene.elements[0]
+        XCTAssertEqual(resized.textBox?.sizing, .fixed)
+        XCTAssertEqual(resized.textBox?.width ?? 0, 156, accuracy: 0.5)
+        XCTAssertEqual(resized.style.fontSize, note.style.fontSize)
+        XCTAssertGreaterThan(CanvasNSView.bounds(of: resized)?.height ?? 0, before.height)
+        window.orderOut(nil)
+    }
+
+    func testTextCornerHandleScalesTheFont() throws {
+        var note = Element(kind: .text, points: [Point(x: 40, y: 40)], text: "Scale me")
+        note.textBox = TextBox(sizing: .fixed, width: 100)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [note])
+        view.tool = .select
+        selectElement(at: CGPoint(x: 60, y: 50), in: view, window: window)
+        let before = try XCTUnwrap(CanvasNSView.bounds(of: note))
+
+        dragSelection(in: view,
+                      window: window,
+                      from: CGPoint(x: before.maxX + 6, y: before.maxY + 6),
+                      to: CGPoint(x: before.maxX + 100, y: before.maxY + 100))
+
+        let resized = view.scene.elements[0]
+        XCTAssertEqual(resized.points.first, Point(x: 40, y: 40))
+        XCTAssertGreaterThan(resized.style.fontSize, note.style.fontSize * 1.8)
+        XCTAssertGreaterThan(resized.textBox?.width ?? 0, 180)
+        window.orderOut(nil)
+    }
+
+    func testAutoTextBoxHugsItsText() {
+        var label = Element(kind: .text, points: [Point(x: 10, y: 20)], text: "Hi")
+        label.textBox = TextBox(sizing: .auto, width: 600)
+
+        let frame = CanvasNSView.bounds(of: label)
+
+        XCTAssertEqual(frame?.origin, CGPoint(x: 10, y: 20))
+        XCTAssertLessThan(frame?.width ?? .infinity, 60)
+    }
+
+    func testLegacyTextKeepsItsSingleLineLayout() throws {
+        let legacy = Data("""
+        {
+          "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
+          "kind": "text",
+          "points": [{ "x": 10, "y": 10 }],
+          "rotation": 0,
+          "style": { "fontSize": 20, "textWidth": 260 },
+          "text": "Something like message_processor_mx, message_processor_us, and more",
+          "seed": 1,
+          "zIndex": 1
+        }
+        """.utf8)
+
+        let note = try JSONDecoder().decode(Element.self, from: legacy)
+        let frame = TextLayout.frame(for: note)
+
+        XCTAssertNil(note.textBox)
+        XCTAssertEqual(frame.height, TextLayout.lineHeight(for: note.style), accuracy: 1)
+        XCTAssertGreaterThan(frame.width, TextLayout.legacyWidth)
+    }
+
+    func testExportBoundsCoverWrappedText() throws {
+        var note = Element(kind: .text,
+                           points: [Point(x: 0, y: 0)],
+                           text: "An exported note that wraps across a few lines of text")
+        note.textBox = TextBox(sizing: .auto, width: 140)
+        let scene = CanvasScene(elements: [note])
+        let frame = TextLayout.frame(for: note)
+
+        let bounds = try XCTUnwrap(Thumbnailer.contentBounds(scene))
+        XCTAssertTrue(bounds.contains(frame))
+
+        let rep = try XCTUnwrap(Exporter.bitmap(for: scene, scale: 1, background: false))
+        let lineHeight = TextLayout.lineHeight(for: note.style)
+        let lastLineTop = Int(12 + 24 + frame.height - lineHeight)
+        let hasInkOnLastLine = (lastLineTop ..< lastLineTop + Int(lineHeight)).contains { y in
+            (0 ..< rep.pixelsWide).contains { x in (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0 }
+        }
+        XCTAssertTrue(hasInkOnLastLine)
     }
 
     func testDefaultToolShortcutsSelectEveryCanvasTool() {
@@ -844,15 +1086,22 @@ final class CanvasTests: XCTestCase {
     private func clickElement(at point: CGPoint,
                               in view: CanvasNSView,
                               window: NSWindow,
-                              modifiers: NSEvent.ModifierFlags = []) {
+                              modifiers: NSEvent.ModifierFlags = [],
+                              clickCount: Int = 1) {
         view.mouseDown(with: mouseEvent(.leftMouseDown,
                                          at: windowPoint(for: point, in: view),
                                          window: window,
-                                         modifiers: modifiers))
+                                         modifiers: modifiers,
+                                         clickCount: clickCount))
         view.mouseUp(with: mouseEvent(.leftMouseUp,
                                        at: windowPoint(for: point, in: view),
                                        window: window,
-                                       modifiers: modifiers))
+                                       modifiers: modifiers,
+                                       clickCount: clickCount))
+    }
+
+    private func type(_ text: String, into editor: NSTextView) {
+        editor.insertText(text, replacementRange: editor.selectedRange())
     }
 
     private func dragSelection(in view: CanvasNSView,
@@ -920,7 +1169,8 @@ final class CanvasTests: XCTestCase {
     private func mouseEvent(_ type: NSEvent.EventType,
                             at point: CGPoint,
                             window: NSWindow,
-                            modifiers: NSEvent.ModifierFlags = []) -> NSEvent {
+                            modifiers: NSEvent.ModifierFlags = [],
+                            clickCount: Int = 1) -> NSEvent {
         NSEvent.mouseEvent(with: type,
                            location: point,
                            modifierFlags: modifiers,
@@ -928,7 +1178,7 @@ final class CanvasTests: XCTestCase {
                            windowNumber: window.windowNumber,
                            context: nil,
                            eventNumber: 0,
-                           clickCount: 1,
+                           clickCount: clickCount,
                            pressure: 1)!
     }
 

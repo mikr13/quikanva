@@ -197,6 +197,8 @@ struct CanvasPanelView: View {
 
     private var closeButton: some View {
         Button {
+            // Commit inline text editing before the flush.
+            NSApp.keyWindow?.makeFirstResponder(nil)
             autosave.flush()
             onClose()
         } label: {

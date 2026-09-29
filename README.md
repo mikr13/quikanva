@@ -90,7 +90,7 @@ Tool shortcuts can be reassigned in **Settings → Canvas**. See the complete [S
 
 - Shapes, lines, arrows, text, images, and freehand ink from a floating toolbar that adapts to the window width
 - Freehand selected on every new canvas, with smoothing applied when you finish a stroke
-- Inline text editing directly on the canvas
+- Multi-line notes that wrap at the canvas edge, edited in place with a double-click
 - Image paste and drag-and-drop, with an optional subtle shadow
 - An eraser that removes elements with a click or a drag
 - Scroll and Hand-tool panning, pinch zoom, and zoom in, out, to fit, to selection, or reset, with smooth, interruptible transitions

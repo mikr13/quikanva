@@ -1,7 +1,6 @@
 import Foundation
 import AppKit
 import CoreGraphics
-import CoreText
 
 struct SketchRNG {
     private var state: UInt64
@@ -212,7 +211,7 @@ enum Renderer {
             ctx.strokePath()
 
         case .text:
-            drawText(el, at: pts[0], in: ctx)
+            TextLayout.draw(el, in: ctx)
 
         case .image:
             drawImage(el, in: ctx)
@@ -356,46 +355,6 @@ enum Renderer {
         Sketch.roughPolygon(corners, roughness: roughness, rng: &rng, into: path)
         roughPathCache.insert(path, forKey: key)
         return path
-    }
-
-    private static func drawText(_ el: Element, at p: CGPoint, in ctx: CGContext) {
-        guard !el.text.isEmpty else { return }
-        var font = CTFontCreateWithName(el.style.fontFamily as CFString, CGFloat(el.style.fontSize), nil)
-        var traits: CTFontSymbolicTraits = []
-        if el.style.fontWeight == .bold || el.style.fontWeight == .semibold {
-            traits.insert(.traitBold)
-        }
-        if el.style.textDecoration == .italic {
-            traits.insert(.traitItalic)
-        }
-        if !traits.isEmpty {
-            font = CTFontCreateCopyWithSymbolicTraits(font, 0, nil, traits, traits) ?? font
-        }
-        var attrs: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: el.style.stroke.cgColor,
-        ]
-        switch el.style.textDecoration {
-        case .underline:
-            attrs[.underlineStyle] = NSUnderlineStyle.single.rawValue
-        case .strikethrough:
-            attrs[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-        case .none, .italic:
-            break
-        }
-        let line = CTLineCreateWithAttributedString(NSAttributedString(string: el.text, attributes: attrs))
-        let flush: CGFloat
-        switch el.style.textAlignment {
-        case .leading: flush = 0
-        case .center: flush = 0.5
-        case .trailing: flush = 1
-        }
-        let offset = CTLineGetPenOffsetForFlush(line, flush, CGFloat(el.style.textWidth))
-        ctx.saveGState()
-        ctx.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
-        ctx.textPosition = CGPoint(x: p.x + offset, y: p.y + CGFloat(el.style.fontSize))
-        CTLineDraw(line, ctx)
-        ctx.restoreGState()
     }
 
     private static func applyStrokeStyle(_ style: StrokeStyle, in ctx: CGContext) {

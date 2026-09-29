@@ -170,7 +170,6 @@ struct ElementStyle: Codable, Hashable {
     var fontWeight: FontWeight = .regular
     var textAlignment: TextAlignment = .leading
     var textDecoration: TextDecoration = .none
-    var textWidth: Double = 260
 
     var visibleFillColor: RGBAColor {
         guard fillStyle != .none, fill.a == 0 else { return fill }
@@ -179,7 +178,7 @@ struct ElementStyle: Codable, Hashable {
 
     private enum CodingKeys: String, CodingKey {
         case stroke, fill, drawingStyle, fillStyle, strokeStyle, arrowheadStyle, arrowheadPlacement, strokeWidth, opacity
-        case roughness, fontSize, fontFamily, fontWeight, textAlignment, textDecoration, textWidth
+        case roughness, fontSize, fontFamily, fontWeight, textAlignment, textDecoration
     }
 
     init(stroke: RGBAColor = .black,
@@ -196,8 +195,7 @@ struct ElementStyle: Codable, Hashable {
          fontFamily: String = "Helvetica Neue",
          fontWeight: FontWeight = .regular,
          textAlignment: TextAlignment = .leading,
-         textDecoration: TextDecoration = .none,
-         textWidth: Double = 260) {
+         textDecoration: TextDecoration = .none) {
         self.stroke = stroke
         self.fill = fill
         self.drawingStyle = drawingStyle
@@ -213,7 +211,6 @@ struct ElementStyle: Codable, Hashable {
         self.fontWeight = fontWeight
         self.textAlignment = textAlignment
         self.textDecoration = textDecoration
-        self.textWidth = textWidth
         materializeVisibleFillIfNeeded()
     }
 
@@ -234,7 +231,6 @@ struct ElementStyle: Codable, Hashable {
         fontWeight = try values.decodeIfPresent(FontWeight.self, forKey: .fontWeight) ?? .regular
         textAlignment = try values.decodeIfPresent(TextAlignment.self, forKey: .textAlignment) ?? .leading
         textDecoration = try values.decodeIfPresent(TextDecoration.self, forKey: .textDecoration) ?? .none
-        textWidth = try values.decodeIfPresent(Double.self, forKey: .textWidth) ?? 260
         materializeVisibleFillIfNeeded()
     }
 
@@ -249,6 +245,16 @@ struct ElementStyle: Codable, Hashable {
     }
 }
 
+struct TextBox: Codable, Hashable {
+    enum Sizing: String, Codable, Hashable {
+        case auto
+        case fixed
+    }
+
+    var sizing: Sizing
+    var width: Double
+}
+
 struct Element: Codable, Identifiable, Hashable {
     var id: UUID = UUID()
     var kind: ElementKind
@@ -256,6 +262,8 @@ struct Element: Codable, Identifiable, Hashable {
     var rotation: Double = 0
     var style: ElementStyle = ElementStyle()
     var text: String = ""
+    /// nil for text saved before wrapping existed; it keeps its single-line layout.
+    var textBox: TextBox?
     var imageData: Data?
     var imageShadow: Bool?
     var seed: UInt64 = UInt64.random(in: 1 ... .max)

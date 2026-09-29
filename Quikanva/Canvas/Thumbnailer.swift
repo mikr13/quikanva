@@ -48,6 +48,11 @@ enum Thumbnailer {
     static func contentBounds(_ scene: CanvasScene) -> CGRect? {
         var box: CGRect?
         for element in scene.elements {
+            if element.kind == .text, !element.points.isEmpty {
+                let frame = TextLayout.frame(for: element)
+                box = box?.union(frame) ?? frame
+                continue
+            }
             for point in element.points {
                 let r = CGRect(x: point.x, y: point.y, width: 0, height: 0)
                 box = box?.union(r) ?? r

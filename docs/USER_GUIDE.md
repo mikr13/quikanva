@@ -35,7 +35,7 @@ Select a tool from the floating toolbar or press its single-letter shortcut. New
 - Scroll or use the Hand tool to pan.
 - Pinch to zoom, or use the zoom commands in the ellipsis menu.
 - Paste or drag an image onto the canvas to add it as an editable element.
-- Click the canvas background and start typing with the Text tool to add a label.
+- Double-click the canvas background, or click it with the Text tool, and start typing to add a note. Drag with the Text tool to set how wide the note wraps.
 
 See [Shortcut Reference](SHORTCUTS.md) for every default key.
 
@@ -51,6 +51,14 @@ Switch to Select with <kbd>V</kbd>.
 - Press <kbd>⌘</kbd><kbd>D</kbd> to duplicate.
 - Press <kbd>⌘</kbd><kbd>[</kbd> or <kbd>⌘</kbd><kbd>]</kbd> to change stacking order.
 - Select a line or arrow and press <kbd>⌘</kbd><kbd>Return</kbd> to edit its endpoints and midpoint.
+
+### Edit text
+
+- Double-click a note, or select it and press <kbd>Return</kbd>, to edit it in place.
+- Press <kbd>Return</kbd> for a new line. Press <kbd>Escape</kbd> or <kbd>⌘</kbd><kbd>Return</kbd>, or click the canvas, to finish.
+- New notes wrap at the right edge of the visible canvas.
+- Drag a note's side handle to change where it wraps. Drag a corner handle to scale its text.
+- Paste plain text from another app to add it as a note.
 
 Quikanva records canvas mutations in the native undo manager. <kbd>⌘</kbd><kbd>Z</kbd> and <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd> follow the active canvas.
 
