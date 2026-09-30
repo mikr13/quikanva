@@ -23,7 +23,7 @@ Quikanva is a free, open-source visual scratchpad for Mac. Press <kbd>⌘</kbd><
 - **Instant:** open a new canvas from a global shortcut, the menu bar, Raycast, or a `quikanva://` URL.
 - **Capable:** draw, select, resize, rotate, curve, style, layer, align, and export real diagrams.
 - **Native:** built with SwiftUI and AppKit, with Mac menus, shortcuts, windows, accessibility, dark mode, and reduced-motion support.
-- **Local-first:** sketches autosave on your Mac. Quikanva has no account, analytics, ads, or network service.
+- **Local-first:** sketches autosave on your Mac. Quikanva has no account, analytics, or ads, and its only network use is an update check you control.
 - **Focused:** floating canvases and a visual gallery, without the machinery of a collaborative whiteboard.
 
 ## See it in action
@@ -45,6 +45,8 @@ Quikanva requires macOS 14 Sonoma or later.
 
 > [!IMPORTANT]
 > Current direct-download builds are unsigned. macOS will show an unidentified-developer warning on first launch. Only download Quikanva from this repository. Developer ID signing and notarization are planned so future downloads can pass Gatekeeper normally.
+
+After that, Quikanva updates itself. On the second launch it asks whether to check for updates automatically. You can also choose **Check for Updates…** from the menu bar. Each update is verified with a signature before it installs. Builds released before the updater have no update check, so download the latest release by hand once.
 
 Prefer to inspect and build the source yourself? See [Development](docs/DEVELOPMENT.md).
 
@@ -148,7 +150,7 @@ Tool shortcuts can be reassigned in **Settings → Canvas**. See the complete [S
 
 ## Privacy
 
-Quikanva does not create an account, send analytics, or upload sketches. App data is stored under `~/Library/Application Support/Quikanva/`. Read the short [Privacy Note](docs/PRIVACY.md) for the exact boundary.
+Quikanva does not create an account, send analytics, or upload sketches. Its only network request is the update check against GitHub releases, which you can turn off. App data is stored under `~/Library/Application Support/Quikanva/`. Read the short [Privacy Note](docs/PRIVACY.md) for the exact boundary.
 
 ## Automation
 
@@ -209,6 +211,7 @@ Check the [Roadmap](#roadmap) before proposing a feature. Focused contributions 
 - A custom vector engine on an AppKit canvas view, used instead of PencilKit because PencilKit's editable canvas is limited to UIKit and Mac Catalyst apps
 - Local sketch storage as scene JSON with PNG thumbnails in SwiftData
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) by Sindre Sorhus
+- [Sparkle](https://sparkle-project.org) for signed in-app updates
 - XcodeGen for reproducible project generation
 
 ## License

@@ -66,12 +66,32 @@ jobs:
             exit 1
           fi
 
+      - name: Install Sparkle tools
+        run: |
+          sparkle_version="$(jq -r '.pins[] | select(.identity == "sparkle") | .state.version' \
+            Quikanva.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)"
+          curl -fsSL -o "$RUNNER_TEMP/sparkle.tar.xz" \
+            "https://github.com/sparkle-project/Sparkle/releases/download/$sparkle_version/Sparkle-$sparkle_version.tar.xz"
+          mkdir -p "$RUNNER_TEMP/sparkle"
+          tar -xf "$RUNNER_TEMP/sparkle.tar.xz" -C "$RUNNER_TEMP/sparkle"
+          echo "$RUNNER_TEMP/sparkle/bin" >> "$GITHUB_PATH"
+
+      - name: Create update feed
+        env:
+          SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
+        run: |
+          archive="$(ls dist/*.zip)"
+          ./scripts/make-appcast.sh "$archive" \
+            "https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$(basename "$archive")" \
+            release-notes.md \
+            dist/appcast.xml
+
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           release_version="$(node -p "require('./package.json').version")"
-          gh release create "$RELEASE_TAG" dist/*.zip \
+          gh release create "$RELEASE_TAG" dist/*.zip dist/appcast.xml \
             --verify-tag \
             --title "Quikanva $release_version" \
             --notes-file release-notes.md

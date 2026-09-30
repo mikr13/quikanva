@@ -4,7 +4,9 @@ import KeyboardShortcuts
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+        let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
+        if !isRunningTests {
             let currentProcess = SingleInstanceLaunch.RunningProcess(
                 processIdentifier: ProcessInfo.processInfo.processIdentifier,
                 bundleIdentifier: Bundle.main.bundleIdentifier,
@@ -38,6 +40,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         KeyboardShortcuts.onKeyUp(for: .toggleAlwaysOnTop) {
             CanvasWindowManager.shared.toggleAlwaysOnTop()
+        }
+
+        if !isRunningTests {
+            UpdateController.shared.start()
         }
     }
 

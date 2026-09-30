@@ -11,6 +11,10 @@ Current downloads are unsigned, so Gatekeeper warns on first launch.
 
 Do not disable Gatekeeper globally. If you do not want to approve an unsigned build, build Quikanva from source or wait for a signed and notarized release.
 
+## An update does not install
+
+Download the latest zip from <https://github.com/mikr13/quikanva/releases/latest> and replace `Quikanva.app` in `/Applications`. Your sketches stay in `~/Library/Application Support/Quikanva/`. If Quikanva reports that an update is improperly signed, do not install it from another source. Report it in a GitHub issue.
+
 ## I cannot find Quikanva in the Dock
 
 That is expected. Quikanva is a menu-bar accessory app. Look for its icon in the menu bar, or use the global new-canvas shortcut.

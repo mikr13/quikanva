@@ -48,7 +48,7 @@ Create an unsigned release artifact with:
 ./scripts/package-unsigned.sh
 ```
 
-The script builds Release with code signing disabled and writes a versioned zip under `dist/`.
+The script builds Release, signs it ad hoc (no Developer ID), verifies the signature, and writes a versioned zip under `dist/`. Sparkle refuses to install an update whose code signature is missing or invalid, so do not package with code signing disabled.
 
 ## Validate visible behavior
 

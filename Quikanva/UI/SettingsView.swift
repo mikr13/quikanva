@@ -19,6 +19,7 @@ struct SettingsView: View {
     @State private var toolShortcuts = CanvasPreferences.toolShortcuts
     @State private var selectedTab: SettingsTab = .general
     @StateObject private var launchAtLogin = LaunchAtLoginController()
+    @ObservedObject private var updates = UpdateController.shared
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -27,7 +28,8 @@ struct SettingsView: View {
                 maxOpenCanvasPanels: $maxOpenCanvasPanels,
                 autoTitleDateFormat: $autoTitleDateFormat,
                 alwaysOnTop: $alwaysOnTop,
-                launchAtLogin: launchAtLogin
+                launchAtLogin: launchAtLogin,
+                updates: updates
             )
             .tabItem {
                 Label("General", systemImage: "gearshape")
@@ -76,6 +78,7 @@ private struct GeneralSettingsView: View {
     @Binding var autoTitleDateFormat: String
     @Binding var alwaysOnTop: Bool
     @ObservedObject var launchAtLogin: LaunchAtLoginController
+    @ObservedObject var updates: UpdateController
 
     var body: some View {
         Form {
@@ -140,6 +143,24 @@ private struct GeneralSettingsView: View {
             } footer: {
                 Text("Use these shortcuts from anywhere while Quikanva is running.")
             }
+
+            Section {
+                Toggle("Check for updates automatically", isOn: automaticUpdateChecksBinding)
+                    .accessibilityHint("Checks the Quikanva GitHub releases for a new version once a day.")
+
+                Toggle("Download and install updates automatically", isOn: automaticUpdateDownloadsBinding)
+                    .accessibilityHint("Downloads new versions in the background and installs them when Quikanva quits.")
+                    .disabled(!updates.automaticallyChecksForUpdates)
+
+                Button("Check for Updates…") {
+                    updates.checkForUpdates()
+                }
+                .disabled(!updates.canCheckForUpdates)
+            } header: {
+                Text("Updates")
+            } footer: {
+                Text("You are using Quikanva \(updates.currentVersion). Updates come from GitHub releases and are verified before they install.")
+            }
         }
         .formStyle(.grouped)
         .settingsContentInsets()
@@ -159,6 +180,20 @@ private struct GeneralSettingsView: View {
         Binding(
             get: { launchAtLogin.isEnabled },
             set: { launchAtLogin.setEnabled($0) }
+        )
+    }
+
+    private var automaticUpdateChecksBinding: Binding<Bool> {
+        Binding(
+            get: { updates.automaticallyChecksForUpdates },
+            set: { updates.setAutomaticallyChecksForUpdates($0) }
+        )
+    }
+
+    private var automaticUpdateDownloadsBinding: Binding<Bool> {
+        Binding(
+            get: { updates.automaticallyDownloadsUpdates },
+            set: { updates.setAutomaticallyDownloadsUpdates($0) }
         )
     }
 }

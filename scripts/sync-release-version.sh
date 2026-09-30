@@ -11,7 +11,9 @@ path, version = ARGV
 contents = File.read(path, encoding: Encoding::UTF_8)
 updated = contents
   .sub(/MARKETING_VERSION: "[^"]+"/, %(MARKETING_VERSION: "#{version}"))
+  .sub(/CURRENT_PROJECT_VERSION: "[^"]+"/, %(CURRENT_PROJECT_VERSION: "#{version}"))
   .sub(/CFBundleShortVersionString: "[^"]+"/, %(CFBundleShortVersionString: "#{version}"))
+  .sub(/CFBundleVersion: "[^"]+"/, %(CFBundleVersion: "#{version}"))
 
 abort "Could not find version fields in #{path}" if updated == contents && !contents.include?(%("#{version}"))
 File.write(path, updated)

@@ -92,6 +92,7 @@ enum WindowID {
 
 private struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
+    @ObservedObject private var updates = UpdateController.shared
 
     var body: some View {
         Group {
@@ -107,6 +108,17 @@ private struct MenuBarContent: View {
             .keyboardShortcut("g")
 
             Divider()
+
+            if let version = updates.availableUpdateVersion {
+                Button("Install Quikanva \(version)…") {
+                    updates.checkForUpdates()
+                }
+            } else {
+                Button("Check for Updates…") {
+                    updates.checkForUpdates()
+                }
+                .disabled(!updates.canCheckForUpdates)
+            }
 
             SettingsLink {
                 Text("Settings…")
