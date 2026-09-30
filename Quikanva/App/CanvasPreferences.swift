@@ -184,17 +184,15 @@ enum CanvasPreferences {
     }
 
     static var defaultStyle: ElementStyle {
-        get {
-            guard let data = UserDefaults.standard.data(forKey: defaultStyleKey),
-                  let style = try? JSONDecoder().decode(ElementStyle.self, from: data) else {
-                return ElementStyle()
-            }
-            return style
-        }
+        get { decodedStyle(UserDefaults.standard.data(forKey: defaultStyleKey) ?? Data()) }
         set {
             guard let data = try? JSONEncoder().encode(newValue) else { return }
             UserDefaults.standard.set(data, forKey: defaultStyleKey)
         }
+    }
+
+    static func decodedStyle(_ data: Data) -> ElementStyle {
+        (try? JSONDecoder().decode(ElementStyle.self, from: data)) ?? ElementStyle()
     }
 
     static var maxOpenCanvasPanels: Int {

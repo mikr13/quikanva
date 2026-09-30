@@ -6,7 +6,8 @@ enum CanvasCommand: Equatable {
     case zoomToFit
     case zoomToSelection
     case resetZoom
-    case updateSelectionStyle(ElementStyle)
+    case updateSelectionStyle(StyleEdit)
+    case setBackground(RGBAColor)
     case updateSelectedImageShadow(Bool)
     case updateSelectedCurve(Double)
     case togglePointEditing
@@ -22,63 +23,52 @@ struct CanvasRepresentable: NSViewRepresentable {
     var command: CanvasCommand?
     var onChange: (CanvasScene) -> Void
     var onToolChange: (ToolKind) -> Void
-    var onSelectionChange: (ElementStyle?) -> Void
+    var onSelectionChange: (ElementStyle?, Bool) -> Void
     var onImageShadowChange: (Bool?) -> Void
     var onCurveChange: (Double?) -> Void
     var onCommandHandled: () -> Void
 
+    @MainActor
+    final class Coordinator {
+        var isUpdating = false
+
+        func deliver(_ callback: @escaping () -> Void) {
+            guard isUpdating else { return callback() }
+            Task { @MainActor in callback() }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeNSView(context: Context) -> CanvasNSView {
         let view = CanvasNSView()
         view.scene = scene
-        view.onToolChange = onToolChange
-        view.tool = tool
-        view.style = style
-        view.toolShortcuts = toolShortcuts
-        view.onCommit = onChange
-        view.onSelectionChange = onSelectionChange
-        view.onImageShadowChange = onImageShadowChange
-        view.onCurveChange = onCurveChange
-        view.command = command
-        view.onCommandHandled = onCommandHandled
+        sync(view, coordinator: context.coordinator)
         return view
     }
 
     func updateNSView(_ view: CanvasNSView, context: Context) {
+        sync(view, coordinator: context.coordinator)
+    }
+
+    private func sync(_ view: CanvasNSView, coordinator: Coordinator) {
+        coordinator.isUpdating = true
+        defer { coordinator.isUpdating = false }
+        view.onCommit = { scene in coordinator.deliver { onChange(scene) } }
+        view.onToolChange = { tool in coordinator.deliver { onToolChange(tool) } }
+        view.onSelectionChange = { style, hasSelection in
+            coordinator.deliver { onSelectionChange(style, hasSelection) }
+        }
+        view.onImageShadowChange = { shadow in coordinator.deliver { onImageShadowChange(shadow) } }
+        view.onCurveChange = { curve in coordinator.deliver { onCurveChange(curve) } }
+        view.onCommandHandled = { coordinator.deliver(onCommandHandled) }
         view.tool = tool
         view.style = style
         view.toolShortcuts = toolShortcuts
-        view.onCommit = onChange
-        view.onToolChange = onToolChange
-        view.onSelectionChange = onSelectionChange
-        view.onImageShadowChange = onImageShadowChange
-        view.onCurveChange = onCurveChange
-        view.onCommandHandled = onCommandHandled
-        let commandChanged = view.command != command
-        let commandApplied = commandChanged && command != nil
-        if commandChanged {
+        if view.command != command {
             view.command = command
         }
-
-        guard !view.isInteracting else { return }
-        if let next = Self.sceneToApply(
-            viewScene: view.scene,
-            incomingScene: scene,
-            commandApplied: commandApplied
-        ) {
-            view.scene = next
-        }
-    }
-
-    static func sceneToApply(
-        viewScene: CanvasScene,
-        incomingScene: CanvasScene,
-        commandApplied: Bool
-    ) -> CanvasScene? {
-        guard !commandApplied else { return nil }
-        guard viewScene.elements != incomingScene.elements ||
-                viewScene.background != incomingScene.background else { return nil }
-        var next = incomingScene
-        next.camera = viewScene.camera
-        return next
     }
 }

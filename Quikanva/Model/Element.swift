@@ -45,6 +45,13 @@ enum ToolKind: String, CaseIterable, Identifiable, Hashable {
 
 enum ElementKind: String, Codable, Hashable {
     case rectangle, ellipse, diamond, line, arrow, freedraw, text, image
+
+    var isBoxShape: Bool {
+        switch self {
+        case .rectangle, .ellipse, .diamond, .image: true
+        case .line, .arrow, .freedraw, .text: false
+        }
+    }
 }
 
 enum DrawingStyle: String, Codable, CaseIterable, Identifiable, Hashable {
@@ -239,10 +246,82 @@ struct ElementStyle: Codable, Hashable {
         materializeVisibleFillIfNeeded()
     }
 
+    mutating func setFill(_ color: RGBAColor) {
+        fill = color
+        if color.a == 0 {
+            fillStyle = .none
+        } else if fillStyle == .none {
+            fillStyle = .solid
+        }
+    }
+
+    mutating func apply(_ edit: StyleEdit) {
+        switch edit {
+        case .stroke(let value): stroke = value
+        case .fill(let value): setFill(value)
+        case .drawingStyle(let value): drawingStyle = value
+        case .fillStyle(let value): setFillStyle(value)
+        case .strokeStyle(let value): strokeStyle = value
+        case .arrowheadStyle(let value): arrowheadStyle = value
+        case .arrowheadPlacement(let value): arrowheadPlacement = value
+        case .strokeWidth(let value): strokeWidth = value
+        case .opacity(let value): opacity = value
+        case .roughness(let value): roughness = value
+        case .fontSize(let value): fontSize = value
+        case .fontFamily(let value): fontFamily = value
+        case .fontWeight(let value): fontWeight = value
+        case .textAlignment(let value): textAlignment = value
+        case .textDecoration(let value): textDecoration = value
+        }
+    }
+
+    func merging(changesFrom old: ElementStyle, to new: ElementStyle) -> ElementStyle {
+        var merged = self
+        func take<Value: Equatable>(_ keyPath: WritableKeyPath<ElementStyle, Value>) {
+            if old[keyPath: keyPath] != new[keyPath: keyPath] {
+                merged[keyPath: keyPath] = new[keyPath: keyPath]
+            }
+        }
+        take(\.stroke)
+        take(\.fill)
+        take(\.drawingStyle)
+        take(\.fillStyle)
+        take(\.strokeStyle)
+        take(\.arrowheadStyle)
+        take(\.arrowheadPlacement)
+        take(\.strokeWidth)
+        take(\.opacity)
+        take(\.roughness)
+        take(\.fontSize)
+        take(\.fontFamily)
+        take(\.fontWeight)
+        take(\.textAlignment)
+        take(\.textDecoration)
+        return merged
+    }
+
     private mutating func materializeVisibleFillIfNeeded() {
         guard fillStyle != .none, fill.a == 0 else { return }
         fill = visibleFillColor
     }
+}
+
+enum StyleEdit: Equatable {
+    case stroke(RGBAColor)
+    case fill(RGBAColor)
+    case drawingStyle(DrawingStyle)
+    case fillStyle(FillStyle)
+    case strokeStyle(StrokeStyle)
+    case arrowheadStyle(ArrowheadStyle)
+    case arrowheadPlacement(ArrowheadPlacement)
+    case strokeWidth(Double)
+    case opacity(Double)
+    case roughness(Double)
+    case fontSize(Double)
+    case fontFamily(String)
+    case fontWeight(FontWeight)
+    case textAlignment(TextAlignment)
+    case textDecoration(TextDecoration)
 }
 
 struct TextBox: Codable, Hashable {

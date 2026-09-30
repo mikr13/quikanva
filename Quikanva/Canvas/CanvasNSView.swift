@@ -120,6 +120,10 @@ final class CanvasNSView: NSView {
             guard tool != oldValue else { return }
             endTextEditing()
             isEditingPoints = false
+            if tool != .select, !selectedIDs.isEmpty {
+                selectedIDs.removeAll()
+                notifySelectionChange()
+            }
             window?.invalidateCursorRects(for: self)
             redraw()
             onToolChange?(tool)
@@ -135,7 +139,7 @@ final class CanvasNSView: NSView {
     var toolShortcuts = ToolShortcutConfiguration.defaultValue
     var onCommit: ((CanvasScene) -> Void)?
     var onToolChange: ((ToolKind) -> Void)?
-    var onSelectionChange: ((ElementStyle?) -> Void)?
+    var onSelectionChange: ((ElementStyle?, Bool) -> Void)?
     var onImageShadowChange: ((Bool?) -> Void)?
     var onCurveChange: ((Double?) -> Void)?
     var onCommandHandled: (() -> Void)?
@@ -148,6 +152,8 @@ final class CanvasNSView: NSView {
 
     private var live: Element?
     private var selectedIDs = Set<UUID>()
+    private var pasteCount = 0
+    private var pasteChangeCount = -1
     private var textEditor: CanvasTextView?
     private var textSession: TextSession?
     private let textLayer = CanvasTextLayer()
@@ -185,7 +191,7 @@ final class CanvasNSView: NSView {
         case drawing
         case erasing(original: CanvasScene)
         case moving(original: CanvasScene, origin: CGPoint, starts: [UUID: [Point]])
-        case resizing(original: CanvasScene, handle: SelectionHandle, bounds: CGRect, points: [Point])
+        case resizing(original: CanvasScene, handle: SelectionHandle, bounds: CGRect, points: [Point], grab: CGPoint)
         case rotating(original: CanvasScene, center: CGPoint, startAngle: CGFloat, points: [Point])
         case editingPoint(original: CanvasScene, elementID: UUID, handle: PointHandle)
         case selecting(start: CGPoint, current: CGPoint, additive: Bool, initial: Set<UUID>)
@@ -196,11 +202,6 @@ final class CanvasNSView: NSView {
     private var isEditingPoints = false
 
     private static let pasteboardType = NSPasteboard.PasteboardType("com.mihirpandey.quikanva.elements")
-
-    var isInteracting: Bool {
-        if case .none = drag { return false }
-        return true
-    }
 
     var pointEditingEnabled: Bool { isEditingPoints }
 
@@ -244,7 +245,7 @@ final class CanvasNSView: NSView {
     }
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
-        if newWindow == nil { stopCameraAnimation() }
+        if newWindow == nil { stopCameraAnimation(committingProgress: true) }
         super.viewWillMove(toWindow: newWindow)
     }
 
@@ -331,12 +332,17 @@ final class CanvasNSView: NSView {
     }
 
     private func drawSelection(in ctx: CGContext) {
-        guard tool == .select, textSession == nil, let box = selectionBounds else { return }
+        guard tool == .select, textSession == nil, let frame = selectionFrame else { return }
+        let box = frame.box
         let zoom = CGFloat(scene.camera.zoom)
         ctx.saveGState()
-        let pointEditingElement = isEditingPoints ? editableElement : nil
-        let showsSelectionBox = (pointEditingElement?.points.count ?? 0) >= 3 || pointEditingElement == nil
         if showsSelectionBox {
+            ctx.saveGState()
+            if frame.rotation != 0 {
+                ctx.translateBy(x: box.midX, y: box.midY)
+                ctx.rotate(by: frame.rotation)
+                ctx.translateBy(x: -box.midX, y: -box.midY)
+            }
             ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
             ctx.setLineWidth(1.5 / zoom)
             ctx.setLineDash(phase: 0, lengths: [5 / zoom, 4 / zoom])
@@ -351,27 +357,28 @@ final class CanvasNSView: NSView {
                 ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
                 ctx.strokeEllipse(in: rect)
             }
+            if selectionHandles.contains(.rotate) {
+                let rotatePoint = handlePoint(.rotate, in: box)
+                ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+                ctx.setLineWidth(1 / zoom)
+                ctx.move(to: CGPoint(x: box.midX, y: box.minY))
+                ctx.addLine(to: rotatePoint)
+                ctx.strokePath()
+                ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
+                ctx.fillEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
+                                           y: rotatePoint.y - 4 / zoom,
+                                           width: 8 / zoom,
+                                           height: 8 / zoom))
+                ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
+                ctx.strokeEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
+                                             y: rotatePoint.y - 4 / zoom,
+                                             width: 8 / zoom,
+                                             height: 8 / zoom))
+            }
+            ctx.restoreGState()
         }
-        if showsSelectionBox, selectionHandles.contains(.rotate) {
-            let rotatePoint = handlePoint(.rotate, in: box)
-            ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-            ctx.setLineWidth(1 / zoom)
-            ctx.move(to: CGPoint(x: box.midX, y: box.minY))
-            ctx.addLine(to: rotatePoint)
-            ctx.strokePath()
-            ctx.setFillColor(NSColor.windowBackgroundColor.cgColor)
-            ctx.fillEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
-                                       y: rotatePoint.y - 4 / zoom,
-                                       width: 8 / zoom,
-                                       height: 8 / zoom))
-            ctx.setStrokeColor(NSColor.controlAccentColor.cgColor)
-            ctx.strokeEllipse(in: CGRect(x: rotatePoint.x - 4 / zoom,
-                                         y: rotatePoint.y - 4 / zoom,
-                                         width: 8 / zoom,
-                                         height: 8 / zoom))
-        }
-        if let pointEditingElement {
-            drawPointEditingHandles(for: pointEditingElement, in: ctx, zoom: zoom)
+        if isEditingPoints, let element = editableElement {
+            drawPointEditingHandles(for: element, in: ctx, zoom: zoom)
         }
         ctx.restoreGState()
     }
@@ -434,10 +441,29 @@ final class CanvasNSView: NSView {
     }
 
     private var selectionHandles: [SelectionHandle] {
+        guard selectedIDs.count == 1 else { return [] }
         guard selectedTextElement == nil else {
             return [.topLeft, .topRight, .right, .bottomRight, .bottomLeft, .left]
         }
         return [.rotate, .topLeft, .top, .topRight, .right, .bottomRight, .bottom, .bottomLeft, .left]
+    }
+
+    private var showsSelectionBox: Bool {
+        guard isEditingPoints, let element = editableElement else { return true }
+        return element.points.count >= 3
+    }
+
+    private var selectionFrame: (box: CGRect, rotation: CGFloat)? {
+        guard selectedIDs.count == 1,
+              let element = scene.elements.first(where: { selectedIDs.contains($0.id) }),
+              let box = Self.localBounds(of: element) else {
+            return selectionBounds.map { ($0, 0) }
+        }
+        return (box.insetBy(dx: -6, dy: -6), Self.rotation(of: element))
+    }
+
+    private var visibleSceneRect: CGRect {
+        CGRect(corner: scenePoint(bounds.origin), scenePoint(CGPoint(x: bounds.maxX, y: bounds.maxY)))
     }
 
     private var editableElement: Element? {
@@ -450,7 +476,7 @@ final class CanvasNSView: NSView {
 
     func notifySelectionChange() {
         if editableElement == nil { isEditingPoints = false }
-        onSelectionChange?(selectedStyle)
+        onSelectionChange?(selectedStyle, !selectedIDs.isEmpty)
         onImageShadowChange?(selectedImageShadow)
         onCurveChange?(selectedCurve)
     }
@@ -489,7 +515,7 @@ final class CanvasNSView: NSView {
         let wasTextEditing = textEditor != nil
         endTextEditing()
         if wasTextEditing { tool = .select }
-        stopCameraAnimation()
+        stopCameraAnimation(committingProgress: true)
         window?.makeFirstResponder(self)
         let p = scenePoint(event)
         switch tool {
@@ -507,6 +533,11 @@ final class CanvasNSView: NSView {
                 redraw()
                 return
             }
+            if isEditingPoints, let handle = pointHandle(at: p), let element = editableElement {
+                drag = .editingPoint(original: scene, elementID: element.id, handle: handle)
+                redraw()
+                return
+            }
             if event.clickCount >= 2, !event.modifierFlags.contains(.command) {
                 let hit = pickElement(p)
                 if let hit, hit.kind == .text {
@@ -517,11 +548,6 @@ final class CanvasNSView: NSView {
                     beginNewText(at: p)
                     return
                 }
-            }
-            if isEditingPoints, let handle = pointHandle(at: p), let element = editableElement {
-                drag = .editingPoint(original: scene, elementID: element.id, handle: handle)
-                redraw()
-                return
             }
             beginSelection(at: p, event: event)
         case .eraser:
@@ -550,7 +576,7 @@ final class CanvasNSView: NSView {
         if let handle = selectionHandle(at: p), selectedIDs.count == 1 {
             guard let id = selectedIDs.first,
                   let element = scene.elements.first(where: { $0.id == id }),
-                  let box = Self.bounds(of: element) else { return }
+                  let box = Self.localBounds(of: element) else { return }
             if handle == .rotate {
                 let center = CGPoint(x: box.midX, y: box.midY)
                 drag = .rotating(original: scene,
@@ -558,7 +584,13 @@ final class CanvasNSView: NSView {
                                  startAngle: atan2(p.y - center.y, p.x - center.x),
                                  points: element.points)
             } else {
-                drag = .resizing(original: scene, handle: handle, bounds: box, points: element.points)
+                let local = Self.localPoint(p, in: element)
+                let grabbed = handlePoint(handle, in: box)
+                drag = .resizing(original: scene,
+                                 handle: handle,
+                                 bounds: box,
+                                 points: element.points,
+                                 grab: CGPoint(x: local.x - grabbed.x, y: local.y - grabbed.y))
             }
             return
         }
@@ -611,8 +643,7 @@ final class CanvasNSView: NSView {
             let targetBounds = original.elements.compactMap { element in
                 selectedIDs.contains(element.id) ? nil : Self.bounds(of: element)
             }
-            let viewport = CGRect(corner: scenePoint(bounds.origin),
-                                  scenePoint(CGPoint(x: bounds.maxX, y: bounds.maxY)))
+            let viewport = visibleSceneRect
             let snapped: AlignmentSnapResult
             if event.modifierFlags.contains(.option) {
                 snapped = AlignmentSnapResult(translation: translation, guides: [])
@@ -632,21 +663,34 @@ final class CanvasNSView: NSView {
                     Point(x: $0.x + snapped.translation.x, y: $0.y + snapped.translation.y)
                 }
             }
-        case .resizing(let original, let handle, let originalBounds, let points):
+        case .resizing(let original, let handle, let originalBounds, let points, let grab):
             guard let id = selectedIDs.first,
-                  let index = scene.elements.firstIndex(where: { $0.id == id }) else { return }
-            if let source = original.elements.first(where: { $0.id == id }), source.kind == .text {
-                scene.elements[index] = resizedText(source, handle: handle, from: originalBounds, pointer: p)
+                  let index = scene.elements.firstIndex(where: { $0.id == id }),
+                  let source = original.elements.first(where: { $0.id == id }) else { return }
+            let local = Self.localPoint(p, in: source)
+            let pointer = CGPoint(x: local.x - grab.x, y: local.y - grab.y)
+            if source.kind == .text {
+                scene.elements[index] = resizedText(source, handle: handle, from: originalBounds, pointer: pointer)
                 break
             }
-            let target = resizeBounds(originalBounds, handle: handle, pointer: p, preserveAspect: event.modifierFlags.contains(.shift))
-            scene.elements[index].points = transformed(points, from: originalBounds, to: target)
-        case .rotating(_, let center, let startAngle, let points):
+            let resized = resizedPoints(points,
+                                        from: originalBounds,
+                                        handle: handle,
+                                        pointer: pointer,
+                                        preserveAspect: event.modifierFlags.contains(.shift))
+            scene.elements[index].points = recentered(resized,
+                                                      rotatedBy: Self.rotation(of: source),
+                                                      around: CGPoint(x: originalBounds.midX, y: originalBounds.midY))
+        case .rotating(let original, let center, let startAngle, let points):
             guard let id = selectedIDs.first,
-                  let index = scene.elements.firstIndex(where: { $0.id == id }) else { return }
+                  let index = scene.elements.firstIndex(where: { $0.id == id }),
+                  let source = original.elements.first(where: { $0.id == id }) else { return }
             let angle = atan2(p.y - center.y, p.x - center.x) - startAngle
-            scene.elements[index].points = points.map { Point(rotate($0.cg, around: center, by: angle)) }
-            scene.elements[index].rotation = angle
+            if source.kind.isBoxShape {
+                scene.elements[index].rotation = (source.rotation + Double(angle)).remainder(dividingBy: 2 * .pi)
+            } else {
+                scene.elements[index].points = points.map { Point(Self.rotated($0.cg, around: center, by: angle)) }
+            }
         case .editingPoint(_, let elementID, let handle):
             guard let index = scene.elements.firstIndex(where: { $0.id == elementID }) else { return }
             var points = scene.elements[index].points
@@ -684,16 +728,14 @@ final class CanvasNSView: NSView {
         switch drag {
         case .drawing:
             commitLive()
-        case .erasing(let original), .moving(let original, _, _), .resizing(let original, _, _, _), .rotating(let original, _, _, _):
+        case .erasing(let original), .moving(let original, _, _), .resizing(let original, _, _, _, _), .rotating(let original, _, _, _):
             finishMutation(from: original)
         case .editingPoint(let original, _, _):
             finishMutation(from: original)
         case .selecting(let start, let current, let additive, let initial):
             let box = CGRect(corner: start, current)
-            let matches = scene.elements.filter { element in
-                guard let bounds = Self.bounds(of: element) else { return false }
-                return box.intersects(bounds) || box.contains(bounds)
-            }.map(\.id)
+            let isClick = max(box.width, box.height) * CGFloat(scene.camera.zoom) < 3
+            let matches = isClick ? [] : scene.elements.filter { Self.intersects($0, box) }.map(\.id)
             selectedIDs = additive ? initial.union(matches) : Set(matches)
             notifySelectionChange()
         case .panning(let original, _, _):
@@ -720,7 +762,7 @@ final class CanvasNSView: NSView {
         defer { live = nil }
         guard var element = live else { return }
         if element.kind == .freedraw {
-            element.points = smoothed(element.points)
+            element.points = element.points.count == 1 ? [element.points[0], element.points[0]] : smoothed(element.points)
         } else if element.points.count >= 2 {
             let d = hypot(element.points[0].x - element.points[1].x, element.points[0].y - element.points[1].y)
             if d < 3 { return }
@@ -767,9 +809,10 @@ final class CanvasNSView: NSView {
     }
 
     private func finishMutation(from original: CanvasScene) {
-        guard original != scene else { return }
+        guard original.elements != scene.elements || original.background != scene.background else { return }
         registerUndo(for: original)
         onCommit?(scene)
+        notifySelectionChange()
     }
 
     private func registerUndo(for previous: CanvasScene) {
@@ -784,7 +827,9 @@ final class CanvasNSView: NSView {
         canvasUndoManager.registerUndo(withTarget: self) { view in
             view.restore(current)
         }
-        scene = restored
+        var next = restored
+        next.camera = scene.camera
+        scene = next
         selectedIDs = selectedIDs.intersection(restored.elements.map(\.id))
         notifySelectionChange()
         onCommit?(scene)
@@ -910,7 +955,7 @@ final class CanvasNSView: NSView {
 
     private func copySelection() {
         let selected = scene.elements.filter { selectedIDs.contains($0.id) }
-        guard let data = try? JSONEncoder().encode(selected) else { return }
+        guard !selected.isEmpty, let data = try? JSONEncoder().encode(selected) else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setData(data, forType: Self.pasteboardType)
         let texts = selected
@@ -936,10 +981,13 @@ final class CanvasNSView: NSView {
         }
         var updated = scene
         let nextZ = (updated.elements.map(\.zIndex).max() ?? 0) + 1
+        let translation = pasteTranslation(for: elements)
         var pastedIDs = Set<UUID>()
         for index in elements.indices {
             elements[index].id = UUID()
-            elements[index].points = elements[index].points.map { Point(x: $0.x + 16, y: $0.y + 16) }
+            elements[index].points = elements[index].points.map {
+                Point(x: $0.x + translation.x, y: $0.y + translation.y)
+            }
             elements[index].zIndex = nextZ + index
             updated.elements.append(elements[index])
             pastedIDs.insert(elements[index].id)
@@ -947,6 +995,20 @@ final class CanvasNSView: NSView {
         selectedIDs = pastedIDs
         notifySelectionChange()
         commit(updated)
+    }
+
+    private func pasteTranslation(for elements: [Element]) -> CGPoint {
+        let changeCount = NSPasteboard.general.changeCount
+        pasteCount = changeCount == pasteChangeCount ? pasteCount + 1 : 1
+        pasteChangeCount = changeCount
+        let cascade = CGFloat(16 * pasteCount)
+        let viewport = visibleSceneRect
+        guard let box = elements.compactMap(Self.bounds(of:)).reduce(into: CGRect?.none, { result, box in
+            result = result?.union(box) ?? box
+        }), !viewport.intersects(box.offsetBy(dx: cascade, dy: cascade)) else {
+            return CGPoint(x: cascade, y: cascade)
+        }
+        return CGPoint(x: viewport.midX - box.midX + cascade - 16, y: viewport.midY - box.midY + cascade - 16)
     }
 
     private func insertImage(_ data: Data, at center: CGPoint) {
@@ -1018,8 +1080,15 @@ final class CanvasNSView: NSView {
         return representation.representation(using: .png, properties: [:])
     }
 
+    private static func containsImage(_ pasteboard: NSPasteboard) -> Bool {
+        pasteboard.canReadItem(withDataConformingToTypes: [UTType.image.identifier]) ||
+            pasteboard.canReadObject(forClasses: [NSURL.self],
+                                     options: [.urlReadingFileURLsOnly: true,
+                                               .urlReadingContentsConformToTypes: [UTType.image.identifier]])
+    }
+
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        Self.imageData(from: sender.draggingPasteboard) == nil ? [] : .copy
+        Self.containsImage(sender.draggingPasteboard) ? .copy : []
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
@@ -1096,18 +1165,23 @@ final class CanvasNSView: NSView {
         case .resetZoom: animateCamera(to: Camera())
         case .zoomToFit: zoomToFit(selectionBounds ?? contentBounds)
         case .zoomToSelection: zoomToFit(selectionBounds)
-        case .updateSelectionStyle(let style):
+        case .updateSelectionStyle(let edit):
             guard !selectedIDs.isEmpty else { break }
             var updated = scene
             for index in updated.elements.indices where selectedIDs.contains(updated.elements[index].id) {
-                updated.elements[index].style = style
+                updated.elements[index].style.apply(edit)
             }
             commit(updated)
-            if let editingID = textSession?.elementID, selectedIDs.contains(editingID) {
-                textSession?.style = style
+            if let editingID = textSession?.elementID,
+               let element = scene.elements.first(where: { $0.id == editingID }) {
+                textSession?.style = element.style
                 applyTextEditorStyle()
             }
             notifySelectionChange()
+        case .setBackground(let color):
+            var updated = scene
+            updated.background = color
+            commit(updated)
         case .updateSelectedImageShadow(let shadow):
             guard !selectedIDs.isEmpty else { break }
             var updated = scene
@@ -1157,13 +1231,15 @@ final class CanvasNSView: NSView {
     private var contentBounds: CGRect? {
         scene.elements.compactMap(Self.bounds(of:)).reduce(into: nil) { result, box in
             result = result?.union(box) ?? box
-        }
+        }?.insetBy(dx: -6, dy: -6)
     }
 
     private func zoom(by factor: CGFloat) {
         let center = CGPoint(x: bounds.midX, y: bounds.midY)
-        let before = scenePoint(center)
-        var target = scene.camera
+        let base = cameraAnimation?.to ?? scene.camera
+        let before = CGPoint(x: (center.x - CGFloat(base.panX)) / CGFloat(base.zoom),
+                             y: (center.y - CGFloat(base.panY)) / CGFloat(base.zoom))
+        var target = base
         target.zoom = max(0.2, min(6, target.zoom * Double(factor)))
         let after = CGPoint(x: before.x * CGFloat(target.zoom) + CGFloat(target.panX),
                             y: before.y * CGFloat(target.zoom) + CGFloat(target.panY))
@@ -1220,17 +1296,21 @@ final class CanvasNSView: NSView {
         }
     }
 
-    private func stopCameraAnimation() {
+    private func stopCameraAnimation(committingProgress: Bool = false) {
+        let wasAnimating = cameraAnimation != nil
         cameraTimer?.invalidate()
         cameraTimer = nil
         cameraAnimation = nil
+        if committingProgress, wasAnimating { onCommit?(scene) }
     }
 
     private func selectionHandle(at p: CGPoint) -> SelectionHandle? {
-        guard !isEditingPoints else { return nil }
-        guard let box = selectionBounds, selectedIDs.count == 1 else { return nil }
+        guard showsSelectionBox,
+              let frame = selectionFrame,
+              let element = scene.elements.first(where: { selectedIDs.contains($0.id) }) else { return nil }
+        let local = Self.localPoint(p, in: element)
         let tolerance = 10 / CGFloat(scene.camera.zoom)
-        return selectionHandles.first { distance(p, to: handlePoint($0, in: box)) <= tolerance }
+        return selectionHandles.first { distance(local, to: handlePoint($0, in: frame.box)) <= tolerance }
     }
 
     private func controlPoint(for element: Element) -> CGPoint {
@@ -1292,16 +1372,72 @@ final class CanvasNSView: NSView {
         }
     }
 
-    private func transformed(_ points: [Point], from source: CGRect, to target: CGRect) -> [Point] {
-        let sx = target.width / max(source.width, 1)
-        let sy = target.height / max(source.height, 1)
-        return points.map { point in
-            Point(x: target.minX + (point.x - source.minX) * sx,
-                  y: target.minY + (point.y - source.minY) * sy)
+    private func resizedPoints(_ points: [Point],
+                               from original: CGRect,
+                               handle: SelectionHandle,
+                               pointer: CGPoint,
+                               preserveAspect: Bool) -> [Point] {
+        let anchor = handlePoint(opposite(of: handle), in: original)
+        let grabbed = handlePoint(handle, in: original)
+        let movesX = handle != .top && handle != .bottom
+        let movesY = handle != .left && handle != .right
+        let flatX = original.width < 1
+        let flatY = original.height < 1
+        var scaleX: CGFloat = movesX && !flatX ? (pointer.x - anchor.x) / (grabbed.x - anchor.x) : 1
+        var scaleY: CGFloat = movesY && !flatY ? (pointer.y - anchor.y) / (grabbed.y - anchor.y) : 1
+        if preserveAspect, movesX, movesY, !flatX, !flatY {
+            let scale = max(abs(scaleX), abs(scaleY))
+            scaleX = scaleX < 0 ? -scale : scale
+            scaleY = scaleY < 0 ? -scale : scale
+        }
+        let lastIndex = CGFloat(max(points.count - 1, 1))
+        func spread(_ offset: CGFloat, extent: CGFloat, anchoredAtMax: Bool, index: Int) -> CGFloat {
+            guard extent >= 1 else { return CGFloat(index) / lastIndex }
+            let fraction = offset / extent
+            return anchoredAtMax ? 1 - fraction : fraction
+        }
+        return points.enumerated().map { index, point in
+            let x = movesX && flatX
+                ? anchor.x + (pointer.x - anchor.x) * spread(point.y - original.minY,
+                                                             extent: original.height,
+                                                             anchoredAtMax: anchor.y > original.midY,
+                                                             index: index)
+                : anchor.x + (point.x - anchor.x) * scaleX
+            let y = movesY && flatY
+                ? anchor.y + (pointer.y - anchor.y) * spread(point.x - original.minX,
+                                                             extent: original.width,
+                                                             anchoredAtMax: anchor.x > original.midX,
+                                                             index: index)
+                : anchor.y + (point.y - anchor.y) * scaleY
+            return Point(x: x, y: y)
         }
     }
 
-    private func rotate(_ point: CGPoint, around center: CGPoint, by angle: CGFloat) -> CGPoint {
+    private func opposite(of handle: SelectionHandle) -> SelectionHandle {
+        switch handle {
+        case .topLeft: .bottomRight
+        case .top: .bottom
+        case .topRight: .bottomLeft
+        case .right: .left
+        case .bottomRight: .topLeft
+        case .bottom: .top
+        case .bottomLeft: .topRight
+        case .left: .right
+        case .rotate: .rotate
+        }
+    }
+
+    private func recentered(_ points: [Point], rotatedBy angle: CGFloat, around center: CGPoint) -> [Point] {
+        guard angle != 0, let first = points.first, let last = points.last else { return points }
+        let box = CGRect(corner: first.cg, last.cg)
+        let localCenter = CGPoint(x: box.midX, y: box.midY)
+        let sceneCenter = Self.rotated(localCenter, around: center, by: angle)
+        return points.map {
+            Point(x: $0.x + sceneCenter.x - localCenter.x, y: $0.y + sceneCenter.y - localCenter.y)
+        }
+    }
+
+    nonisolated private static func rotated(_ point: CGPoint, around center: CGPoint, by angle: CGFloat) -> CGPoint {
         let x = point.x - center.x
         let y = point.y - center.y
         return CGPoint(x: center.x + x * cos(angle) - y * sin(angle),
@@ -1498,16 +1634,27 @@ final class CanvasNSView: NSView {
     }
 
     private func pickElement(_ p: CGPoint) -> Element? {
-        scene.elements.sorted(by: { $0.zIndex > $1.zIndex }).first(where: { Self.hits($0, p) })
+        let zoom = CGFloat(scene.camera.zoom)
+        return scene.elements.sorted(by: { $0.zIndex > $1.zIndex }).first(where: { Self.hits($0, p, zoom: zoom) })
     }
 
-    static func hits(_ element: Element, _ p: CGPoint) -> Bool {
+    nonisolated static func hits(_ element: Element, _ p: CGPoint, zoom: CGFloat = 1) -> Bool {
         let points = element.points.map(\.cg)
-        guard !points.isEmpty else { return false }
-        let tolerance = max(8, CGFloat(element.style.strokeWidth) + 6)
+        guard !points.isEmpty, let box = localBounds(of: element) else { return false }
+        let tolerance = max(8, CGFloat(element.style.strokeWidth) * zoom + 6) / zoom
+        let local = localPoint(p, in: element)
         switch element.kind {
-        case .rectangle, .ellipse, .diamond, .text, .image:
-            return (bounds(of: element) ?? .null).insetBy(dx: -tolerance, dy: -tolerance).contains(p)
+        case .rectangle, .text, .image:
+            return box.insetBy(dx: -tolerance, dy: -tolerance).contains(local)
+        case .ellipse:
+            let outer = box.insetBy(dx: -tolerance, dy: -tolerance)
+            let dx = (local.x - outer.midX) / (outer.width / 2)
+            let dy = (local.y - outer.midY) / (outer.height / 2)
+            return dx * dx + dy * dy <= 1
+        case .diamond:
+            let a = box.width / 2, b = box.height / 2
+            guard a > 0, b > 0 else { return box.insetBy(dx: -tolerance, dy: -tolerance).contains(local) }
+            return abs(local.x - box.midX) / a + abs(local.y - box.midY) / b <= 1 + tolerance * hypot(a, b) / (a * b)
         case .line, .arrow:
             guard points.count >= 2 else { return false }
             if points.count >= 3 {
@@ -1521,20 +1668,73 @@ final class CanvasNSView: NSView {
         }
     }
 
-    static func bounds(of element: Element) -> CGRect? {
+    nonisolated static func bounds(of element: Element) -> CGRect? {
+        guard let box = localBounds(of: element) else { return nil }
+        let angle = rotation(of: element)
+        guard angle != 0 else { return box }
+        let center = CGPoint(x: box.midX, y: box.midY)
+        return [box.topLeft, box.topRight, box.bottomRight, box.bottomLeft]
+            .map { CGRect(origin: rotated($0, around: center, by: angle), size: .zero) }
+            .reduce(CGRect.null) { $0.union($1) }
+    }
+
+    nonisolated private static func localBounds(of element: Element) -> CGRect? {
         let points = element.points.map(\.cg)
         guard let first = points.first else { return nil }
         if element.kind == .text {
             return TextLayout.frame(for: element)
         }
+        if element.kind == .line || element.kind == .arrow, points.count >= 3 {
+            return quadraticBounds(start: points[0], control: points[1], end: points[2])
+        }
         return points.dropFirst().reduce(CGRect(origin: first, size: .zero)) { $0.union(CGRect(origin: $1, size: .zero)) }
+    }
+
+    nonisolated private static func rotation(of element: Element) -> CGFloat {
+        element.kind.isBoxShape ? CGFloat(element.rotation) : 0
+    }
+
+    nonisolated private static func localPoint(_ p: CGPoint, in element: Element) -> CGPoint {
+        let angle = rotation(of: element)
+        guard angle != 0, let box = localBounds(of: element) else { return p }
+        return rotated(p, around: CGPoint(x: box.midX, y: box.midY), by: -angle)
+    }
+
+    nonisolated private static func intersects(_ element: Element, _ box: CGRect) -> Bool {
+        let points = element.points.map(\.cg)
+        let path: [CGPoint]
+        switch element.kind {
+        case .line, .arrow:
+            guard points.count >= 2 else { return false }
+            path = points.count >= 3
+                ? (0 ... 24).map { quadraticPoint(start: points[0], control: points[1], end: points[2], at: CGFloat($0) / 24) }
+                : [points[0], points[points.count - 1]]
+        case .freedraw:
+            path = points
+        case .rectangle, .ellipse, .diamond, .text, .image:
+            guard let bounds = bounds(of: element) else { return false }
+            return box.intersects(bounds) || box.contains(bounds)
+        }
+        if path.contains(where: { box.contains($0) }) { return true }
+        let edges = [(box.topLeft, box.topRight), (box.topRight, box.bottomRight),
+                     (box.bottomRight, box.bottomLeft), (box.bottomLeft, box.topLeft)]
+        return zip(path, path.dropFirst()).contains { start, end in
+            edges.contains { segmentsCross(start, end, $0.0, $0.1) }
+        }
+    }
+
+    nonisolated private static func segmentsCross(_ a: CGPoint, _ b: CGPoint, _ c: CGPoint, _ d: CGPoint) -> Bool {
+        func side(_ p: CGPoint, _ q: CGPoint, _ r: CGPoint) -> CGFloat {
+            (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)
+        }
+        return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0
     }
 
     private func distance(_ p: CGPoint, to other: CGPoint) -> CGFloat {
         hypot(p.x - other.x, p.y - other.y)
     }
 
-    private static func segmentDistance(_ p: CGPoint, segment a: CGPoint, _ b: CGPoint) -> CGFloat {
+    nonisolated private static func segmentDistance(_ p: CGPoint, segment a: CGPoint, _ b: CGPoint) -> CGFloat {
         let dx = b.x - a.x, dy = b.y - a.y
         let lengthSquared = dx * dx + dy * dy
         guard lengthSquared > 0 else { return hypot(p.x - a.x, p.y - a.y) }
@@ -1542,21 +1742,41 @@ final class CanvasNSView: NSView {
         return hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy))
     }
 
-    private static func quadraticDistance(_ p: CGPoint,
-                                          start a: CGPoint,
-                                          control c: CGPoint,
-                                          end b: CGPoint) -> CGFloat {
+    nonisolated private static func quadraticDistance(_ p: CGPoint,
+                                                      start a: CGPoint,
+                                                      control c: CGPoint,
+                                                      end b: CGPoint) -> CGFloat {
         var previous = a
         var closest = CGFloat.greatestFiniteMagnitude
         for step in 1 ... 24 {
-            let t = CGFloat(step) / 24
-            let inverse = 1 - t
-            let point = CGPoint(x: inverse * inverse * a.x + 2 * inverse * t * c.x + t * t * b.x,
-                                y: inverse * inverse * a.y + 2 * inverse * t * c.y + t * t * b.y)
+            let point = quadraticPoint(start: a, control: c, end: b, at: CGFloat(step) / 24)
             closest = min(closest, segmentDistance(p, segment: previous, point))
             previous = point
         }
         return closest
+    }
+
+    nonisolated private static func quadraticPoint(start a: CGPoint,
+                                                   control c: CGPoint,
+                                                   end b: CGPoint,
+                                                   at t: CGFloat) -> CGPoint {
+        let inverse = 1 - t
+        return CGPoint(x: inverse * inverse * a.x + 2 * inverse * t * c.x + t * t * b.x,
+                       y: inverse * inverse * a.y + 2 * inverse * t * c.y + t * t * b.y)
+    }
+
+    nonisolated private static func quadraticBounds(start a: CGPoint, control c: CGPoint, end b: CGPoint) -> CGRect {
+        [extremum(a.x, c.x, b.x), extremum(a.y, c.y, b.y)]
+            .compactMap { $0 }
+            .map { quadraticPoint(start: a, control: c, end: b, at: $0) }
+            .reduce(CGRect(corner: a, b)) { $0.union(CGRect(origin: $1, size: .zero)) }
+    }
+
+    nonisolated private static func extremum(_ start: CGFloat, _ control: CGFloat, _ end: CGFloat) -> CGFloat? {
+        let denominator = start - 2 * control + end
+        guard abs(denominator) > 0.0001 else { return nil }
+        let t = (start - control) / denominator
+        return t > 0 && t < 1 ? t : nil
     }
 
     private static func curveValue(for element: Element) -> Double {

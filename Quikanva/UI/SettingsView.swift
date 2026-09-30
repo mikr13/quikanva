@@ -15,6 +15,7 @@ struct SettingsView: View {
     private var alwaysOnTop = false
     @State private var defaultBackground = CanvasPreferences.defaultBackground.swiftUIColor
     @State private var defaultStyle = CanvasPreferences.defaultStyle
+    @AppStorage(CanvasPreferences.defaultStyleKey) private var defaultStyleData = Data()
     @State private var toolShortcuts = CanvasPreferences.toolShortcuts
     @State private var selectedTab: SettingsTab = .general
     @StateObject private var launchAtLogin = LaunchAtLoginController()
@@ -47,6 +48,9 @@ struct SettingsView: View {
             .accessibilityLabel("Canvas settings")
         }
         .frame(width: 620, height: 500)
+        .onChange(of: defaultStyleData) { _, updated in
+            defaultStyle = CanvasPreferences.decodedStyle(updated)
+        }
         .onAppear {
             Task { @MainActor in
                 await Task.yield()
@@ -262,7 +266,7 @@ private struct CanvasSettingsView: View {
                     }
                 }
 
-                Picker("Default text size", selection: $defaultStyle.fontSize) {
+                Picker("Default text size", selection: fontSizeBinding) {
                     ForEach([14.0, 18.0, 20.0, 24.0, 32.0], id: \.self) { size in
                         Text("\(Int(size)) pt").tag(size)
                     }
@@ -276,8 +280,8 @@ private struct CanvasSettingsView: View {
         .onChange(of: defaultBackground) { _, value in
             CanvasPreferences.defaultBackground = RGBAColor(value)
         }
-        .onChange(of: defaultStyle) { _, value in
-            CanvasPreferences.defaultStyle = value
+        .onChange(of: defaultStyle) { old, value in
+            CanvasPreferences.defaultStyle = CanvasPreferences.defaultStyle.merging(changesFrom: old, to: value)
         }
         .onChange(of: toolShortcuts) { _, value in
             CanvasPreferences.toolShortcuts = value
@@ -294,7 +298,14 @@ private struct CanvasSettingsView: View {
     private var fillBinding: Binding<Color> {
         Binding(
             get: { defaultStyle.fill.swiftUIColor },
-            set: { defaultStyle.fill = RGBAColor($0) }
+            set: { defaultStyle.setFill(RGBAColor($0)) }
+        )
+    }
+
+    private var fontSizeBinding: Binding<Double> {
+        Binding(
+            get: { [14.0, 18.0, 20.0, 24.0, 32.0].nearest(to: defaultStyle.fontSize) },
+            set: { defaultStyle.fontSize = $0 }
         )
     }
 

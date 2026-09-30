@@ -1,6 +1,18 @@
 import AppKit
 import CoreText
 
+private final class FontCache: @unchecked Sendable {
+    private let storage = NSCache<NSString, NSFont>()
+
+    func font(forKey key: NSString) -> NSFont? {
+        storage.object(forKey: key)
+    }
+
+    func insert(_ font: NSFont, forKey key: NSString) {
+        storage.setObject(font, forKey: key)
+    }
+}
+
 private final class TextSizeCache: @unchecked Sendable {
     private let storage: NSCache<NSString, NSValue> = {
         let cache = NSCache<NSString, NSValue>()
@@ -23,20 +35,53 @@ enum TextLayout {
     static let minimumWidth: CGFloat = 24
 
     private static let sizeCache = TextSizeCache()
+    private static let fontCache = FontCache()
 
     static func font(for style: ElementStyle) -> NSFont {
-        var font = CTFontCreateWithName(style.fontFamily as CFString, CGFloat(style.fontSize), nil)
-        var traits: CTFontSymbolicTraits = []
-        if style.fontWeight == .bold || style.fontWeight == .semibold {
-            traits.insert(.traitBold)
+        let italic = style.textDecoration == .italic
+        let key = [style.fontFamily, "\(style.fontSize)", style.fontWeight.rawValue, "\(italic)"]
+            .joined(separator: "|") as NSString
+        if let cached = fontCache.font(forKey: key) { return cached }
+        let size = CGFloat(style.fontSize)
+        let weight = weightValue(style.fontWeight)
+        var font = matchingFont(family: style.fontFamily, weight: weight, italic: italic, size: size)
+        if abs(resolvedWeight(of: font) - weight) > 0.02, let fallback = fallbackWeight(for: style.fontWeight) {
+            font = matchingFont(family: style.fontFamily, weight: fallback, italic: italic, size: size)
         }
-        if style.textDecoration == .italic {
-            traits.insert(.traitItalic)
+        let resolved = font as NSFont
+        fontCache.insert(resolved, forKey: key)
+        return resolved
+    }
+
+    private static func weightValue(_ weight: FontWeight) -> CGFloat {
+        switch weight {
+        case .regular: NSFont.Weight.regular.rawValue
+        case .medium: NSFont.Weight.medium.rawValue
+        case .semibold: NSFont.Weight.semibold.rawValue
+        case .bold: NSFont.Weight.bold.rawValue
         }
-        if !traits.isEmpty {
-            font = CTFontCreateCopyWithSymbolicTraits(font, 0, nil, traits, traits) ?? font
+    }
+
+    private static func fallbackWeight(for weight: FontWeight) -> CGFloat? {
+        switch weight {
+        case .medium: NSFont.Weight.regular.rawValue
+        case .semibold: NSFont.Weight.bold.rawValue
+        case .regular, .bold: nil
         }
-        return font as NSFont
+    }
+
+    private static func matchingFont(family: String, weight: CGFloat, italic: Bool, size: CGFloat) -> CTFont {
+        var traits: [CFString: Any] = [kCTFontWeightTrait: weight]
+        if italic {
+            traits[kCTFontSymbolicTrait] = CTFontSymbolicTraits.traitItalic.rawValue
+        }
+        let attributes: [CFString: Any] = [kCTFontFamilyNameAttribute: family, kCTFontTraitsAttribute: traits]
+        return CTFontCreateWithFontDescriptor(CTFontDescriptorCreateWithAttributes(attributes as CFDictionary), size, nil)
+    }
+
+    private static func resolvedWeight(of font: CTFont) -> CGFloat {
+        let traits = CTFontCopyTraits(font) as NSDictionary
+        return (traits[kCTFontWeightTrait as String] as? NSNumber).map { CGFloat($0.doubleValue) } ?? 0
     }
 
     static func attributes(for style: ElementStyle) -> [NSAttributedString.Key: Any] {
