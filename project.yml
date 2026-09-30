@@ -9,8 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "0.3.1"
-    CURRENT_PROJECT_VERSION: "0.3.1"
+    MARKETING_VERSION: "0.3.2"
+    CURRENT_PROJECT_VERSION: "0.3.2"
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
     ENABLE_HARDENED_RUNTIME: NO
@@ -49,8 +49,8 @@ targets:
       properties:
         LSUIElement: true
         LSMultipleInstancesProhibited: true
-        CFBundleShortVersionString: "0.3.1"
-        CFBundleVersion: "0.3.1"
+        CFBundleShortVersionString: "0.3.2"
+        CFBundleVersion: "0.3.2"
         NSHumanReadableCopyright: "Copyright © 2026 Mihir Kumar."
         SUFeedURL: https://github.com/mikr13/quikanva/releases/latest/download/appcast.xml
         SUPublicEDKey: vqBiOSGNQ3iJHgkyKhVz8HtwlQ2Cfzpzncppyn50iv4=
