@@ -29,7 +29,12 @@ extension CGRect {
 }
 
 enum Sketch {
-    static func roughLine(_ a: CGPoint, _ b: CGPoint, roughness: Double, rng: inout SketchRNG, into path: CGMutablePath) {
+    static func roughLine(_ a: CGPoint,
+                          _ b: CGPoint,
+                          roughness: Double,
+                          pinsEnds: Bool = false,
+                          rng: inout SketchRNG,
+                          into path: CGMutablePath) {
         let len = hypot(b.x - a.x, b.y - a.y)
         let m = CGFloat(max(1.0, min(6.0, Double(len) * 0.02)) * roughness)
         for pass in 0 ..< 2 {
@@ -38,8 +43,8 @@ enum Sketch {
             let e = CGPoint(x: b.x + rng.signed() * m * k, y: b.y + rng.signed() * m * k)
             let c = CGPoint(x: (a.x + b.x) / 2 + rng.signed() * m * 2 * k,
                             y: (a.y + b.y) / 2 + rng.signed() * m * 2 * k)
-            path.move(to: s)
-            path.addQuadCurve(to: e, control: c)
+            path.move(to: pinsEnds ? a : s)
+            path.addQuadCurve(to: pinsEnds ? b : e, control: c)
         }
     }
 
@@ -47,6 +52,7 @@ enum Sketch {
                            _ control: CGPoint,
                            _ b: CGPoint,
                            roughness: Double,
+                           pinsEnds: Bool = false,
                            rng: inout SketchRNG,
                            into path: CGMutablePath) {
         let len = hypot(b.x - a.x, b.y - a.y)
@@ -57,8 +63,8 @@ enum Sketch {
             let bend = CGPoint(x: control.x + rng.signed() * m * 2 * k,
                                y: control.y + rng.signed() * m * 2 * k)
             let end = CGPoint(x: b.x + rng.signed() * m * k, y: b.y + rng.signed() * m * k)
-            path.move(to: start)
-            path.addQuadCurve(to: end, control: bend)
+            path.move(to: pinsEnds ? a : start)
+            path.addQuadCurve(to: pinsEnds ? b : end, control: bend)
         }
     }
 
@@ -138,7 +144,13 @@ enum Renderer {
         ctx.setLineJoin(.round)
         ctx.setLineWidth(CGFloat(el.style.strokeWidth))
         ctx.setStrokeColor(el.style.stroke.cgColor)
-        applyStrokeStyle(el.style.strokeStyle, in: ctx)
+        applyStrokeStyle(el.style.strokeStyle, width: CGFloat(el.style.strokeWidth), in: ctx)
+        if el.kind.isBoxShape, el.rotation != 0 {
+            let box = CGRect(corner: pts[0], pts[pts.count - 1])
+            ctx.translateBy(x: box.midX, y: box.midY)
+            ctx.rotate(by: CGFloat(el.rotation))
+            ctx.translateBy(x: -box.midX, y: -box.midY)
+        }
 
         var rng = SketchRNG(seed: el.seed)
         let rough = el.style.roughness
@@ -299,10 +311,15 @@ enum Renderer {
         let key = "line-\(element.hashValue)" as NSString
         if let cached = roughPathCache.path(forKey: key) { return cached }
         let path = CGMutablePath()
+        let pinsEnds = element.kind == .arrow
         if points.count >= 3 {
-            Sketch.roughCurve(points[0], points[1], points[2], roughness: roughness, rng: &rng, into: path)
+            Sketch.roughCurve(points[0], points[1], points[2],
+                              roughness: roughness,
+                              pinsEnds: pinsEnds,
+                              rng: &rng,
+                              into: path)
         } else if points.count >= 2 {
-            Sketch.roughLine(points[0], points[1], roughness: roughness, rng: &rng, into: path)
+            Sketch.roughLine(points[0], points[1], roughness: roughness, pinsEnds: pinsEnds, rng: &rng, into: path)
         }
         roughPathCache.insert(path, forKey: key)
         return path
@@ -357,14 +374,15 @@ enum Renderer {
         return path
     }
 
-    private static func applyStrokeStyle(_ style: StrokeStyle, in ctx: CGContext) {
+    private static func applyStrokeStyle(_ style: StrokeStyle, width: CGFloat, in ctx: CGContext) {
+        let gap = max(4, width * 1.5) + width
         switch style {
         case .solid:
             ctx.setLineDash(phase: 0, lengths: [])
         case .dashed:
-            ctx.setLineDash(phase: 0, lengths: [8, 6])
+            ctx.setLineDash(phase: 0, lengths: [max(6, width * 3), gap])
         case .dotted:
-            ctx.setLineDash(phase: 0, lengths: [1, 6])
+            ctx.setLineDash(phase: 0, lengths: [0, gap])
         }
     }
 

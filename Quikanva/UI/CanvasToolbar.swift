@@ -7,16 +7,17 @@ enum QuikanvaMotion {
 }
 
 enum CanvasStyleState {
-    @discardableResult
-    static func update(active: inout ElementStyle,
-                       selected: inout ElementStyle?,
-                       _ update: (inout ElementStyle) -> Void) -> ElementStyle? {
+    static func apply(_ edit: StyleEdit, active: inout ElementStyle, selected: inout ElementStyle?) {
         var updated = selected ?? active
-        update(&updated)
+        updated.apply(edit)
         active = updated
-        guard selected != nil else { return nil }
-        selected = updated
-        return updated
+        if selected != nil { selected = updated }
+    }
+}
+
+extension Array where Element == Double {
+    func nearest(to value: Double) -> Double {
+        self.min { abs($0 - value) < abs($1 - value) } ?? value
     }
 }
 
@@ -38,6 +39,7 @@ struct CanvasToolbar: View {
     @Binding var tool: ToolKind
     @Binding var style: ElementStyle
     @Binding var selectedStyle: ElementStyle?
+    let hasSelection: Bool
     @Binding var selectedImageShadow: Bool?
     @Binding var selectedCurve: Double?
     @Binding var background: Color
@@ -52,7 +54,7 @@ struct CanvasToolbar: View {
     var onZoomToFit: () -> Void = {}
     var onZoomToSelection: () -> Void = {}
     var onResetZoom: () -> Void = {}
-    var onApplySelectedStyle: (ElementStyle) -> Void = { _ in }
+    var onApplySelectedStyle: (StyleEdit) -> Void = { _ in }
     var onApplySelectedImageShadow: (Bool) -> Void = { _ in }
     var onApplySelectedCurve: (Double) -> Void = { _ in }
     var onTogglePointEditing: () -> Void = {}
@@ -118,47 +120,50 @@ struct CanvasToolbar: View {
                 }
 
                 Divider()
-                Section(selectedStyle == nil ? "Style for new shapes" : "Style for selection and new shapes") {
-                    Picker("Drawing style", selection: drawingStyleBinding) {
+                Section(hasSelection ? "Style for selection and new shapes" : "Style for new shapes") {
+                    Picker("Drawing style", selection: styleBinding(currentStyle.drawingStyle, StyleEdit.drawingStyle)) {
                         ForEach(DrawingStyle.allCases) { drawingStyle in
                             Text(drawingStyle.label).tag(drawingStyle)
                         }
                     }
-                    Picker("Stroke style", selection: strokeStyleBinding) {
+                    Picker("Stroke style", selection: styleBinding(currentStyle.strokeStyle, StyleEdit.strokeStyle)) {
                         ForEach(StrokeStyle.allCases) { strokeStyle in
                             Text(strokeStyle.label).tag(strokeStyle)
                         }
                     }
-                    Picker("Arrowhead style", selection: arrowheadStyleBinding) {
+                    Picker("Arrowhead style", selection: styleBinding(currentStyle.arrowheadStyle, StyleEdit.arrowheadStyle)) {
                         ForEach(ArrowheadStyle.allCases) { arrowheadStyle in
                             Text(arrowheadStyle.label).tag(arrowheadStyle)
                         }
                     }
-                    Picker("Arrow ends", selection: arrowheadPlacementBinding) {
+                    Picker("Arrow ends",
+                           selection: styleBinding(currentStyle.arrowheadPlacement, StyleEdit.arrowheadPlacement)) {
                         ForEach(ArrowheadPlacement.allCases) { placement in
                             Text(placement.label).tag(placement)
                         }
                     }
-                    Picker("Fill style", selection: fillStyleBinding) {
+                    Picker("Fill style", selection: styleBinding(currentStyle.fillStyle, StyleEdit.fillStyle)) {
                         Text("No fill").tag(FillStyle.none)
                         Text("Solid").tag(FillStyle.solid)
                         Text("Hachure").tag(FillStyle.hachure)
                     }
-                    Picker("Stroke width", selection: strokeWidthBinding) {
+                    Picker("Stroke width",
+                           selection: styleBinding([1.5, 2.5, 4.0].nearest(to: currentStyle.strokeWidth),
+                                                   StyleEdit.strokeWidth)) {
                         Text("Fine").tag(1.5)
                         Text("Medium").tag(2.5)
                         Text("Bold").tag(4.0)
                     }
-                    if (selectedStyle ?? style).drawingStyle == .handDrawn {
-                        Picker("Roughness", selection: roughnessBinding) {
+                    if currentStyle.drawingStyle == .handDrawn {
+                        Picker("Roughness",
+                               selection: styleBinding([0.6, 1.2, 2.0].nearest(to: currentStyle.roughness),
+                                                       StyleEdit.roughness)) {
                             Text("Subtle").tag(0.6)
                             Text("Sketchy").tag(1.2)
                             Text("Loose").tag(2.0)
                         }
                     }
-                    if selectedStyle != nil {
-                        Button("Edit all style settings…") { showingInspector = true }
-                    }
+                    Button("Edit all style settings…") { showingInspector = true }
                 }
 
                 Divider()
@@ -231,13 +236,13 @@ struct CanvasToolbar: View {
         )
         .shadow(color: .black.opacity(0.18), radius: 14, y: 6)
         .popover(isPresented: $showingInspector, arrowEdge: .bottom) {
-            if selectedStyle != nil {
-                CanvasStyleInspector(style: selectedStyleBinding,
-                                     imageShadow: selectedImageShadowBinding,
-                                     showsImageShadow: selectedImageShadow != nil,
-                                     curve: selectedCurveBinding,
-                                     showsCurve: selectedCurve != nil)
-            }
+            CanvasStyleInspector(title: hasSelection ? "Selected style" : "Style for new shapes",
+                                 style: currentStyle,
+                                 onEdit: apply,
+                                 imageShadow: selectedImageShadowBinding,
+                                 showsImageShadow: selectedImageShadow != nil,
+                                 curve: selectedCurveBinding,
+                                 showsCurve: selectedCurve != nil)
         }
         .popover(item: $colorTarget, arrowEdge: .bottom) { target in
             VStack(alignment: .leading, spacing: 10) {
@@ -302,11 +307,21 @@ struct CanvasToolbar: View {
         }
     }
 
+    private var currentStyle: ElementStyle {
+        selectedStyle ?? style
+    }
+
+    private func styleBinding<Value>(_ value: Value, _ edit: @escaping (Value) -> StyleEdit) -> Binding<Value> {
+        Binding(get: { value }, set: { apply(edit($0)) })
+    }
+
+    private func apply(_ edit: StyleEdit) {
+        CanvasStyleState.apply(edit, active: &style, selected: &selectedStyle)
+        onApplySelectedStyle(edit)
+    }
+
     private var fillColorBinding: Binding<Color> {
-        Binding(
-            get: { selectedStyle?.fill.swiftUIColor ?? style.fill.swiftUIColor },
-            set: { newColor in updateStyle { $0.fill = RGBAColor(newColor) } }
-        )
+        styleBinding(currentStyle.fill.swiftUIColor) { .fill(RGBAColor($0)) }
     }
 
     private var colorBinding: Binding<Color> {
@@ -331,78 +346,7 @@ struct CanvasToolbar: View {
     }
 
     private var strokeColorBinding: Binding<Color> {
-        Binding(
-            get: { selectedStyle?.stroke.swiftUIColor ?? style.stroke.swiftUIColor },
-            set: { newColor in updateStyle { $0.stroke = RGBAColor(newColor) } }
-        )
-    }
-
-    private var drawingStyleBinding: Binding<DrawingStyle> {
-        Binding(
-            get: { selectedStyle?.drawingStyle ?? style.drawingStyle },
-            set: { value in updateStyle { $0.drawingStyle = value } }
-        )
-    }
-
-    private var strokeStyleBinding: Binding<StrokeStyle> {
-        Binding(
-            get: { selectedStyle?.strokeStyle ?? style.strokeStyle },
-            set: { value in updateStyle { $0.strokeStyle = value } }
-        )
-    }
-
-    private var arrowheadStyleBinding: Binding<ArrowheadStyle> {
-        Binding(
-            get: { selectedStyle?.arrowheadStyle ?? style.arrowheadStyle },
-            set: { value in updateStyle { $0.arrowheadStyle = value } }
-        )
-    }
-
-    private var arrowheadPlacementBinding: Binding<ArrowheadPlacement> {
-        Binding(
-            get: { selectedStyle?.arrowheadPlacement ?? style.arrowheadPlacement },
-            set: { value in updateStyle { $0.arrowheadPlacement = value } }
-        )
-    }
-
-    private var fillStyleBinding: Binding<FillStyle> {
-        Binding(
-            get: { selectedStyle?.fillStyle ?? style.fillStyle },
-            set: { value in updateStyle { $0.setFillStyle(value) } }
-        )
-    }
-
-    private var strokeWidthBinding: Binding<Double> {
-        Binding(
-            get: { selectedStyle?.strokeWidth ?? style.strokeWidth },
-            set: { value in updateStyle { $0.strokeWidth = value } }
-        )
-    }
-
-    private var roughnessBinding: Binding<Double> {
-        Binding(
-            get: { selectedStyle?.roughness ?? style.roughness },
-            set: { value in updateStyle { $0.roughness = value } }
-        )
-    }
-
-    private func updateStyle(_ update: (inout ElementStyle) -> Void) {
-        if let updatedSelection = CanvasStyleState.update(active: &style,
-                                                          selected: &selectedStyle,
-                                                          update) {
-            onApplySelectedStyle(updatedSelection)
-        }
-    }
-
-    private var selectedStyleBinding: Binding<ElementStyle> {
-        Binding(
-            get: { selectedStyle ?? style },
-            set: { updated in
-                style = updated
-                selectedStyle = updated
-                onApplySelectedStyle(updated)
-            }
-        )
+        styleBinding(currentStyle.stroke.swiftUIColor) { .stroke(RGBAColor($0)) }
     }
 
     private var selectedImageShadowBinding: Binding<Bool> {
@@ -439,7 +383,9 @@ struct CanvasExportMenuItems: View {
 }
 
 private struct CanvasStyleInspector: View {
-    @Binding var style: ElementStyle
+    let title: String
+    let style: ElementStyle
+    let onEdit: (StyleEdit) -> Void
     @Binding var imageShadow: Bool
     let showsImageShadow: Bool
     @Binding var curve: Double
@@ -449,31 +395,31 @@ private struct CanvasStyleInspector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Selected style")
+            Text(title)
                 .font(.headline)
 
-            ColorPicker("Stroke", selection: strokeBinding, supportsOpacity: true)
-            ColorPicker("Fill", selection: fillBinding, supportsOpacity: true)
+            ColorPicker("Stroke", selection: binding(style.stroke.swiftUIColor) { .stroke(RGBAColor($0)) }, supportsOpacity: true)
+            ColorPicker("Fill", selection: binding(style.fill.swiftUIColor) { .fill(RGBAColor($0)) }, supportsOpacity: true)
 
-            Picker("Drawing style", selection: $style.drawingStyle) {
+            Picker("Drawing style", selection: binding(style.drawingStyle, StyleEdit.drawingStyle)) {
                 ForEach(DrawingStyle.allCases) { drawingStyle in
                     Text(drawingStyle.label).tag(drawingStyle)
                 }
             }
 
-            Picker("Fill style", selection: fillStyleBinding) {
+            Picker("Fill style", selection: binding(style.fillStyle, StyleEdit.fillStyle)) {
                 Text("No fill").tag(FillStyle.none)
                 Text("Solid").tag(FillStyle.solid)
                 Text("Hachure").tag(FillStyle.hachure)
             }
 
-            Picker("Arrowhead style", selection: $style.arrowheadStyle) {
+            Picker("Arrowhead style", selection: binding(style.arrowheadStyle, StyleEdit.arrowheadStyle)) {
                 ForEach(ArrowheadStyle.allCases) { arrowheadStyle in
                     Text(arrowheadStyle.label).tag(arrowheadStyle)
                 }
             }
 
-            Picker("Arrow ends", selection: $style.arrowheadPlacement) {
+            Picker("Arrow ends", selection: binding(style.arrowheadPlacement, StyleEdit.arrowheadPlacement)) {
                 ForEach(ArrowheadPlacement.allCases) { placement in
                     Text(placement.label).tag(placement)
                 }
@@ -483,7 +429,7 @@ private struct CanvasStyleInspector: View {
                 Toggle("Image shadow", isOn: $imageShadow)
             }
 
-            Slider(value: $style.strokeWidth, in: 0.5 ... 8, step: 0.5) {
+            Slider(value: binding(style.strokeWidth, StyleEdit.strokeWidth), in: 0.5 ... 8, step: 0.5) {
                 Text("Stroke width")
             } minimumValueLabel: {
                 Text("0.5")
@@ -493,7 +439,7 @@ private struct CanvasStyleInspector: View {
                     .font(.caption2)
             }
 
-            Slider(value: $style.opacity, in: 0.05 ... 1, step: 0.05) {
+            Slider(value: binding(style.opacity, StyleEdit.opacity), in: 0.05 ... 1, step: 0.05) {
                 Text("Opacity")
             } minimumValueLabel: {
                 Text("0")
@@ -504,7 +450,7 @@ private struct CanvasStyleInspector: View {
             }
 
             if style.drawingStyle == .handDrawn {
-                Slider(value: $style.roughness, in: 0 ... 2.5, step: 0.1) {
+                Slider(value: binding(style.roughness, StyleEdit.roughness), in: 0 ... 2.5, step: 0.1) {
                     Text("Roughness")
                 } minimumValueLabel: {
                     Text("Clean")
@@ -515,7 +461,7 @@ private struct CanvasStyleInspector: View {
                 }
             }
 
-            Slider(value: $style.fontSize, in: 10 ... 72, step: 1) {
+            Slider(value: binding(style.fontSize, StyleEdit.fontSize), in: 10 ... 72, step: 1) {
                 Text("Text size")
             } minimumValueLabel: {
                 Text("10")
@@ -539,23 +485,23 @@ private struct CanvasStyleInspector: View {
 
             Menu("Font family") {
                 ForEach(["Helvetica Neue", "Avenir Next", "Comic Sans MS", "Georgia", "Menlo"], id: \.self) { family in
-                    Button(family) { style.fontFamily = family }
+                    Button(family) { onEdit(.fontFamily(family)) }
                 }
             }
 
-            Picker("Font weight", selection: $style.fontWeight) {
+            Picker("Font weight", selection: binding(style.fontWeight, StyleEdit.fontWeight)) {
                 ForEach(FontWeight.allCases) { weight in
                     Text(weight.label).tag(weight)
                 }
             }
 
-            Picker("Text alignment", selection: $style.textAlignment) {
+            Picker("Text alignment", selection: binding(style.textAlignment, StyleEdit.textAlignment)) {
                 ForEach(TextAlignment.allCases) { alignment in
                     Text(alignment.label).tag(alignment)
                 }
             }
 
-            Picker("Text style", selection: $style.textDecoration) {
+            Picker("Text style", selection: binding(style.textDecoration, StyleEdit.textDecoration)) {
                 ForEach(TextDecoration.allCases) { decoration in
                     Text(decoration.label).tag(decoration)
                 }
@@ -577,25 +523,8 @@ private struct CanvasStyleInspector: View {
         }
     }
 
-    private var strokeBinding: Binding<Color> {
-        Binding(
-            get: { style.stroke.swiftUIColor },
-            set: { style.stroke = RGBAColor($0) }
-        )
-    }
-
-    private var fillBinding: Binding<Color> {
-        Binding(
-            get: { style.fill.swiftUIColor },
-            set: { style.fill = RGBAColor($0) }
-        )
-    }
-
-    private var fillStyleBinding: Binding<FillStyle> {
-        Binding(
-            get: { style.fillStyle },
-            set: { style.setFillStyle($0) }
-        )
+    private func binding<Value>(_ value: Value, _ edit: @escaping (Value) -> StyleEdit) -> Binding<Value> {
+        Binding(get: { value }, set: { onEdit(edit($0)) })
     }
 }
 

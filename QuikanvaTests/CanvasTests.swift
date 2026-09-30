@@ -122,12 +122,8 @@ final class CanvasTests: XCTestCase {
         var active = ElementStyle()
         var selected: ElementStyle? = ElementStyle()
 
-        CanvasStyleState.update(active: &active, selected: &selected) {
-            $0.strokeStyle = .dashed
-        }
-        CanvasStyleState.update(active: &active, selected: &selected) {
-            $0.arrowheadStyle = .filled
-        }
+        CanvasStyleState.apply(.strokeStyle(.dashed), active: &active, selected: &selected)
+        CanvasStyleState.apply(.arrowheadStyle(.filled), active: &active, selected: &selected)
 
         XCTAssertEqual(selected?.strokeStyle, .dashed)
         XCTAssertEqual(selected?.arrowheadStyle, .filled)
@@ -148,6 +144,7 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasNSView.hits(rectangle, CGPoint(x: 60, y: 60)))
         XCTAssertFalse(CanvasNSView.hits(rectangle, CGPoint(x: 180, y: 180)))
         XCTAssertTrue(CanvasNSView.hits(line, CGPoint(x: 70, y: 70)))
+        XCTAssertFalse(CanvasNSView.hits(line, CGPoint(x: 70, y: 70), zoom: 4))
 
         let curvedLine = Element(kind: .line,
                                  points: [Point(x: 20, y: 20), Point(x: 70, y: 110), Point(x: 120, y: 20)])
@@ -367,23 +364,28 @@ final class CanvasTests: XCTestCase {
         XCTAssertTrue(CanvasPreferences.alwaysOnTop)
     }
 
-    func testRepresentableDoesNotOverwriteSceneChangedByACommand() {
-        var back = Element(kind: .rectangle,
-                           points: [Point(x: 20, y: 20), Point(x: 120, y: 120)])
-        back.zIndex = 0
-        var front = Element(kind: .ellipse,
-                            points: [Point(x: 20, y: 20), Point(x: 120, y: 120)])
-        front.zIndex = 1
-        let incoming = CanvasScene(elements: [back, front])
+    func testCommandsSurviveLaterSwiftUIUpdates() throws {
+        let ellipse = Element(kind: .ellipse, points: [Point(x: 40, y: 40), Point(x: 200, y: 160)])
+        let model = CommandHostModel()
+        let host = NSHostingView(rootView: CommandHost(model: model, scene: CanvasScene(elements: [ellipse])))
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 300),
+                              styleMask: [.titled],
+                              backing: .buffered,
+                              defer: false)
+        window.contentView = host
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        let canvas = try XCTUnwrap(canvasView(in: host))
+        clickElement(at: CGPoint(x: 120, y: 100), in: canvas, window: window)
 
-        back.zIndex = 2
-        let reordered = CanvasScene(elements: [back, front])
+        model.edit = .fillStyle(.solid)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        model.passes += 1
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
 
-        XCTAssertNil(CanvasRepresentable.sceneToApply(
-            viewScene: reordered,
-            incomingScene: incoming,
-            commandApplied: true
-        ), "A command's newer local scene must not be replaced by the stale incoming scene from the same update pass")
+        XCTAssertEqual(canvas.scene.elements.first?.style.fillStyle, .solid)
+        XCTAssertEqual(model.reportedScene?.elements.first?.style.fillStyle, .solid)
+        XCTAssertNil(canvas.command)
+        window.orderOut(nil)
     }
 
     func testCommandReturnEntersPointEditingAndDraggingMidpointBendsArrow() {
@@ -449,6 +451,7 @@ final class CanvasTests: XCTestCase {
 
         clickElement(at: CGPoint(x: 40, y: 80), in: view, window: window)
         let editor = try XCTUnwrap(view.textEditorView)
+        XCTAssertTrue(editor.clipsToBounds)
         type("First", into: editor)
         let oneLineHeight = editor.frame.height
         editor.doCommand(by: #selector(NSResponder.insertNewline(_:)))
@@ -604,7 +607,7 @@ final class CanvasTests: XCTestCase {
 
         let resized = view.scene.elements[0]
         XCTAssertEqual(resized.textBox?.sizing, .fixed)
-        XCTAssertEqual(resized.textBox?.width ?? 0, 156, accuracy: 0.5)
+        XCTAssertEqual(resized.textBox?.width ?? 0, 150, accuracy: 0.5)
         XCTAssertEqual(resized.style.fontSize, note.style.fontSize)
         XCTAssertGreaterThan(CanvasNSView.bounds(of: resized)?.height ?? 0, before.height)
         window.orderOut(nil)
@@ -619,6 +622,8 @@ final class CanvasTests: XCTestCase {
         view.tool = .select
         selectElement(at: CGPoint(x: 60, y: 50), in: view, window: window)
         let before = try XCTUnwrap(CanvasNSView.bounds(of: note))
+        var publishedStyle: ElementStyle?
+        view.onSelectionChange = { style, _ in publishedStyle = style }
 
         dragSelection(in: view,
                       window: window,
@@ -626,10 +631,250 @@ final class CanvasTests: XCTestCase {
                       to: CGPoint(x: before.maxX + 100, y: before.maxY + 100))
 
         let resized = view.scene.elements[0]
+        XCTAssertEqual(publishedStyle, resized.style)
         XCTAssertEqual(resized.points.first, Point(x: 40, y: 40))
         XCTAssertGreaterThan(resized.style.fontSize, note.style.fontSize * 1.8)
         XCTAssertGreaterThan(resized.textBox?.width ?? 0, 180)
         window.orderOut(nil)
+    }
+
+    func testRotatingABoxRotatesItInsteadOfReshapingIt() {
+        let square = Element(kind: .rectangle, points: [Point(x: 100, y: 100), Point(x: 200, y: 200)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 400))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [square])
+        view.tool = .select
+        selectElement(at: CGPoint(x: 150, y: 150), in: view, window: window)
+
+        rotate(view, window: window, from: CGPoint(x: 150, y: 64), to: CGPoint(x: 250, y: 50))
+
+        let rotated = view.scene.elements[0]
+        XCTAssertEqual(rotated.points, square.points)
+        XCTAssertEqual(rotated.rotation, .pi / 4, accuracy: 0.001)
+        XCTAssertEqual(CanvasNSView.bounds(of: rotated)?.width ?? 0, 100 * 2.squareRoot(), accuracy: 0.01)
+        XCTAssertTrue(CanvasNSView.hits(rotated, CGPoint(x: 150, y: 85)))
+        XCTAssertFalse(CanvasNSView.hits(rotated, CGPoint(x: 102, y: 102)))
+        window.orderOut(nil)
+    }
+
+    func testSingleFreehandClickLeavesAVisibleDot() throws {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .freedraw
+
+        clickElement(at: CGPoint(x: 60, y: 60), in: view, window: window)
+
+        let dot = try XCTUnwrap(view.scene.elements.first)
+        XCTAssertEqual(dot.points.count, 2)
+        XCTAssertTrue(CanvasNSView.hits(dot, CGPoint(x: 62, y: 60)))
+        XCTAssertTrue(containsInk(renderedPixels(for: dot, width: 120, height: 120), width: 120, x: 60, y: 60))
+        window.orderOut(nil)
+    }
+
+    func testEmptySpaceBesideAStrokeDoesNotSelectIt() {
+        let line = Element(kind: .line, points: [Point(x: 20, y: 20), Point(x: 220, y: 220)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [line])
+        view.tool = .select
+        var hasSelection = false
+        view.onSelectionChange = { _, isSelected in hasSelection = isSelected }
+
+        clickElement(at: CGPoint(x: 200, y: 40), in: view, window: window)
+        XCTAssertFalse(hasSelection)
+        dragSelection(in: view, window: window, from: CGPoint(x: 180, y: 30), to: CGPoint(x: 210, y: 60))
+        XCTAssertFalse(hasSelection)
+        dragSelection(in: view, window: window, from: CGPoint(x: 100, y: 80), to: CGPoint(x: 160, y: 140))
+        XCTAssertTrue(hasSelection)
+        window.orderOut(nil)
+    }
+
+    func testEllipseAndDiamondHitOnlyTheirOwnShape() {
+        let ellipse = Element(kind: .ellipse, points: [Point(x: 0, y: 0), Point(x: 100, y: 100)])
+        let diamond = Element(kind: .diamond, points: [Point(x: 0, y: 0), Point(x: 100, y: 100)])
+
+        XCTAssertFalse(CanvasNSView.hits(ellipse, CGPoint(x: 5, y: 5)))
+        XCTAssertTrue(CanvasNSView.hits(ellipse, CGPoint(x: 50, y: 3)))
+        XCTAssertFalse(CanvasNSView.hits(diamond, CGPoint(x: 15, y: 15)))
+        XCTAssertTrue(CanvasNSView.hits(diamond, CGPoint(x: 50, y: 3)))
+    }
+
+    func testStyleEditsApplyToAMixedSelection() {
+        var thin = Element(kind: .rectangle, points: [Point(x: 20, y: 20), Point(x: 100, y: 100)])
+        thin.style.strokeWidth = 1.5
+        var bold = Element(kind: .ellipse, points: [Point(x: 200, y: 20), Point(x: 280, y: 100)])
+        bold.style.strokeWidth = 4
+        let red = RGBAColor(r: 1, g: 0, b: 0, a: 1)
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [thin, bold])
+        view.tool = .select
+
+        dragSelection(in: view, window: window, from: CGPoint(x: 10, y: 10), to: CGPoint(x: 290, y: 110))
+        view.command = .updateSelectionStyle(.stroke(red))
+
+        XCTAssertEqual(view.scene.elements.map(\.style.stroke), [red, red])
+        XCTAssertEqual(view.scene.elements.map(\.style.strokeWidth), [1.5, 4])
+        window.orderOut(nil)
+    }
+
+    func testSwitchingToolsClearsTheSelection() {
+        let rectangle = Element(kind: .rectangle, points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [rectangle])
+        view.tool = .select
+        selectElement(at: CGPoint(x: 90, y: 80), in: view, window: window)
+
+        view.tool = .rectangle
+        deleteSelection(in: view, window: window)
+
+        XCTAssertEqual(view.scene.elements.count, 1)
+        window.orderOut(nil)
+    }
+
+    func testResizeHandlesTrackThePointer() {
+        let rectangle = Element(kind: .rectangle, points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let line = Element(kind: .line, points: [Point(x: 200, y: 40), Point(x: 300, y: 140)])
+        let flat = Element(kind: .rectangle, points: [Point(x: 40, y: 180), Point(x: 40, y: 260)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [rectangle, line, flat])
+        view.tool = .select
+
+        selectElement(at: CGPoint(x: 90, y: 80), in: view, window: window)
+        dragSelection(in: view, window: window, from: CGPoint(x: 146, y: 126), to: CGPoint(x: 147, y: 127))
+        XCTAssertEqual(view.scene.elements[0].points[1], Point(x: 141, y: 121))
+
+        selectElement(at: CGPoint(x: 250, y: 90), in: view, window: window)
+        dragSelection(in: view, window: window, from: CGPoint(x: 306, y: 146), to: CGPoint(x: 186, y: 26))
+        XCTAssertEqual(view.scene.elements[1].points, [Point(x: 200, y: 40), Point(x: 180, y: 20)])
+
+        selectElement(at: CGPoint(x: 40, y: 220), in: view, window: window)
+        dragSelection(in: view, window: window, from: CGPoint(x: 46, y: 220), to: CGPoint(x: 106, y: 220))
+        XCTAssertEqual(CanvasNSView.bounds(of: view.scene.elements[2])?.width ?? 0, 60, accuracy: 0.001)
+        window.orderOut(nil)
+    }
+
+    func testCurvedLinePointEditingKeepsItsResizeHandles() throws {
+        let curve = Element(kind: .line, points: [Point(x: 40, y: 200), Point(x: 140, y: 100), Point(x: 240, y: 200)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [curve])
+        view.tool = .select
+        selectElement(at: CGPoint(x: 140, y: 150), in: view, window: window)
+        view.keyDown(with: keyEvent(for: window, modifiers: [.command], characters: "\r", keyCode: 36))
+
+        clickElement(at: CGPoint(x: 140, y: 100), in: view, window: window)
+        clickElement(at: CGPoint(x: 140, y: 100), in: view, window: window, clickCount: 2)
+        XCTAssertNil(view.textEditorView)
+
+        dragSelection(in: view, window: window, from: CGPoint(x: 34, y: 144), to: CGPoint(x: 14, y: 124))
+        let first = try XCTUnwrap(view.scene.elements.first?.points.first)
+        XCTAssertEqual(first.x, 20, accuracy: 0.001)
+        XCTAssertEqual(first.y, 200, accuracy: 0.001)
+        XCTAssertTrue(view.pointEditingEnabled)
+        window.orderOut(nil)
+    }
+
+    func testUndoKeepsTheCurrentCamera() {
+        let rectangle = Element(kind: .rectangle, points: [Point(x: 40, y: 40), Point(x: 140, y: 120)])
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(elements: [rectangle])
+        view.tool = .select
+        dragSelection(in: view, window: window, from: CGPoint(x: 90, y: 80), to: CGPoint(x: 120, y: 90))
+        let camera = Camera(panX: 40, panY: 30, zoom: 2)
+        view.scene.camera = camera
+
+        view.undoManager?.undo()
+
+        XCTAssertEqual(view.scene.elements, [rectangle])
+        XCTAssertEqual(view.scene.camera, camera)
+        window.orderOut(nil)
+    }
+
+    func testBackgroundChangesAreUndoable() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.scene = CanvasScene(background: .beige)
+
+        view.command = .setBackground(.black)
+        XCTAssertEqual(view.scene.background, .black)
+        view.undoManager?.undo()
+
+        XCTAssertEqual(view.scene.background, .beige)
+        window.orderOut(nil)
+    }
+
+    func testCameraCommandsCompoundAndCommitWhenInterrupted() {
+        let view = CanvasNSView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+        let window = testWindow(for: view)
+        view.tool = .select
+        view.scene = CanvasScene(elements: [Element(kind: .line, points: [Point(x: 40, y: 100), Point(x: 240, y: 100)])])
+
+        view.command = .zoomIn
+        view.command = nil
+        view.command = .zoomIn
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        XCTAssertEqual(view.scene.camera.zoom, 1.44, accuracy: 0.001)
+
+        var committedScenes = [CanvasScene]()
+        view.onCommit = { committedScenes.append($0) }
+        view.command = .zoomToFit
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        clickElement(at: CGPoint(x: 200, y: 250), in: view, window: window)
+
+        XCTAssertEqual(committedScenes.last?.camera, view.scene.camera)
+        XCTAssertNotEqual(view.scene.camera.zoom, 1.44, accuracy: 0.001)
+        window.orderOut(nil)
+    }
+
+    func testFontWeightsUseTheirOwnFaces() {
+        func fontName(_ family: String, _ weight: FontWeight) -> String {
+            var style = ElementStyle()
+            style.fontFamily = family
+            style.fontWeight = weight
+            return TextLayout.font(for: style).fontName
+        }
+
+        XCTAssertEqual(fontName("Avenir Next", .medium), "AvenirNext-Medium")
+        XCTAssertEqual(fontName("Avenir Next", .semibold), "AvenirNext-DemiBold")
+        XCTAssertEqual(fontName("Georgia", .medium), "Georgia")
+        XCTAssertEqual(fontName("Helvetica Neue", .semibold), "HelveticaNeue-Bold")
+    }
+
+    func testFillColorChoiceKeepsFillStyleInSync() {
+        var style = ElementStyle()
+        style.setFill(RGBAColor(r: 1, g: 0, b: 0, a: 1))
+        XCTAssertEqual(style.fillStyle, .solid)
+        style.setFillStyle(.hachure)
+        style.setFill(RGBAColor(r: 0, g: 0, b: 1, a: 1))
+        XCTAssertEqual(style.fillStyle, .hachure)
+        style.setFill(.clear)
+        XCTAssertEqual(style.fillStyle, .none)
+    }
+
+    func testStyleMergeCopiesOnlyChangedFields() {
+        var stored = ElementStyle()
+        stored.fontSize = 32
+        let old = ElementStyle()
+        var new = old
+        new.strokeWidth = 4
+
+        let merged = stored.merging(changesFrom: old, to: new)
+
+        XCTAssertEqual(merged.fontSize, 32)
+        XCTAssertEqual(merged.strokeWidth, 4)
+    }
+
+    func testHandDrawnArrowShaftEndsAtItsTip() {
+        var rng = SketchRNG(seed: 7)
+        let path = CGMutablePath()
+
+        Sketch.roughLine(CGPoint(x: 0, y: 0), CGPoint(x: 200, y: 0), roughness: 2, pinsEnds: true, rng: &rng, into: path)
+
+        XCTAssertEqual(path.currentPoint, CGPoint(x: 200, y: 0))
     }
 
     func testAutoTextBoxHugsItsText() {
@@ -811,10 +1056,12 @@ final class CanvasTests: XCTestCase {
         view.mouseUp(with: mouseEvent(.leftMouseUp, at: CGPoint(x: 90, y: 220), window: window))
 
         var updatedStyle = element.style
-        updatedStyle.fillStyle = .solid
+        updatedStyle.setFillStyle(.solid)
         updatedStyle.strokeWidth = 4
         updatedStyle.roughness = 0.6
-        view.command = .updateSelectionStyle(updatedStyle)
+        view.command = .updateSelectionStyle(.fillStyle(.solid))
+        view.command = .updateSelectionStyle(.strokeWidth(4))
+        view.command = .updateSelectionStyle(.roughness(0.6))
 
         XCTAssertEqual(view.scene.elements.first?.style, updatedStyle)
         window.orderOut(nil)
@@ -1070,6 +1317,10 @@ final class CanvasTests: XCTestCase {
                            pressure: 1)!
     }
 
+    private func canvasView(in view: NSView) -> CanvasNSView? {
+        (view as? CanvasNSView) ?? view.subviews.lazy.compactMap(canvasView(in:)).first
+    }
+
     private func testWindow(for view: CanvasNSView) -> NSWindow {
         let window = NSWindow(contentRect: view.frame,
                               styleMask: [.titled],
@@ -1223,6 +1474,40 @@ final class CanvasTests: XCTestCase {
             }
         }
         return false
+    }
+}
+
+@MainActor
+private final class CommandHostModel: ObservableObject {
+    @Published var edit: StyleEdit?
+    @Published var passes = 0
+    var reportedScene: CanvasScene?
+}
+
+private struct CommandHost: View {
+    @ObservedObject var model: CommandHostModel
+    @State var scene: CanvasScene
+    @State private var command: CanvasCommand?
+
+    var body: some View {
+        CanvasRepresentable(scene: scene,
+                            tool: .select,
+                            style: ElementStyle(),
+                            toolShortcuts: .defaultValue,
+                            command: command) { updated in
+            scene = updated
+            model.reportedScene = updated
+        } onToolChange: { _ in
+        } onSelectionChange: { _, _ in
+        } onImageShadowChange: { _ in
+        } onCurveChange: { _ in
+        } onCommandHandled: {
+            command = nil
+        }
+        .onChange(of: model.edit) { _, edit in
+            command = edit.map(CanvasCommand.updateSelectionStyle)
+        }
+        .onChange(of: model.passes) { _, _ in }
     }
 }
 

@@ -6,7 +6,7 @@ final class FloatingCanvasWindow: NSWindow {
     var onClose: (() -> Void)?
 
     var activeUndoManager: UndoManager? {
-        firstResponder?.undoManager ?? contentView?.canvasUndoManager
+        firstResponder?.undoManager ?? contentView?.canvasView?.undoManager
     }
 
     override var canBecomeKey: Bool { true }
@@ -94,6 +94,17 @@ final class CanvasWindowManager {
     func redo() {
         guard let undoManager = activeWindow?.activeUndoManager, undoManager.canRedo else { return }
         undoManager.redo()
+    }
+
+    func saveOpenCanvases() {
+        guard let context else { return }
+        for (id, window) in windows {
+            window.makeFirstResponder(nil)
+            let descriptor = FetchDescriptor<CanvasDocument>(predicate: #Predicate { $0.id == id })
+            guard let scene = window.contentView?.canvasView?.scene,
+                  let doc = try? context.fetch(descriptor).first else { continue }
+            CanvasPanelView.persist(scene, doc: doc, context: context)
+        }
     }
 
     func updateAlwaysOnTop(_ enabled: Bool) {
@@ -234,10 +245,10 @@ final class CanvasWindowManager {
 }
 
 private extension NSView {
-    var canvasUndoManager: UndoManager? {
+    var canvasView: CanvasNSView? {
         if let canvas = self as? CanvasNSView {
-            return canvas.undoManager
+            return canvas
         }
-        return subviews.lazy.compactMap(\.canvasUndoManager).first
+        return subviews.lazy.compactMap(\.canvasView).first
     }
 }

@@ -30,6 +30,7 @@ final class CanvasTextView: NSTextView {
         importsGraphics = false
         allowsUndo = true
         drawsBackground = false
+        clipsToBounds = true
         isHorizontallyResizable = false
         isVerticallyResizable = false
         textContainerInset = .zero

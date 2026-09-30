@@ -53,9 +53,11 @@ struct CanvasPanelView: View {
     @State private var canvasCommand: CanvasCommand?
     @State private var includeExportBackground = true
     @State private var selectedStyle: ElementStyle?
+    @State private var hasSelection = false
     @State private var selectedImageShadow: Bool?
     @State private var selectedCurve: Double?
     @AppStorage(CanvasPreferences.toolShortcutsKey) private var toolShortcutsData = Data()
+    @AppStorage(CanvasPreferences.defaultStyleKey) private var defaultStyleData = Data()
     @StateObject private var autosave: CanvasAutosaveCoordinator
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
@@ -90,8 +92,9 @@ struct CanvasPanelView: View {
                 autosave.schedule(updated)
             } onToolChange: { updated in
                 tool = updated
-            } onSelectionChange: { updated in
+            } onSelectionChange: { updated, isSelected in
                 selectedStyle = updated
+                hasSelection = isSelected
             } onImageShadowChange: { updated in
                 selectedImageShadow = updated
             } onCurveChange: { updated in
@@ -118,6 +121,7 @@ struct CanvasPanelView: View {
                         tool: $tool,
                         style: $style,
                         selectedStyle: $selectedStyle,
+                        hasSelection: hasSelection,
                         selectedImageShadow: $selectedImageShadow,
                         selectedCurve: $selectedCurve,
                         background: backgroundBinding,
@@ -135,8 +139,8 @@ struct CanvasPanelView: View {
                         onZoomToFit: { canvasCommand = .zoomToFit },
                         onZoomToSelection: { canvasCommand = .zoomToSelection },
                         onResetZoom: { canvasCommand = .resetZoom },
-                        onApplySelectedStyle: { updated in
-                            canvasCommand = .updateSelectionStyle(updated)
+                        onApplySelectedStyle: { edit in
+                            canvasCommand = .updateSelectionStyle(edit)
                         },
                         onApplySelectedImageShadow: { enabled in
                             canvasCommand = .updateSelectedImageShadow(enabled)
@@ -164,8 +168,12 @@ struct CanvasPanelView: View {
         }
         .frame(minWidth: 360, minHeight: 640)
         .ignoresSafeArea()
-        .onChange(of: style) { _, updated in
-            CanvasPreferences.defaultStyle = updated
+        .onChange(of: style) { old, updated in
+            CanvasPreferences.defaultStyle = CanvasPreferences.defaultStyle.merging(changesFrom: old, to: updated)
+        }
+        .onChange(of: defaultStyleData) { old, updated in
+            style = style.merging(changesFrom: CanvasPreferences.decodedStyle(old),
+                                  to: CanvasPreferences.decodedStyle(updated))
         }
         .onDisappear { autosave.flush() }
         .alert("Save Sketch", isPresented: $showNamePrompt) {
@@ -184,10 +192,7 @@ struct CanvasPanelView: View {
     private var backgroundBinding: Binding<Color> {
         Binding(
             get: { scene.background?.swiftUIColor ?? RGBAColor.beige.swiftUIColor },
-            set: { newColor in
-                scene.background = RGBAColor(newColor)
-                autosave.schedule(scene)
-            }
+            set: { canvasCommand = .setBackground(RGBAColor($0)) }
         )
     }
 
@@ -226,25 +231,31 @@ struct CanvasPanelView: View {
         Self.persist(scene, title: title, doc: doc, context: context, onTitleChange: onTitleChange)
     }
 
-    private static func persist(_ scene: CanvasScene,
-                                title: String? = nil,
-                                doc: CanvasDocument,
-                                context: ModelContext,
-                                onTitleChange: () -> Void = {}) {
+    static func persist(_ scene: CanvasScene,
+                        title: String? = nil,
+                        doc: CanvasDocument,
+                        context: ModelContext,
+                        onTitleChange: () -> Void = {}) {
         let encoded = SceneCodec.encode(scene)
         let sceneChanged = encoded != doc.sceneData
         let titleChanged = title.map { $0 != doc.title } ?? false
         guard sceneChanged || titleChanged else { return }
 
+        let stored = SceneCodec.decode(doc.sceneData)
+        let contentChanged = stored.elements != scene.elements || stored.background != scene.background
         if sceneChanged {
             doc.sceneData = encoded
+        }
+        if contentChanged {
             doc.thumbnail = Thumbnailer.png(for: scene, aspectRatio: doc.aspectRatio)
         }
         if let title, titleChanged {
             doc.title = title
             onTitleChange()
         }
-        doc.updatedAt = .now
+        if contentChanged || titleChanged {
+            doc.updatedAt = .now
+        }
         try? context.save()
     }
 }
