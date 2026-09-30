@@ -8,7 +8,7 @@ project_spec="$repo_root/project.yml"
 
 ruby - "$project_spec" "$release_version" <<'RUBY'
 path, version = ARGV
-contents = File.read(path)
+contents = File.read(path, encoding: Encoding::UTF_8)
 updated = contents
   .sub(/MARKETING_VERSION: "[^"]+"/, %(MARKETING_VERSION: "#{version}"))
   .sub(/CFBundleShortVersionString: "[^"]+"/, %(CFBundleShortVersionString: "#{version}"))

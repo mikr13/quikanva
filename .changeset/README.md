@@ -10,11 +10,12 @@ Choose `patch`, `minor`, or `major` for the private `quikanva` release metadata 
 write the summary in user-facing language. Commit the generated Markdown file with
 the feature it describes.
 
-To prepare a release, run:
+Changesets that are not user-facing can be empty:
 
 ```sh
-pnpm run release:version
+pnpm run changeset --empty
 ```
 
-This consumes pending fragments, updates `CHANGELOG.md` and `package.json`, syncs
-the version into `project.yml`, and regenerates the Xcode project.
+After fragments land on `main`, the Version workflow collects them into a
+`chore: version packages` pull request. Merging it tags and publishes the release, as
+described in [RELEASING.md](../RELEASING.md).

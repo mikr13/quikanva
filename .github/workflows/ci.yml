@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Require a changeset for pull requests
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
         run: pnpm run changeset:status --since=origin/main
 
       - name: Build and test
