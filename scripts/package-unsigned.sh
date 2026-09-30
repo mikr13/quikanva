@@ -24,14 +24,15 @@ xcodebuild \
     -scheme Quikanva \
     -configuration Release \
     -derivedDataPath "$build_root" \
-    CODE_SIGNING_ALLOWED=NO \
-    CODE_SIGNING_REQUIRED=NO \
     build
 
 if [[ ! -d "$app_path" ]]; then
     printf 'Release app was not produced at %s\n' "$app_path" >&2
     exit 1
 fi
+
+# The project signs ad hoc. Sparkle only installs an update whose code signature is valid.
+codesign --verify --deep --strict "$app_path"
 
 mkdir -p "$output_dir"
 ditto -c -k --sequesterRsrc --keepParent "$app_path" "$zip_path"

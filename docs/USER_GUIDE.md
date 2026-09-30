@@ -7,7 +7,7 @@ Quikanva is a native Mac canvas for capturing and explaining an idea quickly. It
 Quikanva is a menu-bar accessory app, so it does not show a Dock icon.
 
 - Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd> anywhere to create a sketch.
-- Use the menu-bar icon for **New Canvas**, **Open Gallery**, **Settings**, or **Quit**.
+- Use the menu-bar icon for **New Canvas**, **Open Gallery**, **Check for Updates**, **Settings**, or **Quit**.
 - While Quikanva is active, press <kbd>⌘</kbd><kbd>N</kbd> for a new canvas or <kbd>⌘</kbd><kbd>G</kbd> for the Gallery.
 - Use the included Raycast commands or a `quikanva://` route for automation.
 
@@ -109,7 +109,13 @@ In **Settings → Canvas**, choose:
 - Arrowhead, stroke, and text defaults
 - A key for every drawing tool
 
-In **Settings → General**, choose launch-at-login behavior, maximum simultaneous canvases, title date format, global shortcuts, and always-on-top behavior.
+In **Settings → General**, choose launch-at-login behavior, maximum simultaneous canvases, title date format, global shortcuts, always-on-top behavior, and update behavior.
+
+## Keep Quikanva up to date
+
+Quikanva checks its GitHub releases for new versions. On the second launch it asks whether to check automatically, and you can change that later in **Settings → General → Updates**. Turn on **Download and install updates automatically** to install new versions when Quikanva quits. To check right away, choose **Check for Updates…** from the menu bar.
+
+When a scheduled check finds an update, its window can open behind other apps. The menu bar then shows **Install Quikanva <version>…** until you look at it.
 
 ## Automate with URLs and Raycast
 

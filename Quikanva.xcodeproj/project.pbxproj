@@ -22,7 +22,9 @@
 		557D4DCE27B0ECC8DB323536 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61B7ACF22D1AFDB2FF74BE86 /* LaunchAtLoginController.swift */; };
 		64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */; };
 		652992688D460C1E221E89E6 /* Exporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */; };
+		69E063D9C0167B7BA403886C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 134B47ECDAF56818D88820D2 /* Sparkle */; };
 		6DEEA7908AD87AD95B0E9733 /* CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */; };
+		77933E1878CA5733BD806216 /* UpdateConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48A2EDF97752B1003D1C7EB1 /* UpdateConfigurationTests.swift */; };
 		8781E30CCB30136310A5A56F /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */; };
 		98506D8AA56171771E1F5E90 /* TextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7232027029F98DBA832E38B /* TextLayout.swift */; };
 		9C62BDE5712DEA0DA0033891 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8515A7ACEC34D555B4CCC251 /* Renderer.swift */; };
@@ -32,6 +34,7 @@
 		DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */; };
 		E4F0F69A32C60963D8EA8F4F /* Thumbnailer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A793C28CD455347F171ACCDF /* Thumbnailer.swift */; };
 		E540A801D820668D488D8BD2 /* QuikanvaMenuBar.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */; };
+		E99218527470E6450D15C1BC /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6C2229D0B01361B9F13155 /* UpdateController.swift */; };
 		EEB9C094384CAC05BAD56EA4 /* QuikanvaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */; };
 /* End PBXBuildFile section */
 
@@ -54,12 +57,14 @@
 		11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = QuikanvaMenuBar.xcassets; sourceTree = "<group>"; };
 		3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		46D94AE76AAE6762AE832420 /* Element.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Element.swift; sourceTree = "<group>"; };
+		48A2EDF97752B1003D1C7EB1 /* UpdateConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateConfigurationTests.swift; sourceTree = "<group>"; };
 		53E421D1A989290401E9D263 /* CanvasNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNSView.swift; sourceTree = "<group>"; };
 		5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuikanvaApp.swift; sourceTree = "<group>"; };
 		604B8F2AA487892ED5690917 /* CanvasTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextEditor.swift; sourceTree = "<group>"; };
 		61B7ACF22D1AFDB2FF74BE86 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginController.swift; sourceTree = "<group>"; };
 		63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasWindowManager.swift; sourceTree = "<group>"; };
 		6D9287128C437921E883590D /* CanvasPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPreferences.swift; sourceTree = "<group>"; };
+		7D6C2229D0B01361B9F13155 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
 		8515A7ACEC34D555B4CCC251 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasDocument.swift; sourceTree = "<group>"; };
 		A6B46C1CA6A09856107E4858 /* Quikanva.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quikanva.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +87,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8781E30CCB30136310A5A56F /* KeyboardShortcuts in Frameworks */,
+				69E063D9C0167B7BA403886C /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -177,6 +183,7 @@
 			children = (
 				D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */,
 				D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */,
+				48A2EDF97752B1003D1C7EB1 /* UpdateConfigurationTests.swift */,
 			);
 			path = QuikanvaTests;
 			sourceTree = "<group>";
@@ -190,6 +197,7 @@
 				3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */,
 				61B7ACF22D1AFDB2FF74BE86 /* LaunchAtLoginController.swift */,
 				5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */,
+				7D6C2229D0B01361B9F13155 /* UpdateController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -238,6 +246,7 @@
 			name = Quikanva;
 			packageProductDependencies = (
 				3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */,
+				134B47ECDAF56818D88820D2 /* Sparkle */,
 			);
 			productName = Quikanva;
 			productReference = A6B46C1CA6A09856107E4858 /* Quikanva.app */;
@@ -271,6 +280,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				91527F7F7D8E68E629CC0A4E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+				F167CE66074A808C67AB8774 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4ABFBDF174CACE23AF135C22 /* Products */;
@@ -321,6 +331,7 @@
 				9DEB8A68CAB351B464044943 /* SettingsView.swift in Sources */,
 				98506D8AA56171771E1F5E90 /* TextLayout.swift in Sources */,
 				E4F0F69A32C60963D8EA8F4F /* Thumbnailer.swift in Sources */,
+				E99218527470E6450D15C1BC /* UpdateController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,6 +341,7 @@
 			files = (
 				64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */,
 				46CD6455384F7209FEBD229D /* SingleInstanceLaunchTests.swift in Sources */,
+				77933E1878CA5733BD806216 /* UpdateConfigurationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -398,7 +410,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.3.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -512,7 +524,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 0.3.1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -586,9 +598,22 @@
 				minimumVersion = 3.0.0;
 			};
 		};
+		F167CE66074A808C67AB8774 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.10.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		134B47ECDAF56818D88820D2 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F167CE66074A808C67AB8774 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
 		3BCA10111FD050C0EC36AE48 /* KeyboardShortcuts */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 91527F7F7D8E68E629CC0A4E /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;

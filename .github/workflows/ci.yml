@@ -17,6 +17,12 @@ jobs:
     if: github.event.action != 'closed' && github.head_ref != 'changeset-release/main'
     runs-on: macos-latest
     timeout-minutes: 20
+    # A maintainer approves each run in the ci environment, so a push does not start a
+    # macOS runner until someone chooses to test that commit. Merging into main
+    # requires this job to pass on the latest commit.
+    environment:
+      name: ci
+      deployment: false
 
     steps:
       - uses: actions/checkout@v7
