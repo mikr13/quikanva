@@ -2,19 +2,19 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
+    types: [opened, synchronize, reopened, closed]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
   build-and-test:
+    if: github.event.action != 'closed' && github.head_ref != 'changeset-release/main'
     runs-on: macos-latest
     timeout-minutes: 20
 
@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Require a changeset for pull requests
-        if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
+        if: github.event_name == 'pull_request'
         run: pnpm run changeset:status --since=origin/main
 
       - name: Build and test

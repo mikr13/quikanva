@@ -25,10 +25,11 @@ Before merging the version pull request:
 - Check the README download copy, current screenshots, license, privacy note, and
   release notes for claims that changed in this version.
 
-GitHub does not run CI for pull requests opened with the workflow token, so the
-version pull request shows no checks. The Release workflow builds and tests before it
-publishes. The repository must allow GitHub Actions to create pull requests
-(Settings → Actions → General → Workflow permissions).
+CI skips the version pull request because it only changes release metadata; the
+Release workflow builds and tests before it publishes. CI also runs only on pull
+requests, not again when they merge into `main`. The repository must allow GitHub
+Actions to create pull requests (Settings → Actions → General → Workflow
+permissions).
 
 Pushing a `v<version>` tag by hand still runs the Release workflow, which rejects tags
 that do not match `package.json`.
