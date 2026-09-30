@@ -60,4 +60,8 @@ Choose patch, minor, or major for the private `quikanva` release metadata and wr
 - User-facing changes include a changeset and documentation update.
 - No unrelated formatting or generated-file churn is included.
 
+CI does not start on its own. When your pull request is ready, a maintainer approves
+the `build-and-test` run. It must pass on the latest commit before the pull request
+can merge, so every new push needs another approved run.
+
 By contributing, you agree that your contribution is licensed under the repository's [MIT License](LICENSE).

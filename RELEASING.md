@@ -29,7 +29,15 @@ Before merging the version pull request:
 
 CI skips the version pull request because it only changes release metadata; the
 Release workflow builds and tests before it publishes. CI also runs only on pull
-requests, not again when they merge into `main`. The repository must allow GitHub
+requests, not again when they merge into `main`.
+
+On a pull request, the `build-and-test` job waits for approval in the `ci`
+environment before it uses a macOS runner. Approve it from the pending run
+(**Review deployments**) when the pull request is ready. A newer push cancels the
+waiting run and starts a new one. A ruleset on `main` requires `build-and-test` to
+pass on the latest commit, so a pull request cannot merge until someone approves and
+the run passes. The version pull request still merges, because its skipped job counts
+as passing. The repository must allow GitHub
 Actions to create pull requests (Settings → Actions → General → Workflow
 permissions).
 
