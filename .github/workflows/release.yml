@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - "v*"
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,9 +17,13 @@ jobs:
   release:
     runs-on: macos-latest
     timeout-minutes: 20
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - uses: pnpm/action-setup@v4
 
@@ -29,8 +38,8 @@ jobs:
       - name: Validate release tag
         run: |
           release_version="$(node -p "require('./package.json').version")"
-          if [[ "$GITHUB_REF_NAME" != "v$release_version" ]]; then
-            printf 'Tag %s does not match package version %s\n' "$GITHUB_REF_NAME" "$release_version" >&2
+          if [[ "$RELEASE_TAG" != "v$release_version" ]]; then
+            printf 'Tag %s does not match package version %s\n' "$RELEASE_TAG" "$release_version" >&2
             exit 1
           fi
 
@@ -62,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           release_version="$(node -p "require('./package.json').version")"
-          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+          gh release create "$RELEASE_TAG" dist/*.zip \
             --verify-tag \
             --title "Quikanva $release_version" \
             --notes-file release-notes.md

@@ -2,24 +2,36 @@
 
 Quikanva releases are unsigned direct-download builds until Developer ID signing and
 notarization are introduced. Never describe an unsigned build as Gatekeeper-ready.
-Prepare and publish a release from a clean `main` branch:
+Releases come from changesets merged into `main`:
 
-1. Run `pnpm install --frozen-lockfile`.
-2. Run `pnpm run release:version` to consume pending changesets, update
-   `CHANGELOG.md` and `package.json`, synchronize `project.yml`, and regenerate the
-   Xcode project.
-3. Review the version and changelog, then run the test suite and
-   `./scripts/package-unsigned.sh`.
-4. Launch the packaged app through the same Control-click → Open path documented
-   for users. Verify a new sketch, Gallery reopen, and PNG export.
-5. Check the README download copy, current screenshots, license, privacy note, and
-   release notes for claims that changed in this version.
-6. Commit the release metadata as `chore: release v<version>`.
-7. Create and push an annotated `v<version>` tag.
+1. Every pull request with a user-facing change includes a changeset from
+   `pnpm run changeset`.
+2. When changesets land on `main`, the Version workflow opens a
+   `chore: version packages` pull request. It runs `pnpm run release:version`, which
+   consumes the pending changesets, updates `CHANGELOG.md` and `package.json`,
+   synchronizes `project.yml`, and regenerates the Xcode project. Every later merge to
+   `main` refreshes the same pull request, so it can collect one change or many.
+3. Merge the version pull request when you want to ship.
+4. The Version workflow then tags `v<version>` and runs the Release workflow, which
+   rebuilds and tests the app, extracts the matching `CHANGELOG.md` section, and
+   publishes the unsigned zip to a GitHub release.
 
-The Release workflow rejects tags that do not match `package.json`, rebuilds and
-tests the app, extracts the matching `CHANGELOG.md` section, and publishes the
-unsigned zip to a GitHub release.
+Before merging the version pull request:
+
+- Review the version and changelog.
+- Run the test suite and `./scripts/package-unsigned.sh`, then launch the packaged app
+  through the same Control-click → Open path documented for users. Verify a new
+  sketch, Gallery reopen, and PNG export.
+- Check the README download copy, current screenshots, license, privacy note, and
+  release notes for claims that changed in this version.
+
+GitHub does not run CI for pull requests opened with the workflow token, so the
+version pull request shows no checks. The Release workflow builds and tests before it
+publishes. The repository must allow GitHub Actions to create pull requests
+(Settings → Actions → General → Workflow permissions).
+
+Pushing a `v<version>` tag by hand still runs the Release workflow, which rejects tags
+that do not match `package.json`.
 
 ## Before announcing a release
 
