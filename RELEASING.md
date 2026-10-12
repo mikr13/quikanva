@@ -36,4 +36,4 @@ Sparkle reads the latest GitHub release's `appcast.xml` and compares build versi
 
 With immutable releases, attach every asset to a draft before publishing. Assets cannot be added or replaced afterward.
 
-Before shipping, check the version/changelog, tests, downloaded-app Gatekeeper acceptance, canvas/Gallery/export behavior, and upgrading an existing installation. Update install instructions when the first signed public release ships.
+Before shipping, check the version/changelog, tests, downloaded-app Gatekeeper acceptance, canvas/Gallery/export behavior, and upgrading an existing installation.

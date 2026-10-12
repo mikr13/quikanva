@@ -39,12 +39,9 @@ Both examples were drawn and captured in Quikanva. They use its shipping canvas 
 Quikanva requires macOS 14 Sonoma or later.
 
 1. Open the [latest GitHub release](https://github.com/mikr13/quikanva/releases/latest).
-2. Download `Quikanva-<version>-unsigned.zip` and unzip it.
+2. Download `Quikanva-<version>.zip` and unzip it.
 3. Move `Quikanva.app` to `/Applications`.
-4. On first launch, Control-click Quikanva in Finder, choose **Open**, then confirm **Open**.
-
-> [!IMPORTANT]
-> Current direct-download builds are unsigned. macOS will show an unidentified-developer warning on first launch. Only download Quikanva from this repository. Developer ID signing and notarization are planned so future downloads can pass Gatekeeper normally.
+4. Open Quikanva from Applications.
 
 After that, Quikanva updates itself. On the second launch it asks whether to check for updates automatically. You can also choose **Check for Updates…** from the menu bar. Each update is verified with a signature before it installs. Builds released before the updater have no update check, so download the latest release by hand once.
 
@@ -180,7 +177,6 @@ Everything under [Features](#features) is available today. Here is what comes ne
 
 ### Planned
 
-- [ ] Developer ID signing and notarization, so downloads open without a Gatekeeper warning
 - [ ] PDF and SVG export
 - [ ] Import of Excalidraw files
 - [ ] iCloud sync across your Macs

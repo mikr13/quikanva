@@ -7,7 +7,6 @@ xcuserdata/
 .swiftpm/
 node_modules/
 package-lock.json
-.agents/
 skills-lock.json
 .omo
 
@@ -16,3 +15,5 @@ temp
 docs/assets/video
 docs/assets/audio
 docs/marketing
+
+__pycache__
