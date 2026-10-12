@@ -2,7 +2,9 @@
 
 ## macOS blocks the app
 
-Use downloads from [Quikanva releases](https://github.com/mikr13/quikanva/releases) and move the app to `/Applications`. Unsigned builds may require **System Settings → Privacy & Security → Open Anyway** after a blocked launch. Follow [Apple's instructions](https://support.apple.com/en-us/102445) and verify the source before allowing it.
+Use downloads from [Quikanva releases](https://github.com/mikr13/quikanva/releases) and move the app to `/Applications`. Releases from v0.3.3 onward are signed with an Apple Developer ID and notarized by Apple.
+
+Older unsigned releases and CI builds may require **System Settings → Privacy & Security → Open Anyway** after a blocked launch. Follow [Apple's instructions](https://support.apple.com/en-us/102445) and verify the source before allowing it.
 
 Do not disable Gatekeeper globally. Report unexpected warnings for a signed release.
 
