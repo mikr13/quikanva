@@ -5,7 +5,7 @@
 1. Add a changeset for each user-facing change with `pnpm run changeset`.
 2. Merges to `main` collect changes in a **chore: version packages** pull request.
 3. Review and merge that pull request to bump versions, tag the release, and run the release workflow.
-4. The workflow tests, signs, notarizes, and staples the app, then publishes its ZIP and Sparkle appcast.
+4. The workflow tests, signs, notarizes, and staples the app and DMG, then publishes the DMG, ZIP, and Sparkle appcast.
 
 Manual tags must match `package.json`. Missing signing credentials stop publication; contributor CI still produces ad hoc signed builds.
 
@@ -17,7 +17,7 @@ Local packaging requires a **Developer ID Application** certificate with its pri
 ./scripts/package-signed.sh
 ```
 
-The script enables hardened runtime, exports through Xcode, requires Apple acceptance, staples the ticket, verifies Gatekeeper, and writes `dist/Quikanva-<version>.zip`. Notarization results are saved in `dist/notary-<version>.json`.
+The script enables hardened runtime, exports through Xcode, requires Apple acceptance, staples the tickets, verifies Gatekeeper, and writes `dist/Quikanva-<version>.zip` and `dist/Quikanva.dmg`. The DMG filename stays stable for the README's latest-download link; Sparkle uses the versioned ZIP. Notarization results are saved in `dist/notary-<version>*.json`.
 
 GitHub Actions requires these repository secrets:
 
