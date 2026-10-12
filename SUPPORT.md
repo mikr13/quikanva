@@ -1,9 +1,7 @@
 # Support
 
-## Get help
+Check the [User Guide](docs/USER_GUIDE.md) and [Troubleshooting](docs/TROUBLESHOOTING.md).
 
-Start with the [User Guide](docs/USER_GUIDE.md) and [Troubleshooting](docs/TROUBLESHOOTING.md).
+Still stuck? [Open an issue](https://github.com/mikr13/quikanva/issues/new/choose) with app/macOS versions, installation source, reproduction steps, and expected/actual behavior. Add a screenshot for visual problems.
 
-If the problem remains, open a [GitHub issue](https://github.com/mikr13/quikanva/issues/new/choose). Include the Quikanva version, macOS version, installation source, expected behavior, actual behavior, and exact reproduction steps. Screenshots or a short recording help when the issue is visual.
-
-For security issues, use the private process in [SECURITY.md](SECURITY.md).
+Report vulnerabilities through [Security](SECURITY.md).

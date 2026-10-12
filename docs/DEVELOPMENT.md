@@ -1,65 +1,37 @@
-# Quikanva development guide
+# Development
 
-Quikanva is a native macOS 14+ application built with Swift 6, SwiftUI, AppKit, Core Graphics, SwiftData, and the KeyboardShortcuts package.
-
-## Requirements
-
-- macOS 14 or later
-- Xcode 16 or later
-- Node.js 24 and pnpm 11 for changesets
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46 or later when changing `project.yml`
-
-## Set up the project
+Requires macOS 14+, Xcode 16+, Node.js 24, and pnpm 11. Use [XcodeGen](https://github.com/yonaskolb/XcodeGen) 2.46+ when changing `project.yml`.
 
 ```sh
 git clone https://github.com/mikr13/quikanva.git
 cd quikanva
 pnpm install --frozen-lockfile
-xcodegen generate
 open Quikanva.xcodeproj
 ```
 
-The generated Xcode project is committed. Regenerate it whenever `project.yml` changes and include both files in the same pull request.
+The generated project is committed. After changing `project.yml`, run `xcodegen generate` and commit both files.
 
-## Architecture
+## Code layout
 
-- `Quikanva/App` owns lifecycle, menu-bar commands, URL routing, global shortcuts, and canvas windows.
-- `Quikanva/UI` contains the SwiftUI gallery, settings, canvas shell, and toolbar.
-- `Quikanva/Canvas` contains the AppKit `CanvasNSView`, SwiftUI bridge, renderer, thumbnailer, and exporter.
-- `Quikanva/Model` contains scenes, elements, documents, styles, and serialization.
-- `QuikanvaTests` covers model, rendering, input behavior, persistence utilities, release-sensitive metadata, and app lifecycle boundaries.
+| Directory | Responsibility |
+| --- | --- |
+| `Quikanva/App` | Lifecycle, windows, shortcuts, routing, updates |
+| `Quikanva/UI` | SwiftUI canvas shell, toolbar, Gallery, Settings |
+| `Quikanva/Canvas` | AppKit interaction, rendering, thumbnails, export |
+| `Quikanva/Model` | Scenes, elements, styles, persistence |
+| `QuikanvaTests` | Models, canvas behavior, lifecycle, release metadata |
 
-The canvas is intentionally AppKit-backed. `CanvasNSView` owns direct interaction and the native undo manager; `CanvasRepresentable` synchronizes it with SwiftUI state. Preserve that ownership boundary when changing tools or commands.
+`CanvasNSView` owns input and undo; `CanvasRepresentable` bridges SwiftUI state. Preserve this boundary.
 
-## Build and test
-
-```sh
-xcodebuild test \
-  -project Quikanva.xcodeproj \
-  -scheme Quikanva \
-  -destination 'platform=macOS'
-```
-
-If the test runner fails with `IDELaunchErrorDomain Code 20`, quit an already-running Quikanva app with the same bundle identifier and rerun. Treat compilation, test launch, and manual UI verification as separate results.
-
-Create an unsigned release artifact with:
+## Verify
 
 ```sh
+xcodebuild test -project Quikanva.xcodeproj -scheme Quikanva -destination 'platform=macOS'
 ./scripts/package-unsigned.sh
 ```
 
-The script builds Release, signs it ad hoc (no Developer ID), verifies the signature, and writes a versioned zip under `dist/`. Sparkle refuses to install an update whose code signature is missing or invalid, so do not package with code signing disabled.
+Packaging writes an ad hoc signed ZIP to `dist/`. For signed distribution, see [Releasing](../RELEASING.md).
 
-## Validate visible behavior
+If tests cannot launch with `IDELaunchErrorDomain Code 20`, quit an already-running Quikanva instance and retry. Test launch failure is not a test result.
 
-For a UI or lifecycle change, run the app and verify the matching surface rather than relying on a build alone. Useful checks include:
-
-- Menu-bar new canvas, Gallery, Settings, and Quit
-- Global shortcut from another active app
-- `quikanva://new`, `quikanva://gallery`, and a valid/invalid open route
-- Drawing, selection, undo/redo, close-time autosave, Gallery reopen, and export
-- Light/dark appearance, Increased Contrast, Reduced Motion, keyboard access, and VoiceOver labels
-
-## Release notes
-
-Use `pnpm run changeset` for every user-facing feature or fix. Release preparation and tag automation are documented in [RELEASING.md](../RELEASING.md).
+For visible changes, check drawing, selection, undo, autosave/reopen, export, hotkeys, and URL routes. Check appearance, accessibility, and Reduced Motion as relevant. Record user-facing changes with `pnpm run changeset`.
