@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.4
+
+### Patch Changes
+
+- 5c54ed2: Add a signed and notarized DMG installer to releases, with a direct download button in the README.
+
 ## 0.3.3
 
 ### Patch Changes
