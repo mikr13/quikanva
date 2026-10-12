@@ -1,123 +1,34 @@
-# Quikanva user guide
+# User Guide
 
-Quikanva is a native Mac canvas for capturing and explaining an idea quickly. It is designed for architecture sketches, product flows, meeting notes, annotations, and diagrams that need shapes and relationships without a full whiteboard setup.
+Quikanva lives in the menu bar. Press **⌘⇧K** anywhere for a new canvas, or use the menu for Gallery, Settings, updates, and Quit. New canvases start with Freehand selected.
 
-## Open Quikanva
+## Draw and edit
 
-Quikanva is a menu-bar accessory app, so it does not show a Dock icon.
+Choose a toolbar tool or use its [shortcut](SHORTCUTS.md). Scroll or use Hand to pan; pinch or use View commands to zoom. Paste/drop images, or paste text to create notes.
 
-- Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd> anywhere to create a sketch.
-- Use the menu-bar icon for **New Canvas**, **Open Gallery**, **Check for Updates**, **Settings**, or **Quit**.
-- While Quikanva is active, press <kbd>⌘</kbd><kbd>N</kbd> for a new canvas or <kbd>⌘</kbd><kbd>G</kbd> for the Gallery.
-- Use the included Raycast commands or a `quikanva://` route for automation.
+Use Select (**V**) to click or marquee-select elements; Shift-click adds/removes selections. Drag to move, use handles to resize/rotate, and hold Shift while resizing to preserve proportions. Arrow keys nudge; Shift-arrow moves 10 points. Option-drag bypasses snapping.
 
-## Build a useful diagram
+Select a line/arrow and press **⌘Return** to edit endpoints and its midpoint. Duplicate, reorder, copy/paste, delete, and undo/redo follow the active canvas.
 
-Start with structure, then annotate:
+## Text and style
 
-1. Use an ellipse for a starting state or concept.
-2. Use rectangles for steps, systems, or outputs.
-3. Use diamonds for decisions.
-4. Connect the structure with arrows and lines.
-5. Add text labels after the geometry is in place.
-6. Use freehand ink for emphasis, a quick correction, or a note that should feel informal.
+Double-click empty canvas or use Text to add a note; drag with Text to set its wrapping width. Double-click a note or select it and press Return to edit. Return adds a line; Escape, ⌘Return, or clicking the canvas finishes editing. Side handles rewrap text; corner handles scale it.
 
-The examples below were made with that sequence:
+The ellipsis menu changes colors, drawing/fill style, strokes, arrowheads, typography, image shadows, and line curves. It applies to selected elements or new ones. Save defaults in **Settings → Canvas**.
 
-![A product launch workflow made in Quikanva, shown on its floating canvas](assets/product/macos-product-launch-flow.png)
+## Save and export
 
-![A native app architecture map made in Quikanva, shown on its floating canvas](assets/product/macos-native-app-architecture.png)
+Changes autosave. Press **⌘S** to name a sketch. In the Gallery, double-click to open or right-click to rename, export, select, or delete. Selection mode supports batch deletion, which is permanent after confirmation.
 
-## Draw and navigate
+The share menu copies an image or exports PNG/JPEG at 2× scale, cropped to content. Omit the background for transparent PNGs.
 
-Select a tool from the floating toolbar or press its single-letter shortcut. New canvases begin with Freehand selected.
+## Settings and updates
 
-- Scroll or use the Hand tool to pan.
-- Pinch to zoom, or use the zoom commands in the ellipsis menu.
-- Paste or drag an image onto the canvas to add it as an editable element.
-- Double-click the canvas background, or click it with the Text tool, and start typing to add a note. Drag with the Text tool to set how wide the note wraps.
+**Canvas** sets aspect ratio, styles, and tool keys. **General** controls launch at login, canvas limits, naming dates, global shortcuts, always-on-top windows, and updates.
 
-See [Shortcut Reference](SHORTCUTS.md) for every default key.
+Choose **Check for Updates…** from the menu bar. Configure automatic checks and downloads in **Settings → General → Updates**; automatic installation happens when Quikanva quits. A pending scheduled update appears in the menu until you inspect it.
 
-## Select and edit
-
-Switch to Select with <kbd>V</kbd>.
-
-- Click an element to select it.
-- Shift-click or drag a marquee to select more than one.
-- Drag the selection to move it.
-- Use the eight handles to resize and the rotation handle to rotate.
-- Use arrow keys for precise movement; add Shift for 10-point steps.
-- Press <kbd>⌘</kbd><kbd>D</kbd> to duplicate.
-- Press <kbd>⌘</kbd><kbd>[</kbd> or <kbd>⌘</kbd><kbd>]</kbd> to change stacking order.
-- Select a line or arrow and press <kbd>⌘</kbd><kbd>Return</kbd> to edit its endpoints and midpoint.
-
-### Edit text
-
-- Double-click a note, or select it and press <kbd>Return</kbd>, to edit it in place.
-- Press <kbd>Return</kbd> for a new line. Press <kbd>Escape</kbd> or <kbd>⌘</kbd><kbd>Return</kbd>, or click the canvas, to finish.
-- New notes wrap at the right edge of the visible canvas.
-- Drag a note's side handle to change where it wraps. Drag a corner handle to scale its text.
-- Paste plain text from another app to add it as a note.
-
-Quikanva records canvas mutations in the native undo manager. <kbd>⌘</kbd><kbd>Z</kbd> and <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd> follow the active canvas.
-
-## Style a diagram
-
-Use the ellipsis menu to set the style for new elements or the current selection:
-
-- Stroke, fill, and canvas background colors
-- Hand-drawn or precise rendering
-- Solid or hachure fill
-- Solid, dashed, or dotted strokes
-- Stroke width, opacity, and roughness
-- Arrowhead style and placement
-- Font family, weight, size, alignment, and decoration
-- Optional shadow for image elements
-- Curve amount for a selected line or arrow
-
-Set reusable defaults in **Settings → Canvas**.
-
-## Save and organize
-
-Canvas changes autosave after a short delay. New sketches receive a two-word title with their creation date. Press <kbd>⌘</kbd><kbd>S</kbd> to give a sketch a deliberate name.
-
-The Gallery shows each canvas at its real aspect ratio. Double-click a card to open it. Right-click for Open, Rename, Export, Delete, or **Select**.
-
-Selection mode supports selecting multiple cards, selecting all, and batch delete. Deletion is permanent, so Quikanva asks for confirmation.
-
-## Export and share
-
-Open the share menu on a canvas or Gallery card:
-
-- **Copy as Image** puts a rendered image on the pasteboard.
-- **Export PNG** preserves crisp lossless output and can omit the canvas background.
-- **Export JPEG** creates a smaller flattened image.
-
-Exports are rendered at 2× scale and cropped to the sketch content. Toggle **Include background** when the destination needs transparency.
-
-## Keep a canvas visible
-
-Enable **Keep Canvas Windows on Top** in Settings or the Canvas menu when presenting, screen sharing, or referencing a sketch while working in another app. The default global toggle is <kbd>⌃</kbd><kbd>⌥</kbd><kbd>T</kbd>.
-
-## Choose canvas defaults
-
-In **Settings → Canvas**, choose:
-
-- Portrait (9:16), Square (1:1), Standard (4:3), or Widescreen (16:9)
-- Default background, stroke, fill, drawing style, and fill style
-- Arrowhead, stroke, and text defaults
-- A key for every drawing tool
-
-In **Settings → General**, choose launch-at-login behavior, maximum simultaneous canvases, title date format, global shortcuts, always-on-top behavior, and update behavior.
-
-## Keep Quikanva up to date
-
-Quikanva checks its GitHub releases for new versions. On the second launch it asks whether to check automatically, and you can change that later in **Settings → General → Updates**. Turn on **Download and install updates automatically** to install new versions when Quikanva quits. To check right away, choose **Check for Updates…** from the menu bar.
-
-When a scheduled check finds an update, its window can open behind other apps. The menu bar then shows **Install Quikanva <version>…** until you look at it.
-
-## Automate with URLs and Raycast
+## Automation and data
 
 ```sh
 open 'quikanva://new'
@@ -125,8 +36,4 @@ open 'quikanva://gallery'
 open 'quikanva://open?id=<UUID>'
 ```
 
-The repository includes silent Raycast script commands in [`integrations/raycast`](../integrations/raycast/README.md).
-
-## Local data and privacy
-
-Sketches live under `~/Library/Application Support/Quikanva/`. Quikanva does not upload them. Read [Privacy](PRIVACY.md) before sharing exported files through another service.
+[Raycast commands](../integrations/raycast/README.md) use these local routes. Sketches stay in `~/Library/Application Support/Quikanva/`; see [Privacy](PRIVACY.md) and [Troubleshooting](TROUBLESHOOTING.md).

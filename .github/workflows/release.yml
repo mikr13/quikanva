@@ -16,9 +16,10 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
-    timeout-minutes: 20
+    timeout-minutes: 75
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      NOTARY_PROFILE: quikanva-notary
 
     steps:
       - uses: actions/checkout@v7
@@ -43,6 +44,38 @@ jobs:
             exit 1
           fi
 
+      - name: Install signing and notarization credentials
+        env:
+          SIGNING_KEYCHAIN: ${{ runner.temp }}/quikanva-signing.keychain-db
+          DEVELOPER_ID_P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+          DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          echo "SIGNING_KEYCHAIN=$SIGNING_KEYCHAIN" >> "$GITHUB_ENV"
+          for name in DEVELOPER_ID_P12_BASE64 DEVELOPER_ID_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              printf 'Required release secret is missing: %s\n' "$name" >&2
+              exit 1
+            fi
+          done
+          umask 077
+          keychain_password="$(openssl rand -hex 32)"
+          echo "::add-mask::$keychain_password"
+          printf '%s' "$DEVELOPER_ID_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/quikanva-signing.p12"
+          security create-keychain -p "$keychain_password" "$SIGNING_KEYCHAIN"
+          security set-keychain-settings -lut 7200 "$SIGNING_KEYCHAIN"
+          security unlock-keychain -p "$keychain_password" "$SIGNING_KEYCHAIN"
+          security import "$RUNNER_TEMP/quikanva-signing.p12" -k "$SIGNING_KEYCHAIN" \
+            -P "$DEVELOPER_ID_P12_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
+            -k "$keychain_password" "$SIGNING_KEYCHAIN" >/dev/null
+          security list-keychains -d user -s "$SIGNING_KEYCHAIN" login.keychain-db
+          rm -f "$RUNNER_TEMP/quikanva-signing.p12"
+          xcrun notarytool store-credentials "$NOTARY_PROFILE" \
+            --keychain "$SIGNING_KEYCHAIN" --apple-id "$APPLE_ID" \
+            --team-id NDLJGT2AYB --password "$APPLE_APP_SPECIFIC_PASSWORD"
+
       - name: Build and test
         run: >-
           xcodebuild test
@@ -50,8 +83,8 @@ jobs:
           -scheme Quikanva
           -destination 'platform=macOS'
 
-      - name: Package unsigned app
-        run: ./scripts/package-unsigned.sh
+      - name: Package signed and notarized app
+        run: ./scripts/package-signed.sh
 
       - name: Extract release notes
         run: |
@@ -80,7 +113,8 @@ jobs:
         env:
           SPARKLE_ED_PRIVATE_KEY: ${{ secrets.SPARKLE_ED_PRIVATE_KEY }}
         run: |
-          archive="$(ls dist/*.zip)"
+          release_version="$(node -p "require('./package.json').version")"
+          archive="dist/Quikanva-$release_version.zip"
           ./scripts/make-appcast.sh "$archive" \
             "https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/$(basename "$archive")" \
             release-notes.md \
@@ -91,7 +125,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           release_version="$(node -p "require('./package.json').version")"
-          gh release create "$RELEASE_TAG" dist/*.zip dist/appcast.xml \
+          gh release create "$RELEASE_TAG" "dist/Quikanva-$release_version.zip" dist/appcast.xml \
             --verify-tag \
             --title "Quikanva $release_version" \
             --notes-file release-notes.md
+
+      - name: Save notarization diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: notarization
+          path: dist/notary-*.json
+          if-no-files-found: ignore
+
+      - name: Remove release credentials
+        if: always()
+        env:
+          SIGNING_KEYCHAIN: ${{ runner.temp }}/quikanva-signing.keychain-db
+        run: |
+          security list-keychains -d user -s login.keychain-db
+          if [[ -f "$SIGNING_KEYCHAIN" ]]; then
+            security delete-keychain "$SIGNING_KEYCHAIN"
+          fi
+          rm -f "$RUNNER_TEMP/quikanva-signing.p12"

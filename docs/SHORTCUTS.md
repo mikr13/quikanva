@@ -1,77 +1,38 @@
-# Quikanva shortcut reference
+# Shortcuts
 
-Tool keys work while a canvas is focused. Tool assignments can be changed in **Settings → Canvas**; choosing a key already assigned to another tool swaps the two assignments.
+Tool keys apply to the focused canvas. Change them in **Settings → Canvas**; assigning a taken key swaps tools. Global shortcuts are configurable in **Settings → General**.
 
-## Global shortcuts
+## Global
 
 | Action | Default |
-|---|:---:|
-| New canvas from anywhere | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd> |
-| Toggle all canvas windows on top | <kbd>⌃</kbd><kbd>⌥</kbd><kbd>T</kbd> |
+| --- | --- |
+| New canvas | ⌘⇧K |
+| Toggle canvases on top | ⌃⌥T |
 
-Both are configurable in **Settings → General**.
-
-## App and canvas commands
+## App and canvas
 
 | Action | Shortcut |
-|---|:---:|
-| New canvas | <kbd>⌘</kbd><kbd>N</kbd> |
-| Open Gallery | <kbd>⌘</kbd><kbd>G</kbd> |
-| Settings | <kbd>⌘</kbd><kbd>,</kbd> |
-| Save/name sketch | <kbd>⌘</kbd><kbd>S</kbd> |
-| Undo | <kbd>⌘</kbd><kbd>Z</kbd> |
-| Redo | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>Z</kbd> or <kbd>⌘</kbd><kbd>Y</kbd> |
-| Copy selection | <kbd>⌘</kbd><kbd>C</kbd> |
-| Paste selection, image, or text | <kbd>⌘</kbd><kbd>V</kbd> |
-| Duplicate selection | <kbd>⌘</kbd><kbd>D</kbd> |
-| Delete selection | <kbd>Delete</kbd> or <kbd>Forward Delete</kbd> |
-| Bring selection to front | <kbd>⌘</kbd><kbd>]</kbd> |
-| Send selection to back | <kbd>⌘</kbd><kbd>[</kbd> |
-| Toggle line/arrow point editing | <kbd>⌘</kbd><kbd>Return</kbd> |
-| Copy canvas as image | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>C</kbd> |
-| Export PNG | <kbd>⌘</kbd><kbd>E</kbd> |
-| Close canvas | <kbd>Escape</kbd> |
+| --- | --- |
+| New canvas / Gallery / Settings | ⌘N / ⌘G / ⌘, |
+| Name sketch | ⌘S |
+| Undo / Redo | ⌘Z / ⌘⇧Z or ⌘Y |
+| Copy / Paste / Duplicate | ⌘C / ⌘V / ⌘D |
+| Delete selection | Delete or Forward Delete |
+| Bring to front / Send to back | ⌘] / ⌘[ |
+| Edit line/arrow points | ⌘Return |
+| Copy canvas image / Export PNG | ⌘⇧C / ⌘E |
+| Close canvas | Escape |
+| Zoom in / out | ⌘+ / ⌘− |
+| Fit / Selection / Reset zoom | ⌘1 / ⌘2 / ⌘0 |
 
-## Text
+## Text and tools
 
-| Action | Shortcut |
-|---|:---:|
-| Edit text | Double-click it, or select it and press <kbd>Return</kbd> |
-| New text | Double-click empty canvas, or click with the Text tool |
-| New line | <kbd>Return</kbd> |
-| Finish editing | <kbd>Escape</kbd>, <kbd>⌘</kbd><kbd>Return</kbd>, or click the canvas |
+Double-click text or select it and press Return to edit. Return adds a line; Escape, ⌘Return, or clicking the canvas finishes. Double-click empty canvas to add text.
 
-## View commands
+| Tool | Key |
+| --- | --- |
+| Select / Hand / Freehand | V / H / P |
+| Rectangle / Ellipse / Diamond | R / O / D |
+| Line / Arrow / Text / Eraser | L / A / T / E |
 
-| Action | Shortcut |
-|---|:---:|
-| Zoom in | <kbd>⌘</kbd><kbd>+</kbd> |
-| Zoom out | <kbd>⌘</kbd><kbd>-</kbd> |
-| Zoom to fit | <kbd>⌘</kbd><kbd>1</kbd> |
-| Zoom to selection | <kbd>⌘</kbd><kbd>2</kbd> |
-| Reset zoom | <kbd>⌘</kbd><kbd>0</kbd> |
-
-Trackpad pinch zoom and scrolling are also supported. Use the Hand tool to drag the view directly.
-
-## Tool keys
-
-| Tool | Default key |
-|---|:---:|
-| Select | <kbd>V</kbd> |
-| Hand | <kbd>H</kbd> |
-| Freehand | <kbd>P</kbd> |
-| Rectangle | <kbd>R</kbd> |
-| Ellipse | <kbd>O</kbd> |
-| Diamond | <kbd>D</kbd> |
-| Line | <kbd>L</kbd> |
-| Arrow | <kbd>A</kbd> |
-| Text | <kbd>T</kbd> |
-| Eraser | <kbd>E</kbd> |
-
-## Selection modifiers
-
-- Shift-click adds or removes an element from the selection.
-- Shift while resizing preserves aspect ratio.
-- Arrow keys move a selection by 1 point.
-- Shift-arrow moves a selection by 10 points.
-- Option-drag temporarily bypasses snapping.
+Shift-click toggles selection; Shift-resize preserves proportions. Arrow keys nudge 1 point, Shift-arrow 10 points. Option-drag bypasses snapping. Scroll/Hand pans; pinch zooms.
