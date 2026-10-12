@@ -16,7 +16,7 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
-    timeout-minutes: 75
+    timeout-minutes: 120
     env:
       RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
       NOTARY_PROFILE: quikanva-notary
@@ -83,7 +83,7 @@ jobs:
           -scheme Quikanva
           -destination 'platform=macOS'
 
-      - name: Package signed and notarized app
+      - name: Package signed and notarized ZIP and DMG
         run: ./scripts/package-signed.sh
 
       - name: Extract release notes
@@ -125,7 +125,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           release_version="$(node -p "require('./package.json').version")"
-          gh release create "$RELEASE_TAG" "dist/Quikanva-$release_version.zip" dist/appcast.xml \
+          gh release create "$RELEASE_TAG" dist/Quikanva.dmg "dist/Quikanva-$release_version.zip" dist/appcast.xml \
             --verify-tag \
             --title "Quikanva $release_version" \
             --notes-file release-notes.md

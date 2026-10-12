@@ -14,6 +14,8 @@
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-2563EB"></a>
 </p>
 
+[![Download for macOS](https://img.shields.io/badge/Download_for_macOS-DMG-2563EB?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/mikr13/quikanva/releases/latest/download/Quikanva.dmg)
+
 [![Quikanva: a canvas one shortcut away](docs/assets/social/github-social-preview.png)](https://github.com/mikr13/quikanva/releases)
 
 Quikanva is a free, open-source visual scratchpad for Mac. Press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd>, sketch an idea with shapes, arrows, text, images, or freehand ink, then copy or export it. There is no account, cloud workspace, or document setup to get between the thought and the canvas.
@@ -38,10 +40,9 @@ Both examples were drawn and captured in Quikanva. They use its shipping canvas 
 
 Quikanva requires macOS 14 Sonoma or later.
 
-1. Open the [latest GitHub release](https://github.com/mikr13/quikanva/releases/latest).
-2. Download `Quikanva-<version>.zip` and unzip it.
-3. Move `Quikanva.app` to `/Applications`.
-4. Open Quikanva from Applications.
+1. [Download the latest DMG](https://github.com/mikr13/quikanva/releases/latest/download/Quikanva.dmg) and open it.
+2. Drag `Quikanva.app` to the **Applications** shortcut.
+3. Eject the Quikanva disk image and open Quikanva from Applications.
 
 After that, Quikanva updates itself. On the second launch it asks whether to check for updates automatically. You can also choose **Check for Updates…** from the menu bar. Each update is verified with a signature before it installs. Builds released before the updater have no update check, so download the latest release by hand once.
 

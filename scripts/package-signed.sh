@@ -22,10 +22,13 @@ xcrun notarytool history "${notary_args[@]}" --output-format json >/dev/null
 version="$(plutil -extract CFBundleShortVersionString raw -o - "$repo_root/Quikanva/Resources/Info.plist")"
 output_dir="$repo_root/dist"
 zip_path="$output_dir/Quikanva-$version.zip"
-if [[ -e "$zip_path" ]]; then
-    printf 'Refusing to overwrite existing package: %s\n' "$zip_path" >&2
-    exit 1
-fi
+dmg_path="$output_dir/Quikanva.dmg"
+for package in "$zip_path" "$dmg_path"; do
+    if [[ -e "$package" ]]; then
+        printf 'Refusing to overwrite existing package: %s\n' "$package" >&2
+        exit 1
+    fi
+done
 build_root="$(mktemp -d "${TMPDIR:-/tmp}/quikanva-signed.XXXXXX")"
 trap 'rm -rf "$build_root"' EXIT
 mkdir -p "$output_dir"
@@ -61,26 +64,43 @@ if ! printf '%s\n' "$signature" | grep -Fx "TeamIdentifier=$team_id" >/dev/null 
     printf 'Exported app is missing the expected Developer ID, team, runtime, or timestamp.\n' >&2
     exit 1
 fi
-ditto -c -k --sequesterRsrc --keepParent "$app_path" "$build_root/submission.zip"
-result_path="$output_dir/notary-$version.json"
-notary_exit=0
-xcrun notarytool submit "$build_root/submission.zip" "${notary_args[@]}" \
-    --wait --timeout 45m --output-format json > "$result_path" || notary_exit=$?
-status="$(plutil -extract status raw -o - "$result_path" 2>/dev/null || true)"
-submission_id="$(plutil -extract id raw -o - "$result_path" 2>/dev/null || true)"
-if [[ "$status" != Accepted || "$notary_exit" -ne 0 ]]; then
-    if [[ -n "$submission_id" && "$status" == Invalid ]]; then
-        xcrun notarytool log "$submission_id" "${notary_args[@]}" "$output_dir/notary-$version-log.json" || true
+notarize_and_staple() {
+    local submission="$1" target="$2" result_path="$3"
+    local notary_exit=0 status submission_id
+    xcrun notarytool submit "$submission" "${notary_args[@]}" \
+        --wait --timeout 45m --output-format json > "$result_path" || notary_exit=$?
+    status="$(plutil -extract status raw -o - "$result_path" 2>/dev/null || true)"
+    submission_id="$(plutil -extract id raw -o - "$result_path" 2>/dev/null || true)"
+    if [[ "$status" != Accepted || "$notary_exit" -ne 0 ]]; then
+        if [[ -n "$submission_id" && "$status" == Invalid ]]; then
+            xcrun notarytool log "$submission_id" "${notary_args[@]}" "${result_path%.json}-log.json" || true
+        fi
+        printf 'Notarization did not succeed (status: %s). See %s and any matching log.\n' "${status:-unknown}" "$result_path" >&2
+        return 1
     fi
-    printf 'Notarization did not succeed (status: %s). See %s and any matching log.\n' "${status:-unknown}" "$result_path" >&2
-    exit 1
-fi
-xcrun stapler staple "$app_path"
-xcrun stapler validate "$app_path"
+    xcrun stapler staple "$target"
+    xcrun stapler validate "$target"
+}
+
+ditto -c -k --sequesterRsrc --keepParent "$app_path" "$build_root/submission.zip"
+notarize_and_staple "$build_root/submission.zip" "$app_path" "$output_dir/notary-$version.json"
 codesign --verify --deep --strict "$app_path"
 spctl --assess --type execute --verbose=2 "$app_path"
 
+# The stable DMG filename enables GitHub's latest-release direct-download URL.
+mkdir "$build_root/dmg"
+ditto "$app_path" "$build_root/dmg/Quikanva.app"
+ln -s /Applications "$build_root/dmg/Applications"
+hdiutil create -volname Quikanva -srcfolder "$build_root/dmg" \
+    -format UDZO "$build_root/Quikanva.dmg"
+codesign --sign "$identity" --timestamp "$build_root/Quikanva.dmg"
+notarize_and_staple "$build_root/Quikanva.dmg" "$build_root/Quikanva.dmg" "$output_dir/notary-$version-dmg.json"
+codesign --verify --strict -R="anchor apple generic and certificate leaf[subject.OU] = \"$team_id\"" "$build_root/Quikanva.dmg"
+spctl --assess --type open --context context:primary-signature --verbose=2 "$build_root/Quikanva.dmg"
+
 # ZIPs cannot be stapled. Repackage the stapled app, then use this final ZIP in
 # make-appcast.sh; signing the pre-stapling archive would break Sparkle updates.
-ditto -c -k --sequesterRsrc --keepParent "$app_path" "$zip_path"
-printf 'Created signed and notarized package: %s\n' "$zip_path"
+ditto -c -k --sequesterRsrc --keepParent "$app_path" "$build_root/Quikanva-$version.zip"
+mv "$build_root/Quikanva-$version.zip" "$zip_path"
+mv "$build_root/Quikanva.dmg" "$dmg_path"
+printf 'Created signed and notarized packages: %s and %s\n' "$zip_path" "$dmg_path"
