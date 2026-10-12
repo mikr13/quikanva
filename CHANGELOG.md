@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.3
+
+### Patch Changes
+
+- 03a5533: Prepare Developer ID signing and Apple notarization for direct-download releases, preserving existing in-app update signatures.
+
 ## 0.3.2
 
 ### Patch Changes
