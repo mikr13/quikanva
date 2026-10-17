@@ -51,9 +51,10 @@ jobs:
           DEVELOPER_ID_P12_PASSWORD: ${{ secrets.DEVELOPER_ID_P12_PASSWORD }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           echo "SIGNING_KEYCHAIN=$SIGNING_KEYCHAIN" >> "$GITHUB_ENV"
-          for name in DEVELOPER_ID_P12_BASE64 DEVELOPER_ID_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD; do
+          for name in DEVELOPER_ID_P12_BASE64 DEVELOPER_ID_P12_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD HOMEBREW_TAP_TOKEN; do
             if [[ -z "${!name}" ]]; then
               printf 'Required release secret is missing: %s\n' "$name" >&2
               exit 1
@@ -75,6 +76,13 @@ jobs:
           xcrun notarytool store-credentials "$NOTARY_PROFILE" \
             --keychain "$SIGNING_KEYCHAIN" --apple-id "$APPLE_ID" \
             --team-id NDLJGT2AYB --password "$APPLE_APP_SPECIFIC_PASSWORD"
+
+      - name: Check out Homebrew tap
+        uses: actions/checkout@v7
+        with:
+          repository: mikr13/homebrew-quikanva
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
 
       - name: Build and test
         run: >-
@@ -129,6 +137,22 @@ jobs:
             --verify-tag \
             --title "Quikanva $release_version" \
             --notes-file release-notes.md
+
+      - name: Update Homebrew cask
+        working-directory: homebrew-tap
+        run: |
+          release_version="$(node -p "require('../package.json').version")"
+          mkdir -p Casks
+          ../scripts/render-homebrew-cask.sh "$release_version" "../dist/Quikanva-$release_version.zip" > Casks/quikanva.rb
+          git add Casks/quikanva.rb
+          if git diff --cached --quiet; then
+            printf 'Homebrew cask already matches %s\n' "$release_version"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "quikanva $release_version"
+          git push
 
       - name: Save notarization diagnostics
         if: always()
