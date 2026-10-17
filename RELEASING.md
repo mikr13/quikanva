@@ -6,6 +6,7 @@
 2. Merges to `main` collect changes in a **chore: version packages** pull request.
 3. Review and merge that pull request to bump versions, tag the release, and run the release workflow.
 4. The workflow tests, signs, notarizes, and staples the app and DMG, then publishes the DMG, ZIP, and Sparkle appcast.
+5. The workflow then updates `Casks/quikanva.rb` in [mikr13/homebrew-quikanva](https://github.com/mikr13/homebrew-quikanva) from the published ZIP.
 
 Manual tags must match `package.json`. Missing signing credentials stop publication; contributor CI still produces ad hoc signed builds.
 
@@ -25,10 +26,13 @@ GitHub Actions requires these repository secrets:
 - `DEVELOPER_ID_P12_PASSWORD`: export password.
 - `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD`: notarization credentials.
 - `SPARKLE_ED_PRIVATE_KEY`: existing update-signing key.
+- `HOMEBREW_TAP_TOKEN`: fine-grained token with **Contents: Read and write** on `mikr13/homebrew-quikanva` only.
 
 Keep credentials out of Git and maintain a secure backup. The workflow removes its temporary signing keychain after each run.
 
 ## Updates and publication
+
+The cask sets `auto_updates true`, so `brew upgrade` leaves Sparkle in charge of installed copies. Render the cask locally with `./scripts/render-homebrew-cask.sh <version> dist/Quikanva-<version>.zip`.
 
 Keep the bundle identifier and Sparkle update key stable. `scripts/make-appcast.sh` signs the final ZIP and verifies it against the public key shipped in the app.
 

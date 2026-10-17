@@ -44,7 +44,14 @@ Quikanva requires macOS 14 Sonoma or later.
 2. Drag `Quikanva.app` to the **Applications** shortcut.
 3. Eject the Quikanva disk image and open Quikanva from Applications.
 
-After that, Quikanva updates itself. On the second launch it asks whether to check for updates automatically. You can also choose **Check for Updates…** from the menu bar. Each update is verified with a signature before it installs. Builds released before the updater have no update check, so download the latest release by hand once.
+Or install with [Homebrew](https://brew.sh):
+
+```sh
+brew trust --tap mikr13/quikanva
+brew install --cask mikr13/quikanva/quikanva
+```
+
+After that, Quikanva updates itself, including Homebrew installs. On the second launch it asks whether to check for updates automatically. You can also choose **Check for Updates…** from the menu bar. Each update is verified with a signature before it installs. Builds released before the updater have no update check, so download the latest release by hand once.
 
 Prefer to inspect and build the source yourself? See [Development](docs/DEVELOPMENT.md).
 
