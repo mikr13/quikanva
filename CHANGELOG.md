@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.5
+
+### Patch Changes
+
+- 7d5bb74: Publish a Homebrew cask to the `mikr13/quikanva` tap with each release.
+
 ## 0.3.4
 
 ### Patch Changes
