@@ -8,6 +8,8 @@
 4. The workflow tests, signs, notarizes, and staples the app and DMG, then publishes the DMG, ZIP, and Sparkle appcast.
 5. The workflow then updates `Casks/quikanva.rb` in [mikr13/homebrew-quikanva](https://github.com/mikr13/homebrew-quikanva) from the published ZIP.
 
+Version pull requests run the same required `build-and-test` check as feature pull requests. Only the changeset-presence check is skipped for `changeset-release/main`, because versioning has already consumed those files. Approve the CI environment review and wait for the build to pass before merging the version pull request.
+
 Manual tags must match `package.json`. Missing signing credentials stop publication; contributor CI still produces ad hoc signed builds.
 
 ## Signing setup
@@ -33,7 +35,7 @@ GitHub Actions requires these repository secrets:
 
 Keep credentials out of Git and maintain a secure backup. The workflow removes its temporary signing keychain after each run.
 
-After adding or rotating the iCloud profile secret, run `gh workflow run ci.yml --ref <branch> -f validate_icloud_profile=true` and approve the CI environment review. This preflight decodes the stored secret and validates its Developer ID profile type, expiry, App ID, team, and Production CloudKit/push capabilities without printing the profile or publishing artifacts.
+After adding or rotating the iCloud profile secret, run `gh workflow run icloud-profile.yml --ref <branch>` and approve the CI environment review. This preflight decodes the stored secret and validates its Developer ID profile type, expiry, App ID, team, and Production CloudKit/push capabilities without printing the profile or publishing artifacts.
 
 Initialize the development CloudKit schema and deploy it to Production in CloudKit Console before publishing the first sync-enabled release. Production schemas are additive: keep existing entity/attribute names and types stable. Follow [iCloud testing and activation](docs/ICLOUD_SYNC.md); enabling an entitlement alone does not provision the container or prove live sync.
 
