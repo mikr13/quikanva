@@ -33,6 +33,14 @@ build_root="$(mktemp -d "${TMPDIR:-/tmp}/quikanva-signed.XXXXXX")"
 trap 'rm -rf "$build_root"' EXIT
 mkdir -p "$output_dir"
 
+if [[ -z "${ICLOUD_PROVISIONING_PROFILE:-}" || ! -f "$ICLOUD_PROVISIONING_PROFILE" ]]; then
+    printf 'Set ICLOUD_PROVISIONING_PROFILE to an installed Developer ID profile with CloudKit and push support.\n' >&2
+    exit 1
+fi
+security cms -D -i "$ICLOUD_PROVISIONING_PROFILE" > "$build_root/profile.plist"
+profile_uuid="$(python3 "$repo_root/scripts/validate-icloud-profile.py" \
+    "$build_root/profile.plist" "$repo_root/config/CloudKit-Release.entitlements")"
+
 cat > "$build_root/ExportOptions.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -42,6 +50,10 @@ cat > "$build_root/ExportOptions.plist" <<PLIST
     <key>teamID</key><string>$team_id</string>
     <key>signingStyle</key><string>manual</string>
     <key>signingCertificate</key><string>$identity</string>
+    <key>iCloudContainerEnvironment</key><string>Production</string>
+    <key>provisioningProfiles</key><dict>
+        <key>com.mihirpandey.quikanva</key><string>$profile_uuid</string>
+    </dict>
 </dict></plist>
 PLIST
 
@@ -50,12 +62,34 @@ xcodebuild -project "$repo_root/Quikanva.xcodeproj" -scheme Quikanva \
     -derivedDataPath "$build_root/DerivedData" -archivePath "$build_root/Quikanva.xcarchive" \
     archive DEVELOPMENT_TEAM="$team_id" CODE_SIGN_STYLE=Manual \
     CODE_SIGN_IDENTITY="$identity" ENABLE_HARDENED_RUNTIME=YES \
+    QUIKANVA_ICLOUD_ENTITLEMENTS="$repo_root/config/CloudKit-Release.entitlements" \
+    QUIKANVA_ICLOUD_PROFILE="$profile_uuid" \
     OTHER_CODE_SIGN_FLAGS=--timestamp ONLY_ACTIVE_ARCH=NO
 xcodebuild -exportArchive -archivePath "$build_root/Quikanva.xcarchive" \
     -exportPath "$build_root/export" -exportOptionsPlist "$build_root/ExportOptions.plist"
 
 app_path="$build_root/export/Quikanva.app"
 codesign --verify --deep --strict "$app_path"
+if [[ ! -f "$app_path/Contents/embedded.provisionprofile" ]]; then
+    printf 'Exported iCloud app is missing its provisioning profile.\n' >&2
+    exit 1
+fi
+security cms -D -i "$app_path/Contents/embedded.provisionprofile" > "$build_root/exported-profile.plist"
+exported_profile_uuid="$(python3 "$repo_root/scripts/validate-icloud-profile.py" \
+    "$build_root/exported-profile.plist" "$repo_root/config/CloudKit-Release.entitlements")"
+if [[ "$exported_profile_uuid" != "$profile_uuid" ]]; then
+    printf 'Exported app contains a different provisioning profile.\n' >&2
+    exit 1
+fi
+codesign -d --entitlements :- "$app_path" > "$build_root/exported-entitlements.plist" 2>/dev/null
+python3 - "$build_root/exported-entitlements.plist" "$repo_root/config/CloudKit-Release.entitlements" <<'PY'
+import plistlib, sys
+with open(sys.argv[1], 'rb') as source: actual = plistlib.load(source)
+with open(sys.argv[2], 'rb') as source: required = plistlib.load(source)
+for key, value in required.items():
+    if actual.get(key) != value:
+        sys.exit(f'Exported app has an unexpected iCloud entitlement: {key}')
+PY
 signature="$(codesign -dv --verbose=4 "$app_path" 2>&1)"
 if ! printf '%s\n' "$signature" | grep -Fx "TeamIdentifier=$team_id" >/dev/null || \
    ! printf '%s\n' "$signature" | grep -F 'Authority=Developer ID Application:' >/dev/null || \

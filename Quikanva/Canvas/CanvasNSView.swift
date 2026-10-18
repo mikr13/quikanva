@@ -207,6 +207,17 @@ final class CanvasNSView: NSView {
 
     var textEditorView: NSTextView? { textEditor }
 
+    /// Remote replacements start a new undo history and never interrupt an active edit.
+    func reloadScene(_ updated: CanvasScene) -> Bool {
+        guard case .none = drag, textSession == nil, cameraAnimation == nil else { return false }
+        scene = updated
+        selectedIDs.removeAll()
+        isEditingPoints = false
+        canvasUndoManager.removeAllActions()
+        notifySelectionChange()
+        return true
+    }
+
     private func redraw() {
         needsDisplay = true
         committedSceneView.needsDisplay = true

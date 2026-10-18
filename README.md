@@ -25,7 +25,7 @@ Quikanva is a free, open-source visual scratchpad for Mac. Press <kbd>⌘</kbd><
 - **Instant:** open a new canvas from a global shortcut, the menu bar, Raycast, or a `quikanva://` URL.
 - **Capable:** draw, select, resize, rotate, curve, style, layer, align, and export real diagrams.
 - **Native:** built with SwiftUI and AppKit, with Mac menus, shortcuts, windows, accessibility, dark mode, and reduced-motion support.
-- **Local-first:** sketches autosave on your Mac. Quikanva has no account, analytics, or ads, and its only network use is an update check you control.
+- **Local-first:** sketches autosave on your Mac. Optional iCloud sync keeps them available across your Macs while retaining local copies. Quikanva has no account, analytics, or ads.
 - **Focused:** floating canvases and a visual gallery, without the machinery of a collaborative whiteboard.
 
 ## See it in action
@@ -63,7 +63,7 @@ Prefer to inspect and build the source yourself? See [Development](docs/DEVELOPM
 4. Use the share button to copy the sketch or export PNG/JPEG.
 5. Open the Gallery from the menu bar or press <kbd>⌘</kbd><kbd>G</kbd> while Quikanva is active.
 
-Sketches autosave locally as you work. Read the [User Guide](docs/USER_GUIDE.md) for selection, styling, gallery management, always-on-top canvases, automation, and export.
+Sketches autosave locally as you work. In a build signed with CloudKit support, enable **Settings → iCloud → Sync sketches with iCloud** on each Mac using the same Apple Account. Concurrent edits replace the whole canvas with the latest save; elements are not merged. Read the [User Guide](docs/USER_GUIDE.md) for selection, styling, gallery management, always-on-top canvases, automation, and export.
 
 ## Tools
 
@@ -155,7 +155,7 @@ Tool shortcuts can be reassigned in **Settings → Canvas**. See the complete [S
 
 ## Privacy
 
-Quikanva does not create an account, send analytics, or upload sketches. Its only network request is the update check against GitHub releases, which you can turn off. App data is stored under `~/Library/Application Support/Quikanva/`. Read the short [Privacy Note](docs/PRIVACY.md) for the exact boundary.
+Quikanva does not create an account or send analytics. Sketches stay on your Mac by default. Enabling iCloud sync uploads sketches, images, thumbnails, and deletion markers to your private CloudKit database. Signing out or turning sync off keeps the local library. Update checks use GitHub releases and can be disabled. App data is stored under `~/Library/Application Support/Quikanva/`. Read the short [Privacy Note](docs/PRIVACY.md) for the exact boundary.
 
 ## Automation
 
@@ -187,7 +187,6 @@ Everything under [Features](#features) is available today. Here is what comes ne
 
 - [ ] PDF and SVG export
 - [ ] Import of Excalidraw files
-- [ ] iCloud sync across your Macs
 - [ ] Performance audit in Instruments: no dropped frames while drawing, panning, and zooming 500+ sketch-style elements
 - [ ] Full manual QA pass: every tool, resize and rotate, multi-select, the undo chain, closing without saving, reopening, exports, hotkey, Raycast, and URL launch, dark mode, Reduced Motion, and VoiceOver
 
@@ -213,7 +212,7 @@ Check the [Roadmap](#roadmap) before proposing a feature. Focused contributions 
 
 - Swift 6, SwiftUI, AppKit, Core Graphics, and SwiftData
 - A custom vector engine on an AppKit canvas view, used instead of PencilKit because PencilKit's editable canvas is limited to UIKit and Mac Catalyst apps
-- Local sketch storage as scene JSON with PNG thumbnails in SwiftData
+- Local sketch storage as scene JSON, separate immutable image assets, and PNG thumbnails in SwiftData; an optional separate SwiftData store mirrors to CloudKit
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) by Sindre Sorhus
 - [Sparkle](https://sparkle-project.org) for signed in-app updates
 - XcodeGen for reproducible project generation

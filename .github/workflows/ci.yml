@@ -50,6 +50,9 @@ jobs:
           -scheme Quikanva
           -destination 'platform=macOS'
 
+      - name: Validate iCloud packaging checks
+        run: python3 -m unittest discover -s scripts/tests -p 'test_icloud_profile.py'
+
       - name: Package unsigned app
         run: ./scripts/package-unsigned.sh
 

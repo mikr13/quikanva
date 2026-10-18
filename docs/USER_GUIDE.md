@@ -22,6 +22,14 @@ Changes autosave. Press **⌘S** to name a sketch. In the Gallery, double-click 
 
 The share menu copies an image or exports PNG/JPEG at 2× scale, cropped to content. Omit the background for transparent PNGs.
 
+## Sync across Macs
+
+1. Sign in to the same Apple Account in System Settings on each Mac.
+2. Open Quikanva's **Settings → iCloud** and enable **Sync sketches with iCloud** on each Mac.
+3. Create a test sketch with an image, then check that it appears in the other Mac's Gallery. Transfers run in the background and may take time.
+
+Sync requires a Quikanva build signed with iCloud support. Concurrent edits use the latest whole-canvas save; individual elements are not merged. Turning sync off or signing out keeps your local sketches. After switching accounts, enable sync again only when you want to upload the local library to that account.
+
 ## Settings and updates
 
 **Canvas** sets aspect ratio, styles, and tool keys. **General** controls launch at login, canvas limits, naming dates, global shortcuts, always-on-top windows, and updates.

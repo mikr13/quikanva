@@ -51,6 +51,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         CanvasWindowManager.shared.saveOpenCanvases()
     }
 
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        CanvasWindowManager.shared.saveOpenCanvases() ? .terminateNow : .terminateCancel
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             CanvasWindowManager.shared.route(url)
