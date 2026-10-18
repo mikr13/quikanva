@@ -3,12 +3,18 @@ import SwiftData
 import AppKit
 
 @MainActor
-private final class CanvasAutosaveCoordinator: ObservableObject {
-    private let save: (CanvasScene) -> Void
+final class CanvasAutosaveCoordinator: ObservableObject {
+    private let save: (CanvasScene) throws -> String
     private var pendingScene: CanvasScene?
     private var task: Task<Void, Never>?
+    private(set) var savedRevision: String?
+    @Published var errorMessage: String?
+    var hasPendingChanges: Bool { pendingScene != nil }
+    func shouldReload(revision: String) -> Bool {
+        !hasPendingChanges && revision != savedRevision
+    }
 
-    init(save: @escaping (CanvasScene) -> Void) {
+    init(save: @escaping (CanvasScene) throws -> String) {
         self.save = save
     }
 
@@ -30,8 +36,13 @@ private final class CanvasAutosaveCoordinator: ObservableObject {
         task?.cancel()
         task = nil
         guard let pendingScene else { return }
-        self.pendingScene = nil
-        save(pendingScene)
+        do {
+            savedRevision = try save(pendingScene)
+            self.pendingScene = nil
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     deinit {
@@ -44,8 +55,10 @@ struct CanvasPanelView: View {
     let context: ModelContext
     let onClose: () -> Void
     let onTitleChange: () -> Void
+    let onAutosaveReady: (@escaping () -> Bool) -> Void
 
     @State private var scene: CanvasScene
+    @State private var reloadToken = UUID()
     @State private var tool: ToolKind = .freedraw
     @State private var style = ElementStyle()
     @State private var showNamePrompt = false
@@ -66,16 +79,19 @@ struct CanvasPanelView: View {
         doc: CanvasDocument,
         context: ModelContext,
         onClose: @escaping () -> Void = {},
-        onTitleChange: @escaping () -> Void = {}
-    ) {
+        onTitleChange: @escaping () -> Void = {},
+        onAutosaveReady: @escaping (@escaping () -> Bool) -> Void = { _ in }
+    ) throws {
         self.doc = doc
         self.context = context
         self.onClose = onClose
         self.onTitleChange = onTitleChange
-        _scene = State(initialValue: SceneCodec.decode(doc.sceneData))
+        self.onAutosaveReady = onAutosaveReady
+        _scene = State(initialValue: try CanvasStorage.load(doc, in: context))
         _style = State(initialValue: CanvasPreferences.defaultStyle)
         _autosave = StateObject(wrappedValue: CanvasAutosaveCoordinator { scene in
-            Self.persist(scene, doc: doc, context: context)
+            try Self.persist(scene, doc: doc, context: context)
+            return doc.revision
         })
     }
 
@@ -83,6 +99,7 @@ struct CanvasPanelView: View {
         ZStack(alignment: .bottom) {
             CanvasRepresentable(
                 scene: scene,
+                reloadToken: reloadToken,
                 tool: tool,
                 style: style,
                 toolShortcuts: toolShortcuts,
@@ -176,12 +193,34 @@ struct CanvasPanelView: View {
                                   to: CanvasPreferences.decodedStyle(updated))
         }
         .onDisappear { autosave.flush() }
+        .onAppear { onAutosaveReady { autosave.flush(); return !autosave.hasPendingChanges } }
+        .onChange(of: doc.sceneData) { _, _ in
+            guard !doc.isTombstone, autosave.shouldReload(revision: doc.revision),
+                  let remote = try? CanvasStorage.load(doc, in: context) else { return }
+            scene = remote
+            reloadToken = UUID()
+        }
+        .onChange(of: doc.title) { _, _ in onTitleChange() }
+        .onChange(of: doc.isTombstone) { _, deleted in
+            if deleted { onClose() }
+        }
+        .alert("Could Not Save Sketch", isPresented: Binding(
+            get: { autosave.errorMessage != nil },
+            set: { if !$0 { autosave.errorMessage = nil } }
+        )) {
+            Button("Retry") { autosave.flush() }
+            Button("OK", role: .cancel) { autosave.errorMessage = nil }
+        } message: {
+            Text(autosave.errorMessage ?? "")
+        }
         .alert("Save Sketch", isPresented: $showNamePrompt) {
             TextField("Name", text: $draftName)
             Button("Cancel", role: .cancel) {}
             Button("Save") {
                 let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
-                persist(scene, title: name.isEmpty ? nil : name)
+                autosave.flush()
+                do { try Self.persist(scene, title: name.isEmpty ? nil : name, doc: doc, context: context, onTitleChange: onTitleChange) }
+                catch { autosave.errorMessage = error.localizedDescription }
             }
             .keyboardShortcut(.defaultAction)
         } message: {
@@ -205,6 +244,7 @@ struct CanvasPanelView: View {
             // Commit inline text editing before the flush.
             NSApp.keyWindow?.makeFirstResponder(nil)
             autosave.flush()
+            guard !autosave.hasPendingChanges else { return }
             onClose()
         } label: {
             Label("Close canvas", systemImage: "xmark")
@@ -227,22 +267,23 @@ struct CanvasPanelView: View {
         .accessibilityLabel("Close canvas")
     }
 
-    private func persist(_ scene: CanvasScene, title: String? = nil) {
-        Self.persist(scene, title: title, doc: doc, context: context, onTitleChange: onTitleChange)
-    }
-
     static func persist(_ scene: CanvasScene,
                         title: String? = nil,
                         doc: CanvasDocument,
                         context: ModelContext,
-                        onTitleChange: () -> Void = {}) {
-        let encoded = SceneCodec.encode(scene)
+                        onTitleChange: () -> Void = {}) throws {
+        guard !doc.isTombstone else { return }
+        let encoded = try CanvasStorage.encode(scene, in: context)
         let sceneChanged = encoded != doc.sceneData
         let titleChanged = title.map { $0 != doc.title } ?? false
-        guard sceneChanged || titleChanged else { return }
+        guard sceneChanged || titleChanged else {
+            if context.hasChanges { try context.save() }
+            return
+        }
 
-        let stored = SceneCodec.decode(doc.sceneData)
-        let contentChanged = stored.elements != scene.elements || stored.background != scene.background
+        let stored = try JSONDecoder().decode(CanvasScene.self, from: doc.sceneData)
+        let updated = try JSONDecoder().decode(CanvasScene.self, from: encoded)
+        let contentChanged = stored.elements != updated.elements || stored.background != updated.background
         if sceneChanged {
             doc.sceneData = encoded
         }
@@ -253,9 +294,8 @@ struct CanvasPanelView: View {
             doc.title = title
             onTitleChange()
         }
-        if contentChanged || titleChanged {
-            doc.updatedAt = .now
-        }
-        try? context.save()
+        doc.markChanged()
+        do { try context.save() }
+        catch { context.rollback(); throw error }
     }
 }

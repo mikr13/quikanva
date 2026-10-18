@@ -4,7 +4,7 @@ import AppKit
 
 struct GalleryView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \CanvasDocument.updatedAt, order: .reverse) private var docs: [CanvasDocument]
+    @Query(filter: #Predicate<CanvasDocument> { !$0.isTombstone }, sort: \CanvasDocument.updatedAt, order: .reverse) private var docs: [CanvasDocument]
 
     @State private var renaming: CanvasDocument?
     @State private var renameText = ""
@@ -12,6 +12,7 @@ struct GalleryView: View {
     @State private var selectedIDs = Set<UUID>()
     @State private var isSelecting = false
     @State private var includeExportBackground = true
+    @State private var exportError: String?
 
     var body: some View {
         ScrollView {
@@ -56,26 +57,21 @@ struct GalleryView: View {
                                     CanvasExportMenuItems(
                                         includeBackground: $includeExportBackground,
                                         onCopyImage: {
-                                            Exporter.copyToClipboard(
-                                                SceneCodec.decode(doc.sceneData),
-                                                background: includeExportBackground
-                                            )
+                                            exportScene(doc) { scene in
+                                                Exporter.copyToClipboard(scene, background: includeExportBackground)
+                                            }
                                         },
                                         onExportPNG: {
-                                            Exporter.exportWithPanel(
-                                                SceneCodec.decode(doc.sceneData),
-                                                format: .png,
-                                                suggestedName: doc.title,
-                                                background: includeExportBackground
-                                            )
+                                            exportScene(doc) { scene in
+                                                Exporter.exportWithPanel(scene, format: .png, suggestedName: doc.title,
+                                                                         background: includeExportBackground)
+                                            }
                                         },
                                         onExportJPEG: {
-                                            Exporter.exportWithPanel(
-                                                SceneCodec.decode(doc.sceneData),
-                                                format: .jpeg,
-                                                suggestedName: doc.title,
-                                                background: includeExportBackground
-                                            )
+                                            exportScene(doc) { scene in
+                                                Exporter.exportWithPanel(scene, format: .jpeg, suggestedName: doc.title,
+                                                                         background: includeExportBackground)
+                                            }
                                         }
                                     )
                                 }
@@ -135,7 +131,7 @@ struct GalleryView: View {
             Button("Save") {
                 if let doc = renaming {
                     doc.title = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    doc.updatedAt = .now
+                    doc.markChanged()
                     try? context.save()
                 }
                 renaming = nil
@@ -155,6 +151,14 @@ struct GalleryView: View {
             Button("Cancel", role: .cancel) { pendingDeletion.removeAll() }
         } message: {
             Text(deletionMessage)
+        }
+        .alert("Could Not Export Sketch", isPresented: Binding(
+            get: { exportError != nil },
+            set: { if !$0 { exportError = nil } }
+        )) {
+            Button("OK", role: .cancel) { exportError = nil }
+        } message: {
+            Text(exportError ?? "")
         }
     }
 
@@ -187,6 +191,11 @@ struct GalleryView: View {
 
     private func open(_ doc: CanvasDocument) {
         CanvasWindowManager.shared.open(doc.id)
+    }
+
+    private func exportScene(_ doc: CanvasDocument, perform: (CanvasScene) -> Void) {
+        do { perform(try CanvasStorage.load(doc, in: context)) }
+        catch { exportError = error.localizedDescription }
     }
 
     private var deletionTitle: String {
@@ -232,7 +241,7 @@ struct GalleryView: View {
     private func deleteDocuments(with ids: Set<UUID>) {
         for doc in docs where ids.contains(doc.id) {
             CanvasWindowManager.shared.close(doc.id)
-            context.delete(doc)
+            doc.markDeleted()
         }
         try? context.save()
         pendingDeletion.removeAll()

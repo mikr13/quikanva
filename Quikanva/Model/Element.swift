@@ -344,6 +344,8 @@ struct Element: Codable, Identifiable, Hashable {
     /// nil for text saved before wrapping existed; it keeps its single-line layout.
     var textBox: TextBox?
     var imageData: Data?
+    /// Stored scenes reference an immutable asset; clipboard/export scenes carry bytes.
+    var imageAssetHash: String?
     var imageShadow: Bool?
     var seed: UInt64 = UInt64.random(in: 1 ... .max)
     var zIndex: Int = 0

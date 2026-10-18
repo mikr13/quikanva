@@ -48,6 +48,10 @@ struct SettingsView: View {
             }
             .tag(SettingsTab.canvas)
             .accessibilityLabel("Canvas settings")
+
+            ICloudSettingsView()
+                .tabItem { Label("iCloud", systemImage: "icloud") }
+                .tag(SettingsTab.icloud)
         }
         .frame(width: 620, height: 500)
         .onChange(of: defaultStyleData) { _, updated in
@@ -70,6 +74,43 @@ struct SettingsView: View {
 private enum SettingsTab: Hashable {
     case general
     case canvas
+    case icloud
+}
+
+private struct ICloudSettingsView: View {
+    @ObservedObject private var sync = ICloudSyncController.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Sync sketches with iCloud", isOn: Binding(
+                    get: { sync.isEnabled },
+                    set: { sync.setEnabled($0) }
+                ))
+                .disabled(!sync.isEnabled && (!sync.canEnable || sync.isChecking))
+                Text(sync.statusMessage)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                Button("Check iCloud") {
+                    Task { await sync.refreshAvailability(); sync.requestSync() }
+                }
+                .disabled(sync.isChecking)
+            } header: {
+                Text("Sketches across your Macs")
+            } footer: {
+                Text("Turning this on uploads your sketches and images to your private iCloud database. Local copies remain on this Mac when sync is off or you sign out. Enable it on each Mac using the same Apple Account.")
+            }
+            Section {
+                Text("If two Macs edit the same sketch, the most recently saved whole canvas wins. Elements are not merged. Wait for changes to arrive before editing on another Mac.")
+                Text("Deleting a sketch also deletes it on your other Macs when sync is enabled. Turning sync off keeps existing iCloud copies.")
+            } header: {
+                Text("Editing and deletion")
+            }
+        }
+        .formStyle(.grouped)
+        .settingsContentInsets()
+        .task { await sync.refreshAvailability() }
+    }
 }
 
 private struct GeneralSettingsView: View {

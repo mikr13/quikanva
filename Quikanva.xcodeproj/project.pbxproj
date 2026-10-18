@@ -7,11 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03C22C6667E9D1FA8F64B35D /* CanvasStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0296766E2A935192278478E9 /* CanvasStorage.swift */; };
 		11A25FEDB289AC16D568D054 /* CanvasNSView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53E421D1A989290401E9D263 /* CanvasNSView.swift */; };
 		12535141ABF0B8B6D3966ECC /* Element.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46D94AE76AAE6762AE832420 /* Element.swift */; };
 		155B606ED1831B760CF55BE1 /* CanvasToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */; };
 		1B83AC1BB3D3CE467DE09FD8 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B466F862487CD5729EE0117A /* GalleryView.swift */; };
+		207237BF026EE09C5E45ED33 /* CanvasMirror.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E577F68BCC4A1E9C040ABFF /* CanvasMirror.swift */; };
 		2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D9287128C437921E883590D /* CanvasPreferences.swift */; };
+		391938A12B2E6F364441BAB2 /* LegacyStore in Resources */ = {isa = PBXBuildFile; fileRef = 290FD23E1057A1796F4987A7 /* LegacyStore */; };
 		3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED410A05B90D3939CA637312 /* AppDelegate.swift */; };
 		3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */; };
 		46CD6455384F7209FEBD229D /* SingleInstanceLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */; };
@@ -29,6 +32,8 @@
 		98506D8AA56171771E1F5E90 /* TextLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7232027029F98DBA832E38B /* TextLayout.swift */; };
 		9C62BDE5712DEA0DA0033891 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8515A7ACEC34D555B4CCC251 /* Renderer.swift */; };
 		9DEB8A68CAB351B464044943 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5981E4D7ED53A0867210313 /* SettingsView.swift */; };
+		AD6F676605ED14727A5B5D18 /* ICloudSyncController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3F05223B47962323DBA8CB /* ICloudSyncController.swift */; };
+		AE8C92033D4F9EE05D0AFEE8 /* ICloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6042A5D029F11347E1EB2A7E /* ICloudSyncTests.swift */; };
 		B1A5794342D0CE89D43EB126 /* CanvasTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 604B8F2AA487892ED5690917 /* CanvasTextEditor.swift */; };
 		D2C74B9FDEA838104F83CE6C /* CanvasWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */; };
 		DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */; };
@@ -50,16 +55,20 @@
 
 /* Begin PBXFileReference section */
 		013CBB88E892090BDD3BDED6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		0296766E2A935192278478E9 /* CanvasStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasStorage.swift; sourceTree = "<group>"; };
 		065E6DB5CBA6EE8A471D8B43 /* QuikanvaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuikanvaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0779665CF23465F0B5C464A8 /* CanvasPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasPanelView.swift; sourceTree = "<group>"; };
 		0EA8DE3641FB9F445B5A40F1 /* CanvasRepresentable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasRepresentable.swift; sourceTree = "<group>"; };
 		0F05362DA3F8BA29A43B45A5 /* ColorBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorBridging.swift; sourceTree = "<group>"; };
 		11E3E79D3A0277E29CA04D5C /* QuikanvaMenuBar.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = QuikanvaMenuBar.xcassets; sourceTree = "<group>"; };
+		290FD23E1057A1796F4987A7 /* LegacyStore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LegacyStore; path = QuikanvaTests/Fixtures/LegacyStore; sourceTree = SOURCE_ROOT; };
+		3E577F68BCC4A1E9C040ABFF /* CanvasMirror.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasMirror.swift; sourceTree = "<group>"; };
 		3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkeys.swift; sourceTree = "<group>"; };
 		46D94AE76AAE6762AE832420 /* Element.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Element.swift; sourceTree = "<group>"; };
 		48A2EDF97752B1003D1C7EB1 /* UpdateConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateConfigurationTests.swift; sourceTree = "<group>"; };
 		53E421D1A989290401E9D263 /* CanvasNSView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasNSView.swift; sourceTree = "<group>"; };
 		5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuikanvaApp.swift; sourceTree = "<group>"; };
+		6042A5D029F11347E1EB2A7E /* ICloudSyncTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSyncTests.swift; sourceTree = "<group>"; };
 		604B8F2AA487892ED5690917 /* CanvasTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasTextEditor.swift; sourceTree = "<group>"; };
 		61B7ACF22D1AFDB2FF74BE86 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginController.swift; sourceTree = "<group>"; };
 		63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasWindowManager.swift; sourceTree = "<group>"; };
@@ -70,6 +79,7 @@
 		A6B46C1CA6A09856107E4858 /* Quikanva.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Quikanva.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A793C28CD455347F171ACCDF /* Thumbnailer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Thumbnailer.swift; sourceTree = "<group>"; };
 		AA36AFEC7A18171E9A8EFAA5 /* Exporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exporter.swift; sourceTree = "<group>"; };
+		AD3F05223B47962323DBA8CB /* ICloudSyncController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICloudSyncController.swift; sourceTree = "<group>"; };
 		B0A9C6C3FC68EFCD8A1A2CF1 /* CanvasToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasToolbar.swift; sourceTree = "<group>"; };
 		B13348EA603D0D317F86C54A /* CanvasScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CanvasScene.swift; sourceTree = "<group>"; };
 		B466F862487CD5729EE0117A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
@@ -106,7 +116,9 @@
 			isa = PBXGroup;
 			children = (
 				A1D002A45ABFB9D5E49AC708 /* CanvasDocument.swift */,
+				3E577F68BCC4A1E9C040ABFF /* CanvasMirror.swift */,
 				B13348EA603D0D317F86C54A /* CanvasScene.swift */,
+				0296766E2A935192278478E9 /* CanvasStorage.swift */,
 				46D94AE76AAE6762AE832420 /* Element.swift */,
 			);
 			path = Model;
@@ -158,6 +170,14 @@
 			path = Quikanva;
 			sourceTree = "<group>";
 		};
+		40AE9D12AC06DA2D5624B6E2 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				290FD23E1057A1796F4987A7 /* LegacyStore */,
+			);
+			path = Fixtures;
+			sourceTree = "<group>";
+		};
 		4ABFBDF174CACE23AF135C22 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -181,7 +201,9 @@
 		6B589BAAAC7E37CAFA36CE67 /* QuikanvaTests */ = {
 			isa = PBXGroup;
 			children = (
+				40AE9D12AC06DA2D5624B6E2 /* Fixtures */,
 				D6EB1629D6FD63AD795A9CD9 /* CanvasTests.swift */,
+				6042A5D029F11347E1EB2A7E /* ICloudSyncTests.swift */,
 				D1295570F68FD6520AB874BD /* SingleInstanceLaunchTests.swift */,
 				48A2EDF97752B1003D1C7EB1 /* UpdateConfigurationTests.swift */,
 			);
@@ -195,6 +217,7 @@
 				6D9287128C437921E883590D /* CanvasPreferences.swift */,
 				63B0BB523C1FB0CDD22D6F9F /* CanvasWindowManager.swift */,
 				3F11046FF921D12B9D0198B3 /* GlobalHotkeys.swift */,
+				AD3F05223B47962323DBA8CB /* ICloudSyncController.swift */,
 				61B7ACF22D1AFDB2FF74BE86 /* LaunchAtLoginController.swift */,
 				5A48CEB96879C4DD235A93BC /* QuikanvaApp.swift */,
 				7D6C2229D0B01361B9F13155 /* UpdateController.swift */,
@@ -218,6 +241,7 @@
 			buildConfigurationList = 597BB90B60399C20156FE51F /* Build configuration list for PBXNativeTarget "QuikanvaTests" */;
 			buildPhases = (
 				C95AA39C517D8D199740D190 /* Sources */,
+				753DFD38620E2C3410DE28F2 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -294,6 +318,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		753DFD38620E2C3410DE28F2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				391938A12B2E6F364441BAB2 /* LegacyStore in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C8A5775BBAE1565577B315AB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -312,11 +344,13 @@
 			files = (
 				3C39AB13EA6F367A51B57DBD /* AppDelegate.swift in Sources */,
 				6DEEA7908AD87AD95B0E9733 /* CanvasDocument.swift in Sources */,
+				207237BF026EE09C5E45ED33 /* CanvasMirror.swift in Sources */,
 				11A25FEDB289AC16D568D054 /* CanvasNSView.swift in Sources */,
 				3F2586D205EBE619A9F95917 /* CanvasPanelView.swift in Sources */,
 				2B6D1B9B6CA13D36E50DB33D /* CanvasPreferences.swift in Sources */,
 				508917C2A089BEC6685D4E43 /* CanvasRepresentable.swift in Sources */,
 				4D8CCA780EB974F20A4D8BF7 /* CanvasScene.swift in Sources */,
+				03C22C6667E9D1FA8F64B35D /* CanvasStorage.swift in Sources */,
 				B1A5794342D0CE89D43EB126 /* CanvasTextEditor.swift in Sources */,
 				155B606ED1831B760CF55BE1 /* CanvasToolbar.swift in Sources */,
 				D2C74B9FDEA838104F83CE6C /* CanvasWindowManager.swift in Sources */,
@@ -325,6 +359,7 @@
 				652992688D460C1E221E89E6 /* Exporter.swift in Sources */,
 				1B83AC1BB3D3CE467DE09FD8 /* GalleryView.swift in Sources */,
 				DD8BA5447B86DE07907E900A /* GlobalHotkeys.swift in Sources */,
+				AD6F676605ED14727A5B5D18 /* ICloudSyncController.swift in Sources */,
 				557D4DCE27B0ECC8DB323536 /* LaunchAtLoginController.swift in Sources */,
 				EEB9C094384CAC05BAD56EA4 /* QuikanvaApp.swift in Sources */,
 				9C62BDE5712DEA0DA0033891 /* Renderer.swift in Sources */,
@@ -340,6 +375,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				64E95A04E95E1E0436172A72 /* CanvasTests.swift in Sources */,
+				AE8C92033D4F9EE05D0AFEE8 /* ICloudSyncTests.swift in Sources */,
 				46CD6455384F7209FEBD229D /* SingleInstanceLaunchTests.swift in Sources */,
 				77933E1878CA5733BD806216 /* UpdateConfigurationTests.swift in Sources */,
 			);
@@ -440,6 +476,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Quikanva;
+				CODE_SIGN_ENTITLEMENTS = "$(QUIKANVA_ICLOUD_ENTITLEMENTS)";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -449,6 +486,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva;
 				PRODUCT_NAME = Quikanva;
+				PROVISIONING_PROFILE_SPECIFIER = "$(QUIKANVA_ICLOUD_PROFILE)";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -457,6 +495,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Quikanva;
+				CODE_SIGN_ENTITLEMENTS = "$(QUIKANVA_ICLOUD_ENTITLEMENTS)";
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Quikanva/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -466,6 +505,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mihirpandey.quikanva;
 				PRODUCT_NAME = Quikanva;
+				PROVISIONING_PROFILE_SPECIFIER = "$(QUIKANVA_ICLOUD_PROFILE)";
 				SDKROOT = macosx;
 			};
 			name = Release;

@@ -12,9 +12,30 @@ struct QuikanvaApp: App {
     init() {
         do {
             let base = URL.applicationSupportDirectory.appending(path: "Quikanva", directoryHint: .isDirectory)
-            try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
-            let config = ModelConfiguration(url: base.appending(path: "Quikanva.store"))
-            container = try ModelContainer(for: CanvasDocument.self, configurations: config)
+            let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            let currentProcess = SingleInstanceLaunch.RunningProcess(
+                processIdentifier: ProcessInfo.processInfo.processIdentifier,
+                bundleIdentifier: Bundle.main.bundleIdentifier,
+                launchDate: NSRunningApplication.current.launchDate
+            )
+            let processes = NSWorkspace.shared.runningApplications.map {
+                SingleInstanceLaunch.RunningProcess(processIdentifier: $0.processIdentifier,
+                                                   bundleIdentifier: $0.bundleIdentifier, launchDate: $0.launchDate)
+            }
+            let isDuplicate: Bool
+            if case .activateAndTerminate = SingleInstanceLaunch.action(currentProcess: currentProcess, runningProcesses: processes) {
+                isDuplicate = true
+            } else { isDuplicate = false }
+            if isRunningTests || isDuplicate {
+                container = try CanvasStorage.container()
+            } else {
+                try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+                let storeURL = base.appending(path: "Quikanva.store")
+                try CanvasStorage.backUpBeforeMigration(at: storeURL)
+                container = try CanvasStorage.container(at: storeURL)
+                try CanvasStorage.migrateEmbeddedImages(in: container.mainContext)
+                ICloudSyncController.shared.configure(local: container, baseURL: base)
+            }
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

@@ -39,5 +39,9 @@
 	<string>https://github.com/mikr13/quikanva/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>vqBiOSGNQ3iJHgkyKhVz8HtwlQ2Cfzpzncppyn50iv4=</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

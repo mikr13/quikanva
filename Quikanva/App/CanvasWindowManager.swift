@@ -4,6 +4,7 @@ import SwiftData
 
 final class FloatingCanvasWindow: NSWindow {
     var onClose: (() -> Void)?
+    var flushPendingChanges: (() -> Bool)?
 
     var activeUndoManager: UndoManager? {
         firstResponder?.undoManager ?? contentView?.canvasView?.undoManager
@@ -18,6 +19,7 @@ final class FloatingCanvasWindow: NSWindow {
 
     override func close() {
         makeFirstResponder(nil)
+        guard flushPendingChanges?() ?? true else { return }
         onClose?()
         onClose = nil
         super.close()
@@ -76,7 +78,7 @@ final class CanvasWindowManager {
             return
         }
         guard let context else { return }
-        let descriptor = FetchDescriptor<CanvasDocument>(predicate: #Predicate { $0.id == id })
+        let descriptor = FetchDescriptor<CanvasDocument>(predicate: #Predicate { $0.id == id && !$0.isTombstone })
         if let doc = try? context.fetch(descriptor).first {
             present(doc)
         }
@@ -96,15 +98,14 @@ final class CanvasWindowManager {
         undoManager.redo()
     }
 
-    func saveOpenCanvases() {
-        guard let context else { return }
-        for (id, window) in windows {
+    @discardableResult
+    func saveOpenCanvases() -> Bool {
+        var succeeded = true
+        for window in windows.values {
             window.makeFirstResponder(nil)
-            let descriptor = FetchDescriptor<CanvasDocument>(predicate: #Predicate { $0.id == id })
-            guard let scene = window.contentView?.canvasView?.scene,
-                  let doc = try? context.fetch(descriptor).first else { continue }
-            CanvasPanelView.persist(scene, doc: doc, context: context)
+            if window.flushPendingChanges?() == false { succeeded = false }
         }
+        return succeeded
     }
 
     func updateAlwaysOnTop(_ enabled: Bool) {
@@ -158,16 +159,27 @@ final class CanvasWindowManager {
         prewarmedAspectRatio = nil
         window.title = doc.title
 
-        window.contentView = NSHostingView(rootView: CanvasPanelView(
-            doc: doc,
-            context: context,
-            onClose: { [weak window] in
-                window?.close()
-            },
-            onTitleChange: { [weak window] in
-                window?.title = doc.title
-            }
-        ))
+        do {
+            window.contentView = NSHostingView(rootView: try CanvasPanelView(
+                doc: doc,
+                context: context,
+                onClose: { [weak window] in
+                    window?.close()
+                },
+                onTitleChange: { [weak window] in
+                    window?.title = doc.title
+                },
+                onAutosaveReady: { [weak window] flush in
+                    window?.flushPendingChanges = flush
+                }
+            ))
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Could Not Open Sketch"
+            alert.informativeText = error.localizedDescription
+            alert.runModal()
+            return
+        }
         window.setContentSize(initialContentSize(for: aspectRatio))
         window.center()
 
@@ -224,8 +236,9 @@ final class CanvasWindowManager {
         windows.removeValue(forKey: id)
         guard let context,
               CanvasPreferences.discardEmptyCanvases,
+              !doc.isTombstone,
               SceneCodec.decode(doc.sceneData).elements.isEmpty else { return }
-        context.delete(doc)
+        doc.markDeleted()
         try? context.save()
     }
 

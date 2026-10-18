@@ -3,12 +3,14 @@ import SwiftData
 
 @Model
 final class CanvasDocument {
-    @Attribute(.unique) var id: UUID
-    var title: String
-    var createdAt: Date
-    var updatedAt: Date
-    var sceneData: Data
-    var aspectRatioRawValue: String
+    var id: UUID = UUID()
+    var title: String = "Untitled"
+    var createdAt: Date = Date.now
+    var updatedAt: Date = Date.now
+    var sceneData: Data = Data()
+    var aspectRatioRawValue: String = "portrait"
+    var revision: String = ""
+    var isTombstone: Bool = false
     @Attribute(.externalStorage) var thumbnail: Data?
 
     init(id: UUID = UUID(),
@@ -25,17 +27,32 @@ final class CanvasDocument {
         self.sceneData = sceneData
         aspectRatioRawValue = aspectRatio.rawValue
         self.thumbnail = thumbnail
+        revision = UUID().uuidString
     }
 
     var aspectRatio: CanvasAspectRatio {
         get { CanvasAspectRatio(rawValue: aspectRatioRawValue) ?? .portrait }
         set { aspectRatioRawValue = newValue.rawValue }
     }
+
+    func markChanged() {
+        updatedAt = .now
+        revision = UUID().uuidString
+    }
+
+    func markDeleted() {
+        isTombstone = true
+        sceneData = SceneCodec.encode(CanvasScene())
+        thumbnail = nil
+        markChanged()
+    }
 }
 
 enum SceneCodec {
     static func encode(_ scene: CanvasScene) -> Data {
-        (try? JSONEncoder().encode(scene)) ?? Data()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return (try? encoder.encode(scene)) ?? Data()
     }
 
     static func decode(_ data: Data) -> CanvasScene {

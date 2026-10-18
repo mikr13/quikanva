@@ -17,6 +17,7 @@ enum CanvasCommand: Equatable {
 
 struct CanvasRepresentable: NSViewRepresentable {
     var scene: CanvasScene
+    var reloadToken: UUID? = nil
     var tool: ToolKind
     var style: ElementStyle
     var toolShortcuts: ToolShortcutConfiguration
@@ -31,6 +32,7 @@ struct CanvasRepresentable: NSViewRepresentable {
     @MainActor
     final class Coordinator {
         var isUpdating = false
+        var reloadToken: UUID?
 
         func deliver(_ callback: @escaping () -> Void) {
             guard isUpdating else { return callback() }
@@ -45,6 +47,7 @@ struct CanvasRepresentable: NSViewRepresentable {
     func makeNSView(context: Context) -> CanvasNSView {
         let view = CanvasNSView()
         view.scene = scene
+        context.coordinator.reloadToken = reloadToken
         sync(view, coordinator: context.coordinator)
         return view
     }
@@ -67,6 +70,14 @@ struct CanvasRepresentable: NSViewRepresentable {
         view.tool = tool
         view.style = style
         view.toolShortcuts = toolShortcuts
+        if coordinator.reloadToken != reloadToken {
+            coordinator.reloadToken = reloadToken
+            if !view.reloadScene(scene) {
+                // A gesture or inline text edit is still in progress. Keep the local edit.
+                let local = view.scene
+                coordinator.deliver { onChange(local) }
+            }
+        }
         if view.command != command {
             view.command = command
         }
