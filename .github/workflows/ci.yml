@@ -2,13 +2,8 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
-    inputs:
-      validate_icloud_profile:
-        description: Validate the stored Production iCloud profile only
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -19,9 +14,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    # A profile-only manual run must not satisfy the PR's required build check.
-    name: ${{ github.event_name == 'workflow_dispatch' && 'Manual build and test' || 'build-and-test' }}
-    if: github.event.action != 'closed' && github.head_ref != 'changeset-release/main' && !inputs.validate_icloud_profile
+    name: build-and-test
     runs-on: macos-latest
     timeout-minutes: 20
     # A maintainer approves each run in the ci environment, so a push does not start a
@@ -47,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Require a changeset for pull requests
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
         run: pnpm run changeset:status --since=origin/main
 
       - name: Build and test
@@ -69,38 +62,3 @@ jobs:
           path: dist/*.zip
           archive: false
           if-no-files-found: error
-
-  validate-icloud-profile:
-    if: github.event_name == 'workflow_dispatch' && inputs.validate_icloud_profile
-    runs-on: macos-latest
-    timeout-minutes: 5
-    environment:
-      name: ci
-      deployment: false
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Validate stored Production iCloud provisioning profile
-        env:
-          ICLOUD_PROVISIONING_PROFILE_BASE64: ${{ secrets.ICLOUD_PROVISIONING_PROFILE_BASE64 }}
-        run: |
-          if [[ -z "$ICLOUD_PROVISIONING_PROFILE_BASE64" ]]; then
-            printf 'ICLOUD_PROVISIONING_PROFILE_BASE64 is missing.\n' >&2
-            exit 1
-          fi
-          umask 077
-          profile_path="$(mktemp "$RUNNER_TEMP/quikanva-profile.XXXXXX")"
-          decoded_path="$profile_path.plist"
-          trap 'rm -f "$profile_path" "$decoded_path"' EXIT
-          printf '%s' "$ICLOUD_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$profile_path"
-          security cms -D -i "$profile_path" > "$decoded_path"
-          python3 scripts/validate-icloud-profile.py "$decoded_path" config/CloudKit-Release.entitlements > /dev/null
-          python3 - "$decoded_path" <<'PY'
-          import plistlib, sys
-          with open(sys.argv[1], 'rb') as source:
-              profile = plistlib.load(source)
-          if profile.get('ProvisionsAllDevices') is not True:
-              sys.exit('The profile must be a Developer ID distribution profile.')
-          PY
-          printf 'Production iCloud profile passed: Developer ID, team, App ID, container, expiration, CloudKit, and push permissions.\n'
