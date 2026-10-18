@@ -33,6 +33,8 @@ GitHub Actions requires these repository secrets:
 
 Keep credentials out of Git and maintain a secure backup. The workflow removes its temporary signing keychain after each run.
 
+After adding or rotating the iCloud profile secret, run `gh workflow run ci.yml --ref <branch> -f validate_icloud_profile=true` and approve the CI environment review. This preflight decodes the stored secret and validates its Developer ID profile type, expiry, App ID, team, and Production CloudKit/push capabilities without printing the profile or publishing artifacts.
+
 Initialize the development CloudKit schema and deploy it to Production in CloudKit Console before publishing the first sync-enabled release. Production schemas are additive: keep existing entity/attribute names and types stable. Follow [iCloud testing and activation](docs/ICLOUD_SYNC.md); enabling an entitlement alone does not provision the container or prove live sync.
 
 ## Updates and publication
