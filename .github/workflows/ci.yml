@@ -19,6 +19,8 @@ concurrency:
 
 jobs:
   build-and-test:
+    # A profile-only manual run must not satisfy the PR's required build check.
+    name: ${{ github.event_name == 'workflow_dispatch' && 'Manual build and test' || 'build-and-test' }}
     if: github.event.action != 'closed' && github.head_ref != 'changeset-release/main' && !inputs.validate_icloud_profile
     runs-on: macos-latest
     timeout-minutes: 20
