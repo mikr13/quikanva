@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1
+
+### Patch Changes
+
+- 90dfbd6: Show a download badge on the menu bar icon when an update is available, including updates downloaded silently and waiting for Quikanva to quit. Open the update from the versioned Install menu item.
+
 ## 0.4.0
 
 ### Minor Changes
