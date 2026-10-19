@@ -46,8 +46,7 @@ struct QuikanvaApp: App {
         MenuBarExtra {
             MenuBarContent()
         } label: {
-            Image(nsImage: .quikanvaMenuBar)
-                .accessibilityLabel("Quikanva")
+            MenuBarLabel()
         }
         .modelContainer(container)
         .commands {
@@ -111,6 +110,15 @@ enum WindowID {
     static let gallery = "gallery"
 }
 
+private struct MenuBarLabel: View {
+    @ObservedObject private var updates = UpdateController.shared
+
+    var body: some View {
+        Image(nsImage: .quikanvaMenuBar(showingUpdate: updates.availableUpdateVersion != nil))
+            .accessibilityLabel(updates.availableUpdateVersion.map { "Quikanva, update \($0) available" } ?? "Quikanva")
+    }
+}
+
 private struct MenuBarContent: View {
     @Environment(\.openWindow) private var openWindow
     @ObservedObject private var updates = UpdateController.shared
@@ -131,8 +139,10 @@ private struct MenuBarContent: View {
             Divider()
 
             if let version = updates.availableUpdateVersion {
-                Button("Install Quikanva \(version)…") {
+                Button {
                     updates.checkForUpdates()
+                } label: {
+                    Label("Install Quikanva \(version)…", systemImage: "arrow.down.circle")
                 }
             } else {
                 Button("Check for Updates…") {
@@ -161,11 +171,28 @@ private struct MenuBarContent: View {
 }
 
 private extension NSImage {
-    static var quikanvaMenuBar: NSImage {
+    static func quikanvaMenuBar(showingUpdate: Bool) -> NSImage {
         guard let base = NSImage(named: "QuikanvaMenuBar") else { return NSImage() }
         let image = (base.copy() as? NSImage) ?? base
         image.isTemplate = true
         image.size = NSSize(width: 18, height: 18)
-        return image
+        guard showingUpdate,
+              let badge = NSImage(systemSymbolName: "arrow.down.circle.fill", accessibilityDescription: nil)
+        else { return image }
+
+        // Compose one template image: MenuBarExtra labels are rendered as status-item images.
+        let badgedImage = NSImage(size: image.size, flipped: false) { rect in
+            image.draw(in: rect)
+            let badgeRect = NSRect(x: 9, y: 0, width: 9, height: 9)
+            NSGraphicsContext.saveGraphicsState()
+            NSGraphicsContext.current?.compositingOperation = .destinationOut
+            NSColor.black.setFill()
+            NSBezierPath(ovalIn: badgeRect.insetBy(dx: -1, dy: -1)).fill()
+            NSGraphicsContext.restoreGraphicsState()
+            badge.draw(in: badgeRect)
+            return true
+        }
+        badgedImage.isTemplate = true
+        return badgedImage
     }
 }

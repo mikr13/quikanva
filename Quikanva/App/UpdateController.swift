@@ -9,16 +9,16 @@ final class UpdateController: NSObject, ObservableObject {
     @Published private(set) var canCheckForUpdates = false
     @Published private(set) var automaticallyChecksForUpdates = false
     @Published private(set) var automaticallyDownloadsUpdates = false
-    /// Set while a scheduled check has found an update the user has not looked at yet.
+    /// Includes updates downloaded silently and waiting for the app to quit.
     @Published private(set) var availableUpdateVersion: String?
 
     private lazy var updaterController = SPUStandardUpdaterController(
         startingUpdater: false,
-        updaterDelegate: nil,
+        updaterDelegate: self,
         userDriverDelegate: self
     )
 
-    override private init() {
+    override init() {
         super.init()
         let updater = updaterController.updater
         updater.publisher(for: \.canCheckForUpdates).assign(to: &$canCheckForUpdates)
@@ -45,6 +45,17 @@ final class UpdateController: NSObject, ObservableObject {
 
     func setAutomaticallyDownloadsUpdates(_ enabled: Bool) {
         updaterController.updater.automaticallyDownloadsUpdates = enabled
+    }
+}
+
+extension UpdateController: SPUUpdaterDelegate {
+    func updater(_ updater: SPUUpdater, didFindValidUpdate item: SUAppcastItem) {
+        // Automatic downloads can finish without ever presenting the standard user driver.
+        availableUpdateVersion = item.displayVersionString
+    }
+
+    func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        availableUpdateVersion = nil
     }
 }
 
