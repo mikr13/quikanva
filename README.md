@@ -220,3 +220,5 @@ Check the [Roadmap](#roadmap) before proposing a feature. Focused contributions 
 ## License
 
 Quikanva is available under the [MIT License](LICENSE). Copyright © 2026 Mihir Kumar.
+
+<a href="https://macnative.io/apps/quikanva?utm_source=macnative-badge&utm_medium=referral" target="_blank" rel="noopener"><img src="https://macnative.io/badge?kind=listed&theme=default&slug=quikanva&rounded=1" alt="Listed on MacNative" width="212" height="58" /></a>
